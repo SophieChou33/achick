@@ -27,10 +27,10 @@ interface CharacterData {
     .character-area {
       position: absolute;
       left: 50%;
-      top: 70dvh;
+      top: 75dvh;
       transform: translate(-50%, -50%);
-      width: 300px;
-      height: 300px;
+      width: 15dvh;
+      height: 15dvh;
       z-index: 700;
       display: flex;
       justify-content: center;
@@ -49,11 +49,11 @@ interface CharacterData {
 
     .character-shadow {
       position: absolute;
-      bottom: -30px;
+      bottom: -1.5dvh;
       left: 50%;
       transform: translateX(-50%);
-      width: 160px;
-      height: 40px;
+      width: 8dvh;
+      height: 2dvh;
       background: radial-gradient(ellipse, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.5) 50%, transparent 100%);
       border-radius: 50%;
       animation: shadowFloat 3s ease-in-out infinite;
@@ -93,8 +93,8 @@ interface CharacterData {
     }
 
     .effect-icon {
-      width: 30px;
-      height: 30px;
+      width: 1.5dvh;
+      height: 1.5dvh;
     }
 
   `]

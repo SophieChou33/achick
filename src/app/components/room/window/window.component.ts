@@ -14,9 +14,9 @@ import { CommonModule } from '@angular/common';
     .window-area {
       position: absolute;
       right: 26%;
-      top: 17%;
-      width: calc(210px + 5dvh);
-      height: calc(210px + 5dvh);
+      top: 17dvh;
+      width: 11dvh;
+      height: 11dvh;
       cursor: pointer;
       z-index: 800;
     }
