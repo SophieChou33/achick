@@ -7,9 +7,13 @@ import { sources } from '../../sources';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="welcome-overlay" [class.animate-out]="animateOut" (click)="onLogoClick()">
-      <div class="logo-container">
-        <img [src]="logoSrc" alt="Achick Logo" class="logo" />
+    <div class="welcome-overlay" [class.animate-out]="animateOut">
+      <div class="background-animation" [style.background-image]="backgroundImage"></div>
+      <div class="content-container">
+        <div class="logo-container">
+          <img [src]="logoSrc" alt="Achick Logo" class="logo" />
+        </div>
+        <button class="start-button" (click)="onStartGame()">START!</button>
       </div>
     </div>
   `,
@@ -20,17 +24,48 @@ import { sources } from '../../sources';
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 9999;
       cursor: pointer;
       transition: transform 0.8s ease-in;
+      overflow: hidden;
     }
 
     .welcome-overlay.animate-out {
       transform: translateY(-100vh);
+    }
+
+    .background-animation {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 200vw;
+      height: 100vh;
+      background-size: 100vw 100vh;
+      background-repeat: repeat-x;
+      animation: scrollRight 20s linear infinite;
+      z-index: 1;
+    }
+
+    @keyframes scrollRight {
+      0% {
+        transform: translateX(-100vw);
+      }
+      100% {
+        transform: translateX(0);
+      }
+    }
+
+    .content-container {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 2;
+      gap: 40px;
     }
 
     .logo-container {
@@ -43,11 +78,39 @@ import { sources } from '../../sources';
       width: 200px;
       height: 200px;
       object-fit: contain;
-      transition: transform 0.3s ease;
+      filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
     }
 
-    .logo:hover {
-      transform: scale(1.05);
+    .start-button {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50px;
+      padding: 15px 40px;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      animation: float 3s ease-in-out infinite;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      letter-spacing: 2px;
+    }
+
+    .start-button:hover {
+      animation-play-state: paused;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+      transform: translateY(-5px);
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-15px);
+      }
     }
 
     @media (max-width: 768px) {
@@ -55,12 +118,22 @@ import { sources } from '../../sources';
         width: 150px;
         height: 150px;
       }
+
+      .start-button {
+        font-size: 20px;
+        padding: 12px 30px;
+      }
+
+      .content-container {
+        gap: 30px;
+      }
     }
   `]
 })
 export class WelcomeComponent implements OnInit, OnDestroy {
   logoSrc: string = '';
   animateOut: boolean = false;
+  backgroundImage = "url('assets/images/scene/welcome-bg.png')";
 
   ngOnInit() {
     this.setLogoBasedOnBackground();
@@ -75,7 +148,7 @@ export class WelcomeComponent implements OnInit, OnDestroy {
     this.logoSrc = sources.logo.logoSquareDark;
   }
 
-  onLogoClick() {
+  onStartGame() {
     this.animateOut = true;
 
     // Remove component from DOM after animation completes
