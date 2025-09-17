@@ -207,38 +207,6 @@ interface StatusEffects {
       font-size: 10px;
     }
 
-    @media (max-width: 768px) {
-      .status-bar {
-        height: 60px;
-        padding: 0 10px;
-        font-size: 11px;
-      }
-
-      .status-center {
-        padding: 0 10px;
-      }
-
-      .status-row {
-        gap: 5px;
-      }
-
-      .status-label {
-        min-width: 40px;
-        font-size: 10px;
-      }
-
-      .progress-bar {
-        height: 6px;
-      }
-
-      .pet-name {
-        font-size: 14px;
-      }
-
-      .pet-details {
-        font-size: 10px;
-      }
-    }
   `]
 })
 export class StatusBarComponent implements OnInit {

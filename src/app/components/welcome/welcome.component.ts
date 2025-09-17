@@ -41,20 +41,20 @@ import { sources } from '../../sources';
       position: absolute;
       top: 0;
       left: 0;
-      width: 200vw;
+      width: 100vw;
       height: 100vh;
-      background-size: 100vw 100vh;
+      background-size: 1920px 100dvh;
       background-repeat: repeat-x;
-      animation: scrollRight 20s linear infinite;
+      animation: scrollRight 15s linear infinite;
       z-index: 1;
     }
 
     @keyframes scrollRight {
-      0% {
-        transform: translateX(-100vw);
+      from {
+        background-position: -1920px 0;
       }
-      100% {
-        transform: translateX(0);
+      to {
+        background-position: 0 0;
       }
     }
 
@@ -113,21 +113,6 @@ import { sources } from '../../sources';
       }
     }
 
-    @media (max-width: 768px) {
-      .logo {
-        width: 150px;
-        height: 150px;
-      }
-
-      .start-button {
-        font-size: 20px;
-        padding: 12px 30px;
-      }
-
-      .content-container {
-        gap: 30px;
-      }
-    }
   `]
 })
 export class WelcomeComponent implements OnInit, OnDestroy {

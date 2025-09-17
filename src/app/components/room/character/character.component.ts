@@ -14,6 +14,7 @@ interface CharacterData {
   imports: [CommonModule],
   template: `
     <div class="character-area">
+      <div class="character-shadow"></div>
       <div class="character-container">
         <img [src]="characterImage" [alt]="characterName" class="character-image" />
         <div class="character-effects" *ngIf="hasEffects">
@@ -24,9 +25,9 @@ interface CharacterData {
   `,
   styles: [`
     .character-area {
-      position: fixed;
+      position: absolute;
       left: 50%;
-      top: 50%;
+      top: 70dvh;
       transform: translate(-50%, -50%);
       width: 300px;
       height: 300px;
@@ -34,6 +35,41 @@ interface CharacterData {
       display: flex;
       justify-content: center;
       align-items: center;
+      animation: characterFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes characterFloat {
+      0%, 100% {
+        transform: translate(-50%, -50%);
+      }
+      50% {
+        transform: translate(-50%, calc(-50% - 15px));
+      }
+    }
+
+    .character-shadow {
+      position: absolute;
+      bottom: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 160px;
+      height: 40px;
+      background: radial-gradient(ellipse, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.5) 50%, transparent 100%);
+      border-radius: 50%;
+      animation: shadowFloat 3s ease-in-out infinite;
+      z-index: 600;
+      filter: blur(8px);
+    }
+
+    @keyframes shadowFloat {
+      0%, 100% {
+        transform: translateX(-50%) scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: translateX(-50%) scale(0.8);
+        opacity: 0.7;
+      }
     }
 
     .character-container {
@@ -47,11 +83,7 @@ interface CharacterData {
       max-width: 100%;
       max-height: 100%;
       object-fit: contain;
-      transition: transform 0.3s ease;
-    }
-
-    .character-image:hover {
-      transform: scale(1.05);
+      cursor: pointer;
     }
 
     .character-effects {
@@ -65,17 +97,6 @@ interface CharacterData {
       height: 30px;
     }
 
-    @media (max-width: 768px) {
-      .character-area {
-        width: 100px;
-        height: 100px;
-      }
-
-      .effect-icon {
-        width: 20px;
-        height: 20px;
-      }
-    }
   `]
 })
 export class CharacterComponent implements OnInit {

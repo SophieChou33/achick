@@ -12,12 +12,11 @@ import { CommonModule } from '@angular/common';
   `,
   styles: [`
     .window-area {
-      position: fixed;
-      left: calc(50% + 70px);
-      top: calc(30vh - 160px);
-      transform: translateX(-50%);
-      width: 210px;
-      height: 210px;
+      position: absolute;
+      right: 26%;
+      top: 17%;
+      width: calc(210px + 5dvh);
+      height: calc(210px + 5dvh);
       cursor: pointer;
       z-index: 800;
     }
@@ -36,14 +35,6 @@ import { CommonModule } from '@angular/common';
       border-color: rgba(255, 255, 255, 0.6);
     }
 
-    @media (max-width: 768px) {
-      .window-area {
-        width: 30px;
-        height: 40px;
-        left: calc(50% + 35px);
-        top: calc(30vh - 80px);
-      }
-    }
   `]
 })
 export class WindowComponent {

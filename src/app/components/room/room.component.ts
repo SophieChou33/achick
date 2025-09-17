@@ -19,15 +19,27 @@ import { sources } from '../../sources';
     CharacterComponent
   ],
   template: `
-    <div class="room-container" [style.background-image]="backgroundImage">
-      <app-header></app-header>
-      <app-sidebar></app-sidebar>
-      <app-window></app-window>
-      <app-character></app-character>
-      <app-status-bar></app-status-bar>
+    <div class="room-wrapper">
+      <div class="room-container" [style.background-image]="backgroundImage">
+        <app-header></app-header>
+        <app-sidebar></app-sidebar>
+        <app-window></app-window>
+        <app-character></app-character>
+        <app-status-bar></app-status-bar>
+      </div>
     </div>
   `,
   styles: [`
+    .room-wrapper {
+      width: 100%;
+      height: 100vh;
+      overflow-x: auto;
+      overflow-y: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
     .room-container {
       position: relative;
       min-width: 1400px;
@@ -35,15 +47,9 @@ import { sources } from '../../sources';
       height: 100vh;
       background-size: cover;
       background-repeat: no-repeat;
-      background-position: center;
-      overflow: hidden;
+      background-position: center top;
     }
 
-    @media (max-width: 768px) {
-      .room-container {
-        min-width: 100vw;
-      }
-    }
   `]
 })
 export class RoomComponent implements OnInit {

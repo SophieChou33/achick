@@ -98,29 +98,6 @@ import { sources } from '../../../sources';
       height: 30px;
     }
 
-    @media (max-width: 768px) {
-      .header {
-        padding: 0 10px;
-      }
-
-      .header-right {
-        gap: 10px;
-      }
-
-      .current-time {
-        font-size: 12px;
-      }
-
-      .function-icon {
-        width: 25px;
-        height: 25px;
-      }
-
-      .coin-icon {
-        width: 18px;
-        height: 18px;
-      }
-    }
   `]
 })
 export class HeaderComponent implements OnInit, OnDestroy {

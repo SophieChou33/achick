@@ -65,25 +65,6 @@ import { sources } from '../../../sources';
       font-size: 24px;
     }
 
-    @media (max-width: 768px) {
-      .sidebar {
-        left: 10px;
-      }
-
-      .sidebar-btn {
-        width: 50px;
-        height: 50px;
-      }
-
-      .sidebar-icon {
-        width: 25px;
-        height: 25px;
-      }
-
-      .sleep-icon {
-        font-size: 20px;
-      }
-    }
   `]
 })
 export class SidebarComponent {
