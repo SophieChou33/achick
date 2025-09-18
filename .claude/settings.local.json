@@ -3,7 +3,8 @@
     "allow": [
       "Bash(mkdir:*)",
       "Bash(npm run build:*)",
-      "Bash(npx ng lint:*)"
+      "Bash(npx ng lint:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

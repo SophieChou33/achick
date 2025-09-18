@@ -149,3 +149,38 @@
     - 反向動畫：角色上升時影子下沉並變小變透明
     - 動態模糊效果：0.5dvh 到 1.2dvh 變化
     - 縮放範圍：1.3 到 0.7 倍變化
+
+#### 11 - 新增床組件功能
+- **開始時間**: 2025-09-18 11:30
+- **完成時間**: 2025-09-18 12:00
+- **狀態**: 已完成
+- **摘要**:
+  - 在 sources.ts 中新增睡眠相關資源：
+    - otherIcons 新增 sleep 和 isSleeping 圖示
+    - 新增 bed 物件包含 bedEmpty 和 bedIsSleeping 圖片
+  - 創建 BedComponent 組件：
+    - 基於 WindowComponent 架構設計
+    - 使用 26dvh x 30dvh 尺寸規格
+    - 位置設定為 left: 30%, top: 17dvh
+    - 預設顯示 bedEmpty 圖片
+    - 實現點擊互動和 hover 縮放效果
+  - 整合到 RoomComponent 中，確保正確的層級顯示
+
+#### 12 - 床組件樣式調整與優化
+- **開始時間**: 2025-09-18 14:00
+- **完成時間**: 2025-09-18 15:30
+- **狀態**: 已完成
+- **摘要**:
+  - 床組件位置多次調整：
+    - 初始：left: 19%, top: 52dvh, height: 45dvh
+    - 調整：top: 60dvh, height: 40dvh, left: 25%
+    - 調整：top: 45dvh, height: 55dvh, left: 19%
+    - 調整：top: 48dvh, height: 45dvh
+    - 最終：top: 50dvh, height: 40dvh, left: 19%
+  - 床組件圖片資源更新：
+    - sources.ts 結構調整為 light/dark 變體
+    - 預設圖片改為 sources.bed.bedEmptyLight
+    - 解決 TypeScript 編譯錯誤
+  - 陰影效果管理：
+    - 添加底部陰影效果（徑向漸變 + 模糊）
+    - 根據用戶回饋移除陰影效果

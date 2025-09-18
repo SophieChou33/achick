@@ -5,6 +5,7 @@ import { SidebarComponent } from './sidebar/sidebar.component';
 import { WindowComponent } from './window/window.component';
 import { StatusBarComponent } from './status-bar/status-bar.component';
 import { CharacterComponent } from './character/character.component';
+import { BedComponent } from './bed/bed.component';
 import { sources } from '../../sources';
 
 @Component({
@@ -16,13 +17,15 @@ import { sources } from '../../sources';
     SidebarComponent,
     WindowComponent,
     StatusBarComponent,
-    CharacterComponent
+    CharacterComponent,
+    BedComponent
   ],
   template: `
     <div class="room-wrapper">
       <div class="room-container">
         <img [src]="backgroundImageSrc" alt="Room Background" class="room-background" />
         <app-window></app-window>
+        <app-bed></app-bed>
         <app-character></app-character>
       </div>
       <app-header></app-header>

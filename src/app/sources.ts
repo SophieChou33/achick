@@ -91,6 +91,12 @@ export const sources = {
     roomNightLightOn: 'assets/images/scene/room-night-light-on.jpg',
     roomNightLightOff: 'assets/images/scene/room-night-light-off.jpg',
   },
+  bed: {
+    bedEmptyLight: 'assets/images/bed/bed-empty-light.png',
+    bedIsSleepingLight: 'assets/images/bed/bed-is-sleeping-light.png',
+    bedEmptyDark: 'assets/images/bed/bed-empty-dark.png',
+    bedIsSleepingDark: 'assets/images/bed/bed-is-sleeping-dark.png',
+  },
   otherIcons: {
     coin: 'assets/images/other-icons/coin.png',
     store: 'assets/images/other-icons/store.png',
@@ -100,5 +106,7 @@ export const sources = {
     dirty03: 'assets/images/other-icons/dirty03.png',
     collection: 'assets/images/other-icons/collection.png',
     feed: 'assets/images/other-icons/feed.png',
+    sleep: 'assets/images/other-icons/sleep.png',
+    isSleeping: 'assets/images/other-icons/is-sleeping.png',
   }
 };
