@@ -184,3 +184,39 @@
   - 陰影效果管理：
     - 添加底部陰影效果（徑向漸變 + 模糊）
     - 根據用戶回饋移除陰影效果
+
+#### 13 - 實現品種型別與資料物件系統
+- **開始時間**: 2025-09-18 16:00
+- **完成時間**: 2025-09-18 16:30
+- **狀態**: 已完成
+- **摘要**:
+  - 品種型別定義：
+    - 創建 /src/app/types/breed.type.ts
+    - 定義 Breed 介面包含 breed, rare, breedName?, cookedEarned?
+    - 支援條件性屬性，BAD/NORMAL 品種無 breedName 屬性
+  - 品種資料物件：
+    - 創建 /src/app/data/breed-data.ts
+    - 提供完整的 14 種品種資料（BAD: 3種、NORMAL: 3種、SPECIAL: 4種、SUPER_SPECIAL: 4種）
+    - 實現 getBreedByName 和 getBreedsByRare 輔助函式
+  - 圖鑑資料物件：
+    - 創建 /src/app/data/collection-data.ts
+    - 實現 CollectionItem 和 CollectionData 介面
+    - 提供 CollectionService 類別支援儲存/載入/統計功能
+    - 整合 localStorage 持久化儲存機制
+
+#### 14 - 品種與圖鑑資料完整建置
+- **開始時間**: 2025-09-18 17:00
+- **完成時間**: 2025-09-18 17:15
+- **狀態**: 已完成
+- **摘要**:
+  - 品種資料完整建置：
+    - 根據品種對照表建立 14 種品種完整資料
+    - BAD 稀有度：爛泥小雞(5)、好毒小雞(30)、過熟小雞(15)、突變小雞(30)
+    - NORMAL 稀有度：健美小雞(40)、好肌小雞(40)、蘿蔔小雞(50)、七彩小雞(70)
+    - SPECIAL 稀有度：琉璃小雞(90)、絨毛小雞(110)、異形小雞(100)
+    - SUPER_SPECIAL 稀有度：貓貓小雞(270)、狐狸小雞(280)、白鵝小雞(250)
+  - 圖鑑資料對應建置：
+    - 建立對應的 14 個圖鑑收集項目
+    - 預設使用 sources.character.others.unlocked 圖片
+    - 解鎖後動態切換至對應進化形態圖片
+    - 整合 sources.ts 靜態資源系統

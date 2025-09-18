@@ -15,7 +15,7 @@ import { sources } from '../../../sources';
     .bed-area {
       position: absolute;
       left: 19%;
-      top: 50dvh;
+      top: 53dvh;
       width: auto;
       height: 40dvh;
       cursor: pointer;

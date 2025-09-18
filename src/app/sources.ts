@@ -54,6 +54,7 @@ export const sources = {
     },
     others: {
       isFreezing: 'assets/images/character/is-freezing.png',
+      unlocked: 'assets/images/character/unlocked.png',
     }
   },
   store: {
