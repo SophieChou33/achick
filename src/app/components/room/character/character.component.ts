@@ -13,24 +13,27 @@ interface CharacterData {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="character-area">
-      <div class="character-shadow"></div>
-      <div class="character-container">
-        <img [src]="characterImage" [alt]="characterName" class="character-image" />
-        <div class="character-effects" *ngIf="hasEffects">
-          <img *ngIf="isFreezing" [src]="freezingIcon" alt="Freezing" class="effect-icon" />
+    <div class="character-area-wrapper">
+      <div class="character-area">
+        <div class="character-shadow"></div>
+        <div class="character-container">
+          <img [src]="characterImage" [alt]="characterName" class="character-image" />
+          <div class="character-effects" *ngIf="hasEffects">
+            <img *ngIf="isFreezing" [src]="freezingIcon" alt="Freezing" class="effect-icon" />
+          </div>
         </div>
       </div>
     </div>
   `,
   styles: [`
+    .character-area-wrapper{
+      width: 100%;
+      height: 100%;
+    }
     .character-area {
       position: absolute;
-      left: 50%;
-      top: 75dvh;
-      transform: translate(-50%, -50%);
-      width: 15dvh;
-      height: 15dvh;
+      left: 40%;
+      top: 35dvh;
       z-index: 700;
       display: flex;
       justify-content: center;
@@ -40,35 +43,37 @@ interface CharacterData {
 
     @keyframes characterFloat {
       0%, 100% {
-        transform: translate(-50%, -50%);
+        transform: translate(0px, 0px);
       }
       50% {
-        transform: translate(-50%, calc(-50% - 15px));
+        transform: translate(0px, -15px);
       }
     }
 
     .character-shadow {
       position: absolute;
-      bottom: -1.5dvh;
+      bottom: 0dvh;
       left: 50%;
       transform: translateX(-50%);
-      width: 8dvh;
-      height: 2dvh;
+      width: 12dvh;
+      height: 3dvh;
       background: radial-gradient(ellipse, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.5) 50%, transparent 100%);
       border-radius: 50%;
       animation: shadowFloat 3s ease-in-out infinite;
       z-index: 600;
-      filter: blur(8px);
+      filter: blur(0.8dvh);
     }
 
     @keyframes shadowFloat {
       0%, 100% {
-        transform: translateX(-50%) scale(1);
-        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1.3);
+        opacity: 0.9;
+        filter: blur(0.5dvh);
       }
       50% {
-        transform: translateX(-50%) scale(0.8);
-        opacity: 0.7;
+        transform: translateX(-50%) translateY(1.5dvh) scale(0.7);
+        opacity: 0.3;
+        filter: blur(1.2dvh);
       }
     }
 
@@ -80,8 +85,8 @@ interface CharacterData {
     }
 
     .character-image {
-      max-width: 100%;
-      max-height: 100%;
+      width: auto;
+      height: 50dvh;
       object-fit: contain;
       cursor: pointer;
     }

@@ -13,12 +13,12 @@ import { CommonModule } from '@angular/common';
   styles: [`
     .window-area {
       position: absolute;
-      right: 26%;
+      right: 30%;
       top: 17dvh;
-      width: 11dvh;
-      height: 11dvh;
+      width: 26dvh;
+      height: 30dvh;
       cursor: pointer;
-      z-index: 800;
+      z-index: 600;
     }
 
     .window-frame {

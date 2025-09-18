@@ -32,7 +32,6 @@ import { sources } from '../../sources';
   `,
   styles: [`
     .room-wrapper {
-      position: relative;
       width: 100%;
       height: 100vh;
       overflow-x: auto;
@@ -41,18 +40,17 @@ import { sources } from '../../sources';
 
     .room-container {
       position: relative;
-      width: 1920px;
-      height: 100vh;
+      display: inline-block;
+      height: 100dvh;
     }
 
     .room-background {
-      position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
+      width: auto;
+      height: 100dvh;
       z-index: -1;
-      object-fit: cover;
+      object-fit: contain;
     }
 
   `]
