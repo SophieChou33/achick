@@ -292,3 +292,19 @@
     - 修正 ShopData 分類名稱為英文小駝峰命名（food, health, gift, decoration）
     - 更新所有相關服務方法的分類引用
     - 確保 TypeScript 編譯檢查通過
+
+#### 19 - 實現狀態資料型別與狀態資料物件系統
+- **開始時間**: 2025-09-19 15:40
+- **完成時間**: 2025-09-19 15:55
+- **狀態**: 已完成
+- **摘要**:
+  - 狀態資料型別定義：
+    - 創建 /src/app/types/state-data.type.ts
+    - 定義 StateDataType 介面包含 stateText 和 isActive 屬性
+    - 定義 StateData 介面包含 12 種寵物狀態屬性
+  - 狀態資料物件：
+    - 創建 /src/app/data/state-data.ts
+    - 提供 defaultStateData 預設狀態資料，包含完整的 12 種狀態
+    - 實現 StateDataService 類別支援完整的狀態資料管理
+    - 包含狀態激活/關閉、查詢活躍狀態、重置所有狀態等功能
+    - 整合 localStorage 持久化儲存機制
