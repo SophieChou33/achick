@@ -8,101 +8,197 @@ export interface CollectionItem {
 }
 
 export interface CollectionData {
-  [key: string]: CollectionItem;
+  EVOLUTION: CollectionItem[];
+  COOKED: CollectionItem[];
 }
 
 export const defaultCollectionData: CollectionData = {
-  // BAD 稀有度品種
-  mud: {
-    breedName: 'mud',
-    imageSource: sources.character.others.unlocked,
-    collectedCount: 0,
-    isUnlocked: 0
-  },
-  poison: {
-    breedName: 'poison',
-    imageSource: sources.character.others.unlocked,
-    collectedCount: 0,
-    isUnlocked: 0
-  },
-  burned: {
-    breedName: 'burned',
-    imageSource: sources.character.others.unlocked,
-    collectedCount: 0,
-    isUnlocked: 0
-  },
-  limbs: {
-    breedName: 'limbs',
-    imageSource: sources.character.others.unlocked,
-    collectedCount: 0,
-    isUnlocked: 0
-  },
+  EVOLUTION: [
+    // BAD 稀有度品種
+    {
+      breedName: 'mud',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'poison',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'burned',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'limbs',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
 
-  // NORMAL 稀有度品種
-  strong: {
-    breedName: 'strong',
-    imageSource: sources.character.others.unlocked,
-    collectedCount: 0,
-    isUnlocked: 0
-  },
-  smooth: {
-    breedName: 'smooth',
-    imageSource: sources.character.others.unlocked,
-    collectedCount: 0,
-    isUnlocked: 0
-  },
-  carrot: {
-    breedName: 'carrot',
-    imageSource: sources.character.others.unlocked,
-    collectedCount: 0,
-    isUnlocked: 0
-  },
-  rainbow: {
-    breedName: 'rainbow',
-    imageSource: sources.character.others.unlocked,
-    collectedCount: 0,
-    isUnlocked: 0
-  },
+    // NORMAL 稀有度品種
+    {
+      breedName: 'strong',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'smooth',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'carrot',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'rainbow',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
 
-  // SPECIAL 稀有度品種
-  glass: {
-    breedName: 'glass',
-    imageSource: sources.character.others.unlocked,
-    collectedCount: 0,
-    isUnlocked: 0
-  },
-  cute: {
-    breedName: 'cute',
-    imageSource: sources.character.others.unlocked,
-    collectedCount: 0,
-    isUnlocked: 0
-  },
-  monster: {
-    breedName: 'monster',
-    imageSource: sources.character.others.unlocked,
-    collectedCount: 0,
-    isUnlocked: 0
-  },
+    // SPECIAL 稀有度品種
+    {
+      breedName: 'glass',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'cute',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'monster',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
 
-  // SUPER_SPECIAL 稀有度品種
-  cat: {
-    breedName: 'cat',
-    imageSource: sources.character.others.unlocked,
-    collectedCount: 0,
-    isUnlocked: 0
-  },
-  fox: {
-    breedName: 'fox',
-    imageSource: sources.character.others.unlocked,
-    collectedCount: 0,
-    isUnlocked: 0
-  },
-  goose: {
-    breedName: 'goose',
-    imageSource: sources.character.others.unlocked,
-    collectedCount: 0,
-    isUnlocked: 0
-  }
+    // SUPER_SPECIAL 稀有度品種
+    {
+      breedName: 'cat',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'fox',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'goose',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    }
+  ],
+  COOKED: [
+    // BAD 稀有度品種
+    {
+      breedName: 'mud',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'poison',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'burned',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'limbs',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+
+    // NORMAL 稀有度品種
+    {
+      breedName: 'strong',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'smooth',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'carrot',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'rainbow',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+
+    // SPECIAL 稀有度品種
+    {
+      breedName: 'glass',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'cute',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'monster',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+
+    // SUPER_SPECIAL 稀有度品種
+    {
+      breedName: 'cat',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'fox',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      breedName: 'goose',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    }
+  ]
 };
 
 export class CollectionService {
@@ -128,16 +224,24 @@ export class CollectionService {
     }
   }
 
-  static unlockBreed(breedName: string, collectionData: CollectionData): CollectionData {
-    const updatedData = { ...collectionData };
-    if (updatedData[breedName]) {
-      // 解鎖時更新圖片資源為對應的進化形態
-      const evolutionImage = (sources.character.evolution as any)[breedName];
-      updatedData[breedName] = {
-        ...updatedData[breedName],
+  static unlockBreed(breedName: string, type: 'EVOLUTION' | 'COOKED', collectionData: CollectionData): CollectionData {
+    const updatedData = {
+      ...collectionData,
+      [type]: [...collectionData[type]]
+    };
+
+    const itemIndex = updatedData[type].findIndex(item => item.breedName === breedName);
+    if (itemIndex !== -1) {
+      // 解鎖時更新圖片資源為對應的形態
+      const imageSource = type === 'EVOLUTION'
+        ? (sources.character.evolution as any)[breedName]
+        : (sources.character.cooked as any)[breedName];
+
+      updatedData[type][itemIndex] = {
+        ...updatedData[type][itemIndex],
         isUnlocked: 1,
-        imageSource: evolutionImage || sources.character.others.unlocked,
-        collectedCount: updatedData[breedName].collectedCount + 1
+        imageSource: imageSource || sources.character.others.unlocked,
+        collectedCount: updatedData[type][itemIndex].collectedCount + 1
       };
       this.saveCollectionData(updatedData);
     }
@@ -148,15 +252,35 @@ export class CollectionService {
     totalBreeds: number;
     unlockedBreeds: number;
     completionRate: number;
+    evolutionStats: { total: number; unlocked: number; rate: number };
+    cookedStats: { total: number; unlocked: number; rate: number };
   } {
-    const totalBreeds = Object.keys(collectionData).length;
-    const unlockedBreeds = Object.values(collectionData).filter(item => item.isUnlocked === 1).length;
+    const evolutionTotal = collectionData.EVOLUTION.length;
+    const evolutionUnlocked = collectionData.EVOLUTION.filter(item => item.isUnlocked === 1).length;
+    const evolutionRate = evolutionTotal > 0 ? (evolutionUnlocked / evolutionTotal) * 100 : 0;
+
+    const cookedTotal = collectionData.COOKED.length;
+    const cookedUnlocked = collectionData.COOKED.filter(item => item.isUnlocked === 1).length;
+    const cookedRate = cookedTotal > 0 ? (cookedUnlocked / cookedTotal) * 100 : 0;
+
+    const totalBreeds = evolutionTotal + cookedTotal;
+    const unlockedBreeds = evolutionUnlocked + cookedUnlocked;
     const completionRate = totalBreeds > 0 ? (unlockedBreeds / totalBreeds) * 100 : 0;
 
     return {
       totalBreeds,
       unlockedBreeds,
-      completionRate: Math.round(completionRate * 100) / 100
+      completionRate: Math.round(completionRate * 100) / 100,
+      evolutionStats: {
+        total: evolutionTotal,
+        unlocked: evolutionUnlocked,
+        rate: Math.round(evolutionRate * 100) / 100
+      },
+      cookedStats: {
+        total: cookedTotal,
+        unlocked: cookedUnlocked,
+        rate: Math.round(cookedRate * 100) / 100
+      }
     };
   }
 }
