@@ -87,14 +87,17 @@ interface StatusEffects {
       bottom: 0;
       left: 0;
       width: 100%;
-      height: 80px;
-      background: rgba(0, 0, 0, 0.7);
+      height: 92px;
+      background: rgba(255, 255, 255, 0.05);
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(5px);
       color: white;
       display: flex;
       align-items: center;
       padding: 0 20px;
       box-sizing: border-box;
       z-index: 1000;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.7);
     }
 
     .status-left {
@@ -114,7 +117,7 @@ interface StatusEffects {
 
     .pet-details {
       display: flex;
-      gap: 15px;
+      flex-direction: column;\n      gap: 3px;
       font-size: 12px;
       opacity: 0.8;
     }
@@ -127,7 +130,11 @@ interface StatusEffects {
     .status-bars {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 3px;
+      max-width: 350px;
+      background: #FAF9F7;
+      border-radius: 12px;
+      padding: 12px;
     }
 
     .status-row {
@@ -139,12 +146,13 @@ interface StatusEffects {
     .status-label {
       min-width: 60px;
       font-size: 12px;
+      color: #847170;
     }
 
     .progress-bar {
       flex: 1;
       height: 8px;
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.1);
       border-radius: 4px;
       overflow: hidden;
     }
@@ -207,7 +215,7 @@ interface StatusEffects {
       font-size: 10px;
     }
 
-  `]
+    @media (max-width: 576px) {\n      .progress-bar {\n        display: none;\n      }\n\n      .status-row {\n        justify-content: space-between;\n      }\n    }\n\n  `]
 })
 export class StatusBarComponent implements OnInit {
   petInfo: PetInfo = {

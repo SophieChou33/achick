@@ -4,7 +4,9 @@
       "Bash(mkdir:*)",
       "Bash(npm run build:*)",
       "Bash(npx ng lint:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(sed:*)",
+      "Bash(ng lint)"
     ],
     "deny": [],
     "ask": []

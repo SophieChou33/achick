@@ -39,14 +39,14 @@ import { sources } from '../../../sources';
     .sidebar-btn {
       width: 60px;
       height: 60px;
-      background: rgba(255, 255, 255, 0.9);
-      border: 2px solid rgba(255, 255, 255, 0.8);
+      background: rgba(255, 240, 230, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.2);
       border-radius: 50%;
       cursor: pointer;
       display: flex;
       justify-content: center;
       align-items: center;
-      transition: all 0.3s ease;
+      transition: all 0.3s ease;\n      backdrop-filter: blur(5px);
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
 
@@ -57,12 +57,12 @@ import { sources } from '../../../sources';
     }
 
     .sidebar-icon {
-      width: 30px;
-      height: 30px;
+      width: 40px;
+      height: 40px;
     }
 
     .sleep-icon {
-      font-size: 24px;
+      font-size: 32px;
     }
 
   `]

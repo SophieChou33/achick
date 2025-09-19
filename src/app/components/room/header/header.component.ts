@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { sources } from '../../../sources';
@@ -14,19 +14,24 @@ import { CoinsService } from '../../../services/coins.service';
         <img [src]="logoSrc" alt="Achick" class="logo" />
       </div>
       <div class="header-right">
-        <div class="current-time">{{ currentTime }}</div>
-        <div class="coins">
-          <img [src]="coinIcon" alt="Coins" class="coin-icon" />
-          <span class="coin-amount">{{ currentCoins }}</span>
+        <div class="header-top-row">
+          <div class="current-time desktop-time">{{ currentTime }}</div>
+          <div class="header-controls">
+            <div class="coins">
+              <img [src]="coinIcon" alt="Coins" class="coin-icon" />
+              <span class="coin-amount">{{ currentCoins }}</span>
+            </div>
+            <div class="functions">
+              <button class="function-btn" (click)="openStore()">
+                <img [src]="storeIcon" alt="商店" class="function-icon" />
+              </button>
+              <button class="function-btn" (click)="openCollection()">
+                <img [src]="collectionIcon" alt="圖鑑" class="function-icon" />
+              </button>
+            </div>
+          </div>
         </div>
-        <div class="functions">
-          <button class="function-btn" (click)="openStore()">
-            <img [src]="storeIcon" alt="商店" class="function-icon" />
-          </button>
-          <button class="function-btn" (click)="openCollection()">
-            <img [src]="collectionIcon" alt="圖鑑" class="function-icon" />
-          </button>
-        </div>
+        <div class="current-time mobile-time">{{ currentTime }}</div>
       </div>
     </header>
   `,
@@ -52,8 +57,26 @@ import { CoinsService } from '../../../services/coins.service';
 
     .header-right {
       display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 5px;
+    }
+
+    .header-top-row {
+      display: flex;
       align-items: center;
       gap: 20px;
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 0 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 25px;
+      backdrop-filter: blur(5px);
     }
 
     .current-time {
@@ -61,6 +84,14 @@ import { CoinsService } from '../../../services/coins.service';
       font-size: 14px;
       font-weight: 500;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    }
+
+    .mobile-time {
+      display: none;
+    }
+
+    .desktop-time {
+      display: block;
     }
 
     .coins {
@@ -73,8 +104,8 @@ import { CoinsService } from '../../../services/coins.service';
     }
 
     .coin-icon {
-      width: 20px;
-      height: 20px;
+      width: 36px;
+      height: 36px;
     }
 
     .functions {
@@ -96,14 +127,54 @@ import { CoinsService } from '../../../services/coins.service';
     }
 
     .function-icon {
-      width: 30px;
-      height: 30px;
+      width: 44px;
+      height: 44px;
+    }
+
+    /* 響應式設計 - 小螢幕 */
+    @media (max-width: 576px) {
+      .header-right {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+      }
+
+      .header-top-row {
+        gap: 15px;
+      }
+
+      .desktop-time {
+        display: none;
+      }
+
+      .mobile-time {
+        display: block;
+        font-size: 12px;
+      }
+
+      .logo {
+        height: 42px !important;
+      }
+
+      .coin-icon {
+        width: 32px;
+        height: 32px;
+      }
+
+      .function-icon {
+        width: 38px;
+        height: 38px;
+      }
+
+      .functions {
+        gap: 8px;
+      }
     }
 
   `]
 })
 export class HeaderComponent implements OnInit, OnDestroy {
-  logoSrc = sources.logo.logoHorizonLight;
+  logoSrc = sources.logo.logoHorizonDark;
   coinIcon = sources.otherIcons.coin;
   storeIcon = sources.otherIcons.store;
   collectionIcon = sources.otherIcons.collection;
@@ -125,6 +196,22 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.coinsSubscription = this.coinsService.coins$.subscribe(coins => {
       this.currentCoins = coins;
     });
+
+    // 初始化 logo
+    this.updateLogo();
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onResize(event: any) {
+    this.updateLogo();
+  }
+
+  private updateLogo() {
+    if (window.innerWidth <= 576) {
+      this.logoSrc = sources.logo.logoSquareDark;
+    } else {
+      this.logoSrc = sources.logo.logoHorizonDark;
+    }
   }
 
   ngOnDestroy() {
