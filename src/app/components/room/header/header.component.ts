@@ -1,6 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { sources } from '../../../sources';
+import { CoinsService } from '../../../services/coins.service';
 
 @Component({
   selector: 'app-header',
@@ -107,20 +109,29 @@ export class HeaderComponent implements OnInit, OnDestroy {
   collectionIcon = sources.otherIcons.collection;
 
   currentTime = '';
-  currentCoins = 1250;
+  currentCoins = 0;
   private timeInterval: any;
+  private coinsSubscription: Subscription = new Subscription();
+
+  constructor(private coinsService: CoinsService) {}
 
   ngOnInit() {
     this.updateTime();
     this.timeInterval = setInterval(() => {
       this.updateTime();
     }, 1000);
+
+    // Subscribe to coins changes
+    this.coinsSubscription = this.coinsService.coins$.subscribe(coins => {
+      this.currentCoins = coins;
+    });
   }
 
   ngOnDestroy() {
     if (this.timeInterval) {
       clearInterval(this.timeInterval);
     }
+    this.coinsSubscription.unsubscribe();
   }
 
   private updateTime() {

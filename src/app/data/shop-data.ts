@@ -1,4 +1,5 @@
 import { ShopData, ProductItem, ProductDataEffect } from '../types/product-data.type';
+import { UserDataService } from './user-data';
 
 const defaultProductEffect: ProductDataEffect = {
   currentHealth: 0,
@@ -171,5 +172,29 @@ export class ShopDataService {
     return allProducts.filter(product =>
       product.price >= minPrice && product.price <= maxPrice
     );
+  }
+
+  static purchaseProduct(productItem: ProductItem): { success: boolean; message: string } {
+    const userData = UserDataService.loadUserData();
+
+    if (userData.coins < productItem.price) {
+      return {
+        success: false,
+        message: `金幣不足！需要 ${productItem.price} 金幣，目前只有 ${userData.coins} 金幣。`
+      };
+    }
+
+    const result = UserDataService.spendCoins(productItem.price, userData);
+    if (result.success) {
+      return {
+        success: true,
+        message: `成功購買 ${productItem.itemName}！花費 ${productItem.price} 金幣。`
+      };
+    }
+
+    return {
+      success: false,
+      message: '購買失敗，請稍後再試。'
+    };
   }
 }

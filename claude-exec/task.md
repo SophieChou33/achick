@@ -308,3 +308,26 @@
     - 實現 StateDataService 類別支援完整的狀態資料管理
     - 包含狀態激活/關閉、查詢活躍狀態、重置所有狀態等功能
     - 整合 localStorage 持久化儲存機制
+
+#### 20 - 實現金幣計算邏輯系統
+- **開始時間**: 2025-09-19 16:10
+- **完成時間**: 2025-09-19 16:25
+- **狀態**: 已完成
+- **摘要**:
+  - 金幣服務實現：
+    - 創建 /src/app/services/coins.service.ts
+    - 實現 CoinsService 類別包含 private 金幣變數、get/set 金幣函數
+    - 整合 BehaviorSubject 實現響應式金幣狀態管理
+    - 提供 addCoins、spendCoins、hasEnoughCoins 等完整功能
+  - HeaderComponent 金幣顯示同步：
+    - 移除硬編碼金幣數值（1250），改為動態訂閱
+    - 整合 CoinsService 實現即時金幣數量顯示
+    - 確保金幣變化時畫面自動更新
+  - 商店購買金幣扣除邏輯：
+    - 更新 ShopDataService 新增 purchaseProduct 方法
+    - 實現金幣不足檢查和扣款邏輯
+    - 整合 UserDataService 確保金幣變化持久化
+  - 電子雞死亡金幣保持機制：
+    - 確認 resetPetStats 和 initializeNewPet 不影響使用者金幣
+    - 金幣資料存儲於獨立的 UserData localStorage
+    - 實現電子雞死亡不重置使用者持有金幣的需求
