@@ -1,4 +1,5 @@
 import { UserData, PetRecord } from '../types/user-data.type';
+import { PetEnding } from '../types/pet-ending.type';
 
 export const defaultUserData: UserData = {
   coins: 0,
@@ -110,7 +111,41 @@ export class UserDataService {
       petName,
       birthTime: this.formatDateTime(new Date()),
       evolutionTime: null,
-      deathTime: null
+      deathTime: null,
+      ending: undefined
     };
+  }
+
+  static addPetEnding(endingType: 'DEAD' | 'COOKED', coinsEarned: number, currentData: UserData): UserData {
+    const currentPetRecord = this.getCurrentPetRecord(currentData);
+    if (!currentPetRecord) {
+      console.warn('No current pet found to add ending');
+      return currentData;
+    }
+
+    const endingTime = this.formatDateTime(new Date());
+    const ending: PetEnding = {
+      endingType,
+      endingTime,
+      coinsEarned
+    };
+
+    const updatedHistory = [...currentData.petHistory];
+    const lastRecordIndex = updatedHistory.length - 1;
+
+    updatedHistory[lastRecordIndex] = {
+      ...updatedHistory[lastRecordIndex],
+      deathTime: endingTime,
+      ending
+    };
+
+    const updatedData = {
+      ...currentData,
+      coins: currentData.coins + coinsEarned,
+      petHistory: updatedHistory
+    };
+
+    this.saveUserData(updatedData);
+    return updatedData;
   }
 }
