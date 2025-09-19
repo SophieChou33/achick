@@ -270,3 +270,25 @@
     - 新增 addPetEnding 方法處理寵物結局
     - 自動更新死亡時間、結局資訊和金幣獎勵
     - 整合現有 localStorage 持久化機制
+
+#### 18 - 實現商店商品資料物件系統
+- **開始時間**: 2025-09-19 15:05
+- **完成時間**: 2025-09-19 15:20
+- **狀態**: 已完成
+- **摘要**:
+  - 商品資料型別定義：
+    - 創建 /src/app/types/product-data.type.ts
+    - 定義 ProductDataEffect 介面包含 5 個寵物數值屬性
+    - 定義 ProductItem 介面包含商品基本資訊和效果
+    - 定義 ShopData 介面包含四大商品分類陣列
+  - 商店資料物件：
+    - 創建 /src/app/data/shop-data.ts
+    - 提供 defaultShopData 預設商店商品資料
+    - 實現 ShopDataService 類別支援完整的商店資料管理
+    - 包含商品查詢、分類篩選、價格區間篩選等功能
+    - 整合 localStorage 持久化儲存機制
+  - 修正商品資料屬性命名：
+    - 統一 ProductDataEffect 屬性名稱與 PetStats 介面一致
+    - 修正 ShopData 分類名稱為英文小駝峰命名（food, health, gift, decoration）
+    - 更新所有相關服務方法的分類引用
+    - 確保 TypeScript 編譯檢查通過
