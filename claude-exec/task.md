@@ -373,3 +373,27 @@
     - 移除原有的狀態進度條區塊
     - 保留寵物基本資訊和狀態效果顯示
     - 整合 PetStatsService 實現真實數據綁定
+
+#### 25 - 實現出生時數值賦值系統
+- **開始時間**: 2025-09-21 15:30
+- **完成時間**: 2025-09-21 15:45
+- **狀態**: 已完成
+- **摘要**:
+  - 孵化獎勵金幣系統：
+    - 實現 getHatchingCoins 方法計算稀有度對應獎勵（bad: 5, normal: 10, special: 30, superSpecial: 80）
+    - 整合 UserDataService 自動更新使用者持有金幣
+  - 生命最大值賦值系統：
+    - 實現 getMaxHealth 方法處理稀有度對應生命值
+    - bad 稀有度：60-90 隨機數值（Math.floor(Math.random() * 31) + 60）
+    - normal: 100, special: 110, superSpecial: 120
+  - 初始數值賦值：
+    - 生命值：設為最大生命值（滿血狀態）
+    - 好感度：設為 50（一半）
+    - 健康度：設為 50（一半）
+    - 飽足感：設為 100（滿飽足感）
+  - 飢餓速度賦值系統：
+    - 實現 getHungerSpeed 方法處理稀有度對應速度
+    - bad: 10, normal: 6, special: 5, superSpecial: 4
+  - 完整整合：
+    - 修改 generateNewPetBreed 方法實現所有數值賦值邏輯
+    - 確保孵化時金幣自動增加且電子雞數值正確初始化
