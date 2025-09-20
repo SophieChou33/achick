@@ -43,6 +43,7 @@ import { sources } from '../../sources';
       overflow-y: hidden;
       scrollbar-width: none; /* Firefox */
       -ms-overflow-style: none; /* Internet Explorer 10+ */
+      scroll-behavior: smooth;
     }
 
     .room-background {
@@ -111,6 +112,54 @@ export class RoomComponent implements OnInit {
     document.addEventListener('mouseup', this.onDragEnd.bind(this));
     document.addEventListener('touchmove', this.onDragMove.bind(this));
     document.addEventListener('touchend', this.onDragEnd.bind(this));
+
+    // 重置畫面位置到場景正中間
+    this.centerRoom();
+  }
+
+  private centerRoom() {
+    // 立即嘗試居中，然後在圖片載入後再次確認
+    const roomWrapper = this.roomWrapper.nativeElement;
+    const roomContainer = roomWrapper.querySelector('.room-container') as HTMLElement;
+    const backgroundImage = roomWrapper.querySelector('.room-background') as HTMLImageElement;
+
+    if (roomContainer && backgroundImage) {
+      // 立即執行一次居中（基於當前尺寸）
+      this.performCentering(roomWrapper, roomContainer);
+
+      // 如果圖片還沒載入完成，等待載入後再次居中
+      if (!backgroundImage.complete) {
+        backgroundImage.onload = () => {
+          this.performCentering(roomWrapper, roomContainer);
+        };
+      }
+    }
+  }
+
+  private performCentering(roomWrapper: HTMLElement, roomContainer: HTMLElement) {
+    const containerWidth = roomContainer.scrollWidth;
+    const wrapperWidth = roomWrapper.clientWidth;
+
+    // 計算居中位置：容器寬度減去可視寬度，再除以2
+    const centerPosition = Math.max(0, (containerWidth - wrapperWidth) / 2);
+
+    // 立即設置滾動位置到居中（無動畫）
+    const originalScrollBehavior = roomWrapper.style.scrollBehavior;
+    roomWrapper.style.scrollBehavior = 'auto';
+    roomWrapper.scrollLeft = centerPosition;
+
+    // 恢復原始滾動行為
+    setTimeout(() => {
+      roomWrapper.style.scrollBehavior = originalScrollBehavior;
+    }, 0);
+  }
+
+  /**
+   * 公開方法：重新將房間畫面置中
+   * 可供外部組件調用
+   */
+  public resetToCenter() {
+    this.centerRoom();
   }
 
   onDragStart(event: MouseEvent | TouchEvent) {

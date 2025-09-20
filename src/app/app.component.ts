@@ -1,17 +1,20 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { WelcomeComponent } from './components/welcome/welcome.component';
 import { RoomComponent } from './components/room/room.component';
+import { WhiteTransitionComponent } from './components/white-transition/white-transition.component';
+import { WhiteTransitionService } from './services/white-transition.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, WelcomeComponent, RoomComponent],
+  imports: [RouterOutlet, CommonModule, WelcomeComponent, RoomComponent, WhiteTransitionComponent],
   template: `
     <div class="app-container">
       <app-welcome *ngIf="showWelcome"></app-welcome>
-      <app-room *ngIf="showRoom"></app-room>
+      <app-room #roomComponent *ngIf="showRoom"></app-room>
+      <app-white-transition></app-white-transition>
     </div>
   `,
   styles: [`
@@ -22,26 +25,42 @@ import { RoomComponent } from './components/room/room.component';
     }
   `]
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
+  @ViewChild('roomComponent') roomComponent!: RoomComponent;
+
   title = 'achick';
   showWelcome = true;
   showRoom = false;
 
+  constructor(private whiteTransitionService: WhiteTransitionService) {}
+
   ngOnInit() {
-    // Listen for welcome page completion
-    setTimeout(() => {
-      this.checkWelcomeCompletion();
-    }, 1000);
+    // 註冊場景準備回調函數
+    this.whiteTransitionService.onWhiteReady(() => {
+      this.prepareScene();
+    });
   }
 
-  private checkWelcomeCompletion() {
-    const interval = setInterval(() => {
-      const welcomeElement = document.querySelector('.welcome-overlay');
-      if (!welcomeElement) {
-        this.showWelcome = false;
-        this.showRoom = true;
-        clearInterval(interval);
-      }
-    }, 100);
+  ngOnDestroy() {
+    // Service會自動清理
   }
+
+  private prepareScene() {
+    // 在白光遮蔽畫面時準備房間場景
+    this.showWelcome = false;
+    this.showRoom = true;
+
+    // 等待房間組件渲染並執行居中
+    setTimeout(() => {
+      if (this.roomComponent) {
+        this.roomComponent.resetToCenter();
+
+        // 場景完全準備好後，通知Service可以fadeOut
+        setTimeout(() => {
+          this.whiteTransitionService.onSceneReady();
+        }, 100);
+      }
+    }, 50);
+  }
+
 }

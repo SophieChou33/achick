@@ -1,19 +1,20 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { sources } from '../../sources';
+import { WhiteTransitionService } from '../../services/white-transition.service';
 
 @Component({
   selector: 'app-welcome',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="welcome-overlay" [class.animate-out]="animateOut">
+    <div class="welcome-overlay" [class.fade-out]="fadeOut">
       <div class="background-animation" [style.background-image]="backgroundImage"></div>
-      <div class="content-container">
+      <div class="content-container" [class.fade-content]="fadeOut">
         <div class="logo-container">
           <img [src]="logoSrc" alt="Achick Logo" class="logo" />
         </div>
-        <button class="start-button" (click)="onStartGame()">START!</button>
+        <button class="start-button" (click)="whiteTransitionService.fadeIn()">START!</button>
       </div>
     </div>
   `,
@@ -29,12 +30,13 @@ import { sources } from '../../sources';
       align-items: center;
       z-index: 9999;
       cursor: pointer;
-      transition: transform 0.8s ease-in;
       overflow: hidden;
+      transition: opacity 0.5s ease;
     }
 
-    .welcome-overlay.animate-out {
-      transform: translateY(-100vh);
+    .welcome-overlay.fade-out {
+      opacity: 0;
+      pointer-events: none;
     }
 
     .background-animation {
@@ -66,7 +68,13 @@ import { sources } from '../../sources';
       align-items: center;
       z-index: 2;
       gap: 40px;
+      transition: opacity 0.3s ease;
     }
+
+    .content-container.fade-content {
+      opacity: 0;
+    }
+
 
     .logo-container {
       display: flex;
@@ -117,8 +125,10 @@ import { sources } from '../../sources';
 })
 export class WelcomeComponent implements OnInit, OnDestroy {
   logoSrc: string = '';
-  animateOut: boolean = false;
+  fadeOut: boolean = false;
   backgroundImage = "url('assets/images/scene/welcome-bg.png')";
+
+  constructor(public whiteTransitionService: WhiteTransitionService) {}
 
   ngOnInit() {
     this.setLogoBasedOnBackground();
@@ -131,17 +141,5 @@ export class WelcomeComponent implements OnInit, OnDestroy {
   private setLogoBasedOnBackground() {
     // For the gradient background (light), use dark logo
     this.logoSrc = sources.logo.logoSquareDark;
-  }
-
-  onStartGame() {
-    this.animateOut = true;
-
-    // Remove component from DOM after animation completes
-    setTimeout(() => {
-      const element = document.querySelector('.welcome-overlay');
-      if (element && element.parentNode) {
-        element.parentNode.removeChild(element);
-      }
-    }, 800); // Animation duration
   }
 }
