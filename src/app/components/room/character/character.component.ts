@@ -163,13 +163,13 @@ export class CharacterComponent implements OnInit {
   private getEggImage(rare: string): string {
     switch (rare) {
       case 'bad':
-        return sources.character.egg.eggBad;
+        return sources.character.egg.bad;
       case 'special':
-        return sources.character.egg.eggSpecial;
+        return sources.character.egg.special;
       case 'superSpecial':
-        return sources.character.egg.eggSuperSpecial;
+        return sources.character.egg.superSpecial;
       default:
-        return sources.character.egg.eggNormal;
+        return sources.character.egg.normal;
     }
   }
 

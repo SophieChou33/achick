@@ -61,12 +61,17 @@ import { sources } from '../../sources';
       -webkit-user-select: none;
       -moz-user-select: none;
       -ms-user-select: none;
-      pointer-events: auto;
       -webkit-user-drag: none;
       -khtml-user-drag: none;
       -moz-user-drag: none;
       -o-user-drag: none;
       user-drag: none;
+    }
+
+    /* 確保子組件不會被背景拖拽影響 */
+    app-window, app-bed, app-character {
+      pointer-events: auto;
+      z-index: 600;
     }
 
     .room-wrapper::-webkit-scrollbar {
@@ -109,26 +114,33 @@ export class RoomComponent implements OnInit {
   }
 
   onDragStart(event: MouseEvent | TouchEvent) {
+    // 只有在點擊背景圖片時才啟用拖拽
+    const target = event.target as HTMLElement;
+    if (!target.classList.contains('room-background')) {
+      return;
+    }
+
     this.isDragging = true;
-    
+
     const clientX = event instanceof MouseEvent ? event.clientX : event.touches[0].clientX;
     this.startX = clientX;
     this.scrollLeft = this.roomWrapper.nativeElement.scrollLeft;
-    
-    const background = event.target as HTMLElement;
-    background.classList.add('dragging');
-    
+
+    target.classList.add('dragging');
+
     event.preventDefault();
+    event.stopPropagation();
   }
 
   onDragMove(event: MouseEvent | TouchEvent) {
     if (!this.isDragging) return;
-    
+
     const clientX = event instanceof MouseEvent ? event.clientX : event.touches[0].clientX;
     const walk = (this.startX - clientX) * 1.5; // 調整移動速度
     this.roomWrapper.nativeElement.scrollLeft = this.scrollLeft + walk;
-    
+
     event.preventDefault();
+    event.stopPropagation();
   }
 
   onDragEnd(event: MouseEvent | TouchEvent) {

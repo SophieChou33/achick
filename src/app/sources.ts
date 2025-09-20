@@ -9,10 +9,10 @@ export const sources = {
   },
   character: {
     egg: {
-      eggBad: 'assets/images/character/egg-bad.png',
-      eggNormal: 'assets/images/character/egg-normal.png',
-      eggSpecial: 'assets/images/character/egg-special.png',
-      eggSuperSpecial: 'assets/images/character/egg-super-special.png',
+      bad: 'assets/images/character/egg-bad.png',
+      normal: 'assets/images/character/egg-normal.png',
+      special: 'assets/images/character/egg-special.png',
+      superSpecial: 'assets/images/character/egg-super-special.png',
     },
     child: {
       child: 'assets/images/character/character-normal.png',
