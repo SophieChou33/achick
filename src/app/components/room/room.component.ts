@@ -11,6 +11,7 @@ import { ToastrComponent } from '../shared/toastr/toastr.component';
 import { DirtyDisplayComponent } from './dirty-display/dirty-display.component';
 import { InventoryModalComponent } from './inventory-modal/inventory-modal.component';
 import { ShopModalComponent } from './shop-modal/shop-modal.component';
+import { CookingButtonComponent } from './cooking-button/cooking-button.component';
 import { sources } from '../../sources';
 import { LightService } from '../../services/light.service';
 
@@ -28,7 +29,8 @@ import { LightService } from '../../services/light.service';
     ToastrComponent,
     DirtyDisplayComponent,
     InventoryModalComponent,
-    ShopModalComponent
+    ShopModalComponent,
+    CookingButtonComponent
   ],
   template: `
     <div class="room-wrapper" #roomWrapper>
@@ -40,6 +42,7 @@ import { LightService } from '../../services/light.service';
         <app-bed></app-bed>
         <app-character></app-character>
         <app-dirty-display></app-dirty-display>
+        <app-cooking-button></app-cooking-button>
       </div>
       <app-header (openShopModal)="openShopModal()"></app-header>
       <app-sidebar (openInventory)="openInventoryModal()"></app-sidebar>

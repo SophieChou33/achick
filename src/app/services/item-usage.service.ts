@@ -198,12 +198,20 @@ export class ItemUsageService {
     const productItem = ShopDataService.getProductByName(itemName, shopData);
 
     if (productItem) {
-      // 死者甦醒只能在電子雞死亡時使用
-      if (productItem.reborn === 1 && !currentPetStats.isDead) {
-        return {
-          canUse: false,
-          reason: '電子雞還活著，不需要使用復活物品'
-        };
+      // 死者甦醒只能在電子雞死亡時使用，且不能在熟成狀態下使用
+      if (productItem.reborn === 1) {
+        if (!currentPetStats.isDead) {
+          return {
+            canUse: false,
+            reason: '電子雞還活著，不需要使用復活物品'
+          };
+        }
+        if (currentPetStats.lifeCycle === 'COOKED') {
+          return {
+            canUse: false,
+            reason: '已熟成的電子雞無法復活'
+          };
+        }
       }
 
       // 冰凍藥丸只能在電子雞沒有被冰凍時使用
