@@ -702,3 +702,35 @@
     - 實現時間字串解析和20分鐘間隔計算
     - 支援 yyyy/mm/dd HH:mm:ss 格式的完整時間操作
     - 正確處理計時器啟動/停止控制和記憶體清理
+
+## 任務 #37：實現離家出走事件邏輯
+**時間**：2025-09-21 16:35
+**狀態**：已完成
+**描述**：創建離家出走事件邏輯服務，實現窗戶點擊互動、機率事件觸發和點擊次數管理
+
+**實現內容**：
+  - 離家出走事件服務 (LeavingService)：
+    - 創建 /src/app/services/leaving.service.ts
+    - 實現私有變數管理：maxClickTime(20)、isCanClick、lastTimeReset、clickTimes
+    - 建立30秒間隔的重置計時器機制
+    - 整合WindowComponent點擊事件處理
+  - 窗戶點擊事件處理 (leavingWindowEvent)：
+    - 檢查 isLeaving 狀態，防止無效點擊
+    - 實現點擊次數上限控制（達到20次顯示提示訊息）
+    - 點擊冷卻機制（2秒間隔）確保用戶體驗
+    - 觸發 observing 機率事件判定
+  - 機率事件系統 (observing)：
+    - 10%機率電子雞回家：重置狀態、好感度50、健康度至少50
+    - 10%機率電子雞死亡：觸發死亡流程、記錄死亡結局
+    - 80%機率無結果：顯示尋找失敗訊息
+    - 整合 UserDataService.addPetEnding 處理死亡記錄
+  - 點擊次數重置機制 (resetClickTimes)：
+    - 檢查遊戲狀態（rare、timeStopping、isLeaving）
+    - 點擊次數達上限時啟動1小時重置計時
+    - 自動重置機制確保遊戲持續性
+    - 30秒間隔執行重置檢查
+  - WindowComponent整合：
+    - 修改 /src/app/components/room/window/window.component.ts
+    - 注入 LeavingService 依賴
+    - 整合點擊事件與離家出走邏輯
+    - 保持原有視覺樣式和互動效果

@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { LeavingService } from '../../../services/leaving.service';
 
 @Component({
   selector: 'app-window',
@@ -39,8 +40,10 @@ import { CommonModule } from '@angular/common';
 })
 export class WindowComponent {
 
+  constructor(private leavingService: LeavingService) {}
+
   onWindowClick() {
     console.log('Window clicked...');
-    // TODO: Implement window interaction functionality
+    this.leavingService.leavingWindowEvent();
   }
 }
