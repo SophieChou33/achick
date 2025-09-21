@@ -10,6 +10,7 @@ import { UserDataService } from '../../../data/user-data';
 import { BirthOverlayComponent } from '../birth-overlay/birth-overlay.component';
 import { NamingModalComponent } from '../naming-modal/naming-modal.component';
 import { CoinAnimationComponent } from '../coin-animation/coin-animation.component';
+import { UnfreezeModalComponent } from '../unfreeze-modal/unfreeze-modal.component';
 import { TouchEventService } from '../../../services/touch-event.service';
 import { LifecycleService } from '../../../services/lifecycle.service';
 import { SleepService } from '../../../services/sleep.service';
@@ -18,7 +19,7 @@ import { StateDataService } from '../../../data/state-data';
 @Component({
   selector: 'app-character',
   standalone: true,
-  imports: [CommonModule, BirthOverlayComponent, NamingModalComponent, CoinAnimationComponent],
+  imports: [CommonModule, BirthOverlayComponent, NamingModalComponent, CoinAnimationComponent, UnfreezeModalComponent],
   template: `
     <!-- 出生按鈕區域 -->
     <div class="character-area-wrapper" *ngIf="showBirthButton">
@@ -56,6 +57,13 @@ import { StateDataService } from '../../../data/state-data';
 
     <!-- 金幣動畫 -->
     <app-coin-animation #coinAnimation></app-coin-animation>
+
+    <!-- 解凍確認彈窗 -->
+    <app-unfreeze-modal
+      #unfreezeModal
+      (confirm)="onUnfreezeConfirm()"
+      (close)="onUnfreezeModalClose()">
+    </app-unfreeze-modal>
   `,
   styles: [`
     .character-area-wrapper{
@@ -174,6 +182,7 @@ export class CharacterComponent implements OnInit, OnDestroy {
   @ViewChild('birthOverlay') birthOverlay!: BirthOverlayComponent;
   @ViewChild('namingModal') namingModal!: NamingModalComponent;
   @ViewChild('coinAnimation') coinAnimation!: CoinAnimationComponent;
+  @ViewChild('unfreezeModal') unfreezeModal!: UnfreezeModalComponent;
 
   characterImage = '';
   characterName = '';
@@ -366,12 +375,18 @@ export class CharacterComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * 角色點擊事件（用於命名、撫摸和喚醒）
+   * 角色點擊事件（用於命名、撫摸、喚醒和解凍）
    */
   onCharacterClick(): void {
     // 處理死亡狀態的點擊
     if (this.petStats.isDead) {
       this.lifecycleService.showDeathConfirmDialog();
+      return;
+    }
+
+    // 處理冷凍狀態的點擊
+    if (this.petStats.timeStopping) {
+      this.unfreezeModal.show();
       return;
     }
 
@@ -468,5 +483,29 @@ export class CharacterComponent implements OnInit, OnDestroy {
   private updateSleepingState(): void {
     const currentStateData = StateDataService.loadStateData();
     this.isSleeping = currentStateData.isSleeping.isActive === 1;
+  }
+
+  /**
+   * 解凍確認事件
+   */
+  onUnfreezeConfirm(): void {
+    // 將『電子雞當前數值』的 timeStoping 賦值為 0
+    const updatedStats = {
+      ...this.petStats,
+      timeStopping: false
+    };
+
+    PetStatsService.savePetStats(updatedStats);
+
+    // 更新角色圖片
+    this.petStats = updatedStats;
+    this.setCharacterImage();
+  }
+
+  /**
+   * 解凍彈窗關閉事件
+   */
+  onUnfreezeModalClose(): void {
+    // 彈窗關閉時不做任何事
   }
 }
