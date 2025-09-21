@@ -12,6 +12,7 @@ import { NamingModalComponent } from '../naming-modal/naming-modal.component';
 import { CoinAnimationComponent } from '../coin-animation/coin-animation.component';
 import { TouchEventService } from '../../../services/touch-event.service';
 import { LifecycleService } from '../../../services/lifecycle.service';
+import { SleepService } from '../../../services/sleep.service';
 
 @Component({
   selector: 'app-character',
@@ -187,7 +188,8 @@ export class CharacterComponent implements OnInit, OnDestroy {
   constructor(
     private rareBreedService: RareBreedService,
     private touchEventService: TouchEventService,
-    private lifecycleService: LifecycleService
+    private lifecycleService: LifecycleService,
+    private sleepService: SleepService
   ) {
     this.petStats = PetStatsService.loadPetStats();
   }
@@ -348,7 +350,7 @@ export class CharacterComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * 角色點擊事件（用於命名和撫摸）
+   * 角色點擊事件（用於命名、撫摸和喚醒）
    */
   onCharacterClick(): void {
     // 處理死亡狀態的點擊
@@ -356,6 +358,9 @@ export class CharacterComponent implements OnInit, OnDestroy {
       this.lifecycleService.showDeathConfirmDialog();
       return;
     }
+
+    // 嘗試喚醒（如果在睡眠中，此函數會處理喚醒邏輯）
+    this.sleepService.wakeUp();
 
     // 只有在蛋狀態且沒有名字時才能命名
     if (this.petStats.lifeCycle === 'EGG' && this.petStats.name === null) {

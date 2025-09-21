@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { sources } from '../../../sources';
 import { LightService } from '../../../services/light.service';
+import { SleepService } from '../../../services/sleep.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -69,15 +70,17 @@ export class SidebarComponent {
   sleepIcon = sources.otherIcons.sleep;
   feedIcon = sources.otherIcons.feed;
 
-  constructor(private lightService: LightService) {}
+  constructor(
+    private lightService: LightService,
+    private sleepService: SleepService
+  ) {}
 
   toggleLight() {
     this.lightService.lampToggle();
   }
 
   sleep() {
-    console.log('Sleep function...');
-    // TODO: Implement sleep functionality
+    this.sleepService.startSleep();
   }
 
   feed() {
