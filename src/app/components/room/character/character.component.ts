@@ -1,17 +1,34 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { sources } from '../../../sources';
 import { PetStatsService } from '../../../data/pet-stats-data';
 import { PetStats } from '../../../types/pet-stats.type';
 import { getBreedByName } from '../../../data/breed-data';
+import { RareBreedService } from '../../../services/rare-breed.service';
+import { UserDataService } from '../../../data/user-data';
+import { BirthOverlayComponent } from '../birth-overlay/birth-overlay.component';
+import { NamingModalComponent } from '../naming-modal/naming-modal.component';
+import { CoinAnimationComponent } from '../coin-animation/coin-animation.component';
 
 @Component({
   selector: 'app-character',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, BirthOverlayComponent, NamingModalComponent, CoinAnimationComponent],
   template: `
-    <div class="character-area-wrapper" *ngIf="isCharacterVisible">
+    <!-- 出生按鈕區域 -->
+    <div class="character-area-wrapper" *ngIf="showBirthButton">
+      <div class="character-area">
+        <div class="birth-button-container">
+          <button class="birth-button" (click)="onBirthClick()">
+            點擊按鈕出生
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 角色顯示區域 -->
+    <div class="character-area-wrapper" *ngIf="isCharacterVisible" (click)="onCharacterClick()">
       <div class="character-area">
         <div class="character-shadow"></div>
         <div class="character-container">
@@ -22,6 +39,19 @@ import { getBreedByName } from '../../../data/breed-data';
         </div>
       </div>
     </div>
+
+    <!-- 出生覆蓋層 -->
+    <app-birth-overlay #birthOverlay></app-birth-overlay>
+
+    <!-- 命名彈窗 -->
+    <app-naming-modal
+      #namingModal
+      (confirm)="onNameConfirmed($event)"
+      (close)="onNamingModalClose()">
+    </app-naming-modal>
+
+    <!-- 金幣動畫 -->
+    <app-coin-animation #coinAnimation></app-coin-animation>
   `,
   styles: [`
     .character-area-wrapper{
@@ -46,6 +76,40 @@ import { getBreedByName } from '../../../data/breed-data';
       50% {
         transform: translate(0px, -15px);
       }
+    }
+
+    .birth-button-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 50dvh;
+      width: auto;
+    }
+
+    .birth-button {
+      background: rgba(255, 255, 255, 0.9);
+      border: 2px solid rgba(132, 113, 112, 0.6);
+      border-radius: 12px;
+      padding: 16px 32px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #847170;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(5px);
+      text-shadow: none;
+    }
+
+    .birth-button:hover {
+      background: rgba(255, 255, 255, 1);
+      border-color: rgba(132, 113, 112, 0.8);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    .birth-button:active {
+      transform: translateY(0);
     }
 
     .character-shadow {
@@ -103,16 +167,22 @@ import { getBreedByName } from '../../../data/breed-data';
   `]
 })
 export class CharacterComponent implements OnInit, OnDestroy {
+  @ViewChild('birthOverlay') birthOverlay!: BirthOverlayComponent;
+  @ViewChild('namingModal') namingModal!: NamingModalComponent;
+  @ViewChild('coinAnimation') coinAnimation!: CoinAnimationComponent;
+
   characterImage = '';
   characterName = '';
   isFreezing = false;
   freezingIcon = sources.character.others.isFreezing;
   isCharacterVisible = false;
+  showBirthButton = false;
+  showNamingModal = false;
 
   private petStats: PetStats;
   private petStatsSubscription?: Subscription;
 
-  constructor() {
+  constructor(private rareBreedService: RareBreedService) {
     this.petStats = PetStatsService.loadPetStats();
   }
 
@@ -140,6 +210,16 @@ export class CharacterComponent implements OnInit, OnDestroy {
 
   private setCharacterImage() {
     const { lifeCycle, rare, breedName } = this.petStats;
+
+    // 任務需求：當 rare 為 null 時，顯示出生按鈕
+    if (rare === null) {
+      this.isCharacterVisible = false;
+      this.showBirthButton = true;
+      return;
+    }
+
+    // 有 rare 時隱藏出生按鈕
+    this.showBirthButton = false;
 
     // 若lifeCycle為null，隱藏角色區塊
     if (lifeCycle === null) {
@@ -216,5 +296,129 @@ export class CharacterComponent implements OnInit, OnDestroy {
   private getCookedImage(breed: string): string {
     const cookedSources = sources.character.cooked as any;
     return cookedSources[breed] || cookedSources.cute;
+  }
+
+  /**
+   * 出生按鈕點擊事件
+   */
+  async onBirthClick(): Promise<void> {
+    try {
+      // 顯示出生覆蓋層
+      await this.birthOverlay.showBirthOverlay('出生中…', 5000);
+
+      // 在覆蓋層遮蔽時執行稀有度 service 的函數
+      // 先生成稀有度但不完成整個流程（不設定名字）
+      this.rareBreedService.reset();
+      const tempStats = this.rareBreedService.generateNewPetBreed('');
+
+      // 將稀有度賦值給當前電子雞，但保持名字為 null
+      const updatedStats = {
+        ...tempStats,
+        name: null,
+        lifeCycle: 'EGG' as const
+      };
+      PetStatsService.savePetStats(updatedStats);
+
+      // 添加到使用者飼養歷程
+      const userData = UserDataService.loadUserData();
+      const newPetRecord = {
+        petName: null,
+        birthTime: UserDataService.formatDateTime(new Date()),
+        evolutionTime: null,
+        deathTime: null
+      };
+      UserDataService.addPetRecord(newPetRecord, userData);
+
+      // 隱藏出生按鈕，顯示角色圖片
+      this.showBirthButton = false;
+      this.setCharacterImage();
+
+    } catch (error) {
+      console.error('Birth process failed:', error);
+    }
+  }
+
+  /**
+   * 角色點擊事件（用於命名）
+   */
+  onCharacterClick(): void {
+    // 只有在蛋狀態且沒有名字時才能命名
+    if (this.petStats.lifeCycle === 'EGG' && this.petStats.name === null) {
+      this.namingModal.show();
+    }
+  }
+
+  /**
+   * 命名確認事件
+   */
+  async onNameConfirmed(petName: string): Promise<void> {
+    try {
+      // 顯示孵化覆蓋層
+      await this.birthOverlay.showBirthOverlay('孵化中…', 5000);
+
+      // 更新電子雞名字和生命週期
+      const currentStats = PetStatsService.loadPetStats();
+      const updatedStats = {
+        ...currentStats,
+        name: petName,
+        lifeCycle: 'CHILD' as const
+      };
+
+      // 執行出生時數值賦值
+      const finalStats = this.rareBreedService.generateNewPetBreed(petName);
+      const completeStats = {
+        ...finalStats,
+        lifeCycle: 'CHILD' as const
+      };
+
+      PetStatsService.savePetStats(completeStats);
+
+      // 更新使用者飼養歷程的名字
+      const userData = UserDataService.loadUserData();
+      const lastRecordIndex = userData.petHistory.length - 1;
+      if (lastRecordIndex >= 0) {
+        UserDataService.updatePetRecord(lastRecordIndex, { petName }, userData);
+      }
+
+      // 觸發金幣浮動動畫
+      const coins = this.getHatchingCoins(finalStats.rare!);
+      this.showCoinAnimation(coins);
+
+      // 更新角色圖片
+      this.setCharacterImage();
+
+    } catch (error) {
+      console.error('Hatching process failed:', error);
+    }
+  }
+
+  /**
+   * 命名彈窗關閉事件
+   */
+  onNamingModalClose(): void {
+    // 彈窗關閉時不做任何事
+  }
+
+  /**
+   * 顯示金幣增加動畫
+   */
+  private showCoinAnimation(coins: number): void {
+    // 在畫面上方中央顯示金幣動畫
+    const x = window.innerWidth / 2;
+    const y = window.innerHeight * 0.3;
+    this.coinAnimation.showCoinAnimation(coins, x, y);
+  }
+
+  /**
+   * 獲取稀有度對應的孵化獎勵金幣
+   */
+  private getHatchingCoins(rare: 'BAD' | 'NORMAL' | 'SPECIAL' | 'SUPER_SPECIAL'): number {
+    switch (rare) {
+      case 'BAD': return 5;
+      case 'NORMAL': return 10;
+      case 'SPECIAL': return 30;
+      case 'SUPER_SPECIAL': return 80;
+      default: return 0;
+    }
   }
 }
