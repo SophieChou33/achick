@@ -734,3 +734,28 @@
     - 注入 LeavingService 依賴
     - 整合點擊事件與離家出走邏輯
     - 保持原有視覺樣式和互動效果
+
+## 任務 #38：實現 isLeaving 判斷 DOM 元素的顯示與隱藏
+**時間**：2025-09-21 16:50
+**狀態**：已完成
+**描述**：根據電子雞的離家出走狀態控制角色顯示和窗戶點擊行為
+
+**實現內容**：
+  - 角色顯示控制 (CharacterComponent)：
+    - 修改 /src/app/components/room/character/character.component.ts
+    - 在 setCharacterImage 方法中整合 isLeaving 狀態判斷
+    - 當 isLeaving 為 true 時隱藏角色區塊 (isCharacterVisible = false)
+    - 當 isLeaving 為 false 時正常顯示角色（根據原有邏輯）
+    - 保持原有的生命週期和稀有度判斷邏輯完整性
+  - 窗戶點擊行為控制 (WindowComponent)：
+    - 修改 /src/app/components/room/window/window.component.ts
+    - 整合 PetStatsService 進行狀態檢查
+    - 實現點擊前 isLeaving 狀態驗證
+    - isLeaving 為 false 時：直接返回，不執行任何邏輯
+    - isLeaving 為 true 時：正常執行 LeavingService.leavingWindowEvent
+    - 確保離家出走互動邏輯的正確觸發時機
+  - 視覺反饋機制：
+    - 電子雞離家時角色完全隱藏，增強沉浸感
+    - 窗戶點擊僅在離家狀態下有效，防止無意義操作
+    - 保持原有動畫效果和視覺樣式不變
+    - 狀態切換即時生效，提供良好用戶體驗

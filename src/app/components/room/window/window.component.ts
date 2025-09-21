@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LeavingService } from '../../../services/leaving.service';
+import { PetStatsService } from '../../../data/pet-stats-data';
 
 @Component({
   selector: 'app-window',
@@ -44,6 +45,15 @@ export class WindowComponent {
 
   onWindowClick() {
     console.log('Window clicked...');
+
+    const currentPetStats = PetStatsService.loadPetStats();
+
+    // 若電子雞當前數值物件的 isLeaving 為 false，則不執行任何邏輯
+    if (!currentPetStats.isLeaving) {
+      return;
+    }
+
+    // 若電子雞當前數值物件的 isLeaving 為 true，則執行 LeavingService 的 leavingWindowEvent 函數
     this.leavingService.leavingWindowEvent();
   }
 }

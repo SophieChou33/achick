@@ -234,8 +234,8 @@ export class CharacterComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // 有lifeCycle時才顯示角色
-    this.isCharacterVisible = true;
+    // 有lifeCycle時才顯示角色，但如果isLeaving為true則隱藏
+    this.isCharacterVisible = !this.petStats.isLeaving;
 
     // 根據任務四的邏輯：
     // 若rare有值且lifecycle為EGG，角色圖片顯示sources.character.egg.{{rare}}
