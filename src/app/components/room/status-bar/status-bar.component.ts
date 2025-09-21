@@ -1,8 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { PetStatsService } from '../../../data/pet-stats-data';
 import { PetStats } from '../../../types/pet-stats.type';
 import { ToastrService } from '../../shared/toastr/toastr.component';
+import { StateDataService } from '../../../data/state-data';
+import { StateData } from '../../../types/state-data.type';
 
 interface PetInfo {
   name: string;
@@ -12,7 +15,7 @@ interface PetInfo {
 
 interface StatusEffects {
   mood: string;
-  debuffs: string[];
+  activeStates: string[];
 }
 
 @Component({
@@ -34,8 +37,8 @@ interface StatusEffects {
       <div class="status-right">
         <div class="status-effects">
           <div class="mood">情緒: {{ statusEffects.mood }}</div>
-          <div class="debuffs" *ngIf="statusEffects.debuffs.length > 0">
-            <span *ngFor="let debuff of statusEffects.debuffs" class="debuff">{{ debuff }}</span>
+          <div class="active-states" *ngIf="statusEffects.activeStates.length > 0">
+            <span *ngFor="let state of statusEffects.activeStates" class="state">{{ state }}</span>
           </div>
         </div>
       </div>
@@ -140,14 +143,14 @@ interface StatusEffects {
       font-weight: 500;
     }
 
-    .debuffs {
+    .active-states {
       display: flex;
       flex-wrap: wrap;
       gap: 5px;
       justify-content: flex-end;
     }
 
-    .debuff {
+    .state {
       background: rgba(231, 76, 60, 0.8);
       padding: 2px 8px;
       border-radius: 12px;
@@ -281,7 +284,7 @@ interface StatusEffects {
     }
   `]
 })
-export class StatusBarComponent implements OnInit {
+export class StatusBarComponent implements OnInit, OnDestroy {
   petInfo: PetInfo = {
     name: 'Achick',
     birthday: '2025/09/15',
@@ -290,16 +293,41 @@ export class StatusBarComponent implements OnInit {
 
   statusEffects: StatusEffects = {
     mood: '開心',
-    debuffs: ['飢餓']
+    activeStates: []
   };
 
   petStats: PetStats = PetStatsService.loadPetStats();
+  stateData: StateData = StateDataService.loadStateData();
   isPanelVisible = false;
   isHovering = false;
+
+  private stateUpdateInterval: any;
+  private petStatsSubscription?: Subscription;
 
   ngOnInit() {
     // Initialize status monitoring
     this.loadPetData();
+    this.updateStateData();
+
+    // 訂閱角色資料變化
+    this.petStatsSubscription = PetStatsService.getPetStats$().subscribe(petStats => {
+      this.petStats = petStats;
+      this.loadPetData();
+    });
+
+    // 定期更新狀態資料
+    this.stateUpdateInterval = setInterval(() => {
+      this.updateStateData();
+    }, 1000);
+  }
+
+  ngOnDestroy() {
+    if (this.stateUpdateInterval) {
+      clearInterval(this.stateUpdateInterval);
+    }
+    if (this.petStatsSubscription) {
+      this.petStatsSubscription.unsubscribe();
+    }
   }
 
   private loadPetData() {
@@ -307,6 +335,17 @@ export class StatusBarComponent implements OnInit {
     if (this.petStats.name) {
       this.petInfo.name = this.petStats.name;
     }
+  }
+
+  private updateStateData() {
+    this.stateData = StateDataService.loadStateData();
+    this.updateActiveStates();
+  }
+
+  private updateActiveStates() {
+    // 獲取所有 isActive 為 1 的狀態的 stateText
+    const activeStates = StateDataService.getActiveStates(this.stateData);
+    this.statusEffects.activeStates = activeStates.map(state => state.stateText);
   }
 
   togglePanel() {
