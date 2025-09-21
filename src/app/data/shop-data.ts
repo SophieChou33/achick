@@ -1,5 +1,6 @@
 import { ShopData, ProductItem, ProductDataEffect } from '../types/product-data.type';
 import { UserDataService } from './user-data';
+import { UserInventoryService } from './user-inventory-data';
 
 const defaultProductEffect: ProductDataEffect = {
   currentHealth: 0,
@@ -174,22 +175,35 @@ export class ShopDataService {
     );
   }
 
-  static purchaseProduct(productItem: ProductItem): { success: boolean; message: string } {
+  static purchaseProduct(productItem: ProductItem, quantity: number = 1): { success: boolean; message: string } {
     const userData = UserDataService.loadUserData();
+    const totalCost = productItem.price * quantity;
 
-    if (userData.coins < productItem.price) {
+    if (userData.coins < totalCost) {
       return {
         success: false,
-        message: `金幣不足！需要 ${productItem.price} 金幣，目前只有 ${userData.coins} 金幣。`
+        message: `金幣不足！需要 ${totalCost} 金幣，目前只有 ${userData.coins} 金幣。`
       };
     }
 
-    const result = UserDataService.spendCoins(productItem.price, userData);
-    if (result.success) {
-      return {
-        success: true,
-        message: `成功購買 ${productItem.itemName}！花費 ${productItem.price} 金幣。`
-      };
+    const spendResult = UserDataService.spendCoins(totalCost, userData);
+    if (spendResult.success) {
+      // 將物品添加到使用者背包
+      const inventoryResult = UserInventoryService.addItem(productItem.itemName, quantity);
+
+      if (inventoryResult.success) {
+        return {
+          success: true,
+          message: `成功購買 ${quantity} 個 ${productItem.itemName}！花費 ${totalCost} 金幣，物品已添加到背包。`
+        };
+      } else {
+        // 如果添加到背包失敗，退還金幣
+        UserDataService.addCoins(totalCost, userData);
+        return {
+          success: false,
+          message: `購買失敗：${inventoryResult.message}`
+        };
+      }
     }
 
     return {
