@@ -1,17 +1,19 @@
-import { Component, OnInit, OnDestroy, HostListener, EventEmitter, Output } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, EventEmitter, Output, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { sources } from '../../../sources';
 import { CoinsService } from '../../../services/coins.service';
+import { CustomTimeService } from '../../../services/custom-time.service';
+import { EngineerModeComponent } from '../../admin/engineer-mode/engineer-mode.component';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, EngineerModeComponent],
   template: `
     <header class="header">
       <div class="header-left">
-        <img [src]="logoSrc" alt="Achick" class="logo" />
+        <img [src]="logoSrc" alt="Achick" class="logo" (dblclick)="onLogoDoubleClick()" />
       </div>
       <div class="header-right">
         <div class="header-top-row">
@@ -34,6 +36,9 @@ import { CoinsService } from '../../../services/coins.service';
         <div class="current-time mobile-time">{{ currentTime }}</div>
       </div>
     </header>
+
+    <!-- 工程師模式 -->
+    <app-engineer-mode #engineerMode (close)="onEngineerModeClose()"></app-engineer-mode>
   `,
   styles: [`
     .header {
@@ -175,6 +180,7 @@ import { CoinsService } from '../../../services/coins.service';
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   @Output() openShopModal = new EventEmitter<void>();
+  @ViewChild('engineerMode') engineerMode!: EngineerModeComponent;
 
   logoSrc = sources.logo.logoHorizonDark;
   coinIcon = sources.otherIcons.coin;
@@ -186,7 +192,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
   private timeInterval: any;
   private coinsSubscription: Subscription = new Subscription();
 
-  constructor(private coinsService: CoinsService) {}
+  constructor(
+    private coinsService: CoinsService,
+    private customTimeService: CustomTimeService
+  ) {}
 
   ngOnInit() {
     this.updateTime();
@@ -224,15 +233,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   private updateTime() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-
-    this.currentTime = `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+    this.currentTime = this.customTimeService.formatTime();
   }
 
   openStore() {
@@ -242,6 +243,14 @@ export class HeaderComponent implements OnInit, OnDestroy {
   openCollection() {
     console.log('Opening collection...');
     // TODO: Implement collection modal
+  }
+
+  onLogoDoubleClick() {
+    this.engineerMode.show();
+  }
+
+  onEngineerModeClose() {
+    // 工程師模式關閉事件處理
   }
 
 }
