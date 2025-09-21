@@ -10,6 +10,7 @@ import { BedComponent } from './bed/bed.component';
 import { ToastrComponent } from '../shared/toastr/toastr.component';
 import { DirtyDisplayComponent } from './dirty-display/dirty-display.component';
 import { InventoryModalComponent } from './inventory-modal/inventory-modal.component';
+import { ShopModalComponent } from './shop-modal/shop-modal.component';
 import { sources } from '../../sources';
 import { LightService } from '../../services/light.service';
 
@@ -26,7 +27,8 @@ import { LightService } from '../../services/light.service';
     BedComponent,
     ToastrComponent,
     DirtyDisplayComponent,
-    InventoryModalComponent
+    InventoryModalComponent,
+    ShopModalComponent
   ],
   template: `
     <div class="room-wrapper" #roomWrapper>
@@ -39,7 +41,7 @@ import { LightService } from '../../services/light.service';
         <app-character></app-character>
         <app-dirty-display></app-dirty-display>
       </div>
-      <app-header></app-header>
+      <app-header (openShopModal)="openShopModal()"></app-header>
       <app-sidebar (openInventory)="openInventoryModal()"></app-sidebar>
       <app-status-bar></app-status-bar>
       <app-toastr></app-toastr>
@@ -51,6 +53,13 @@ import { LightService } from '../../services/light.service';
         (openShopModal)="openShopModal()"
         (itemUsed)="onItemUsed($event)">
       </app-inventory-modal>
+
+      <!-- 商店彈窗 -->
+      <app-shop-modal
+        #shopModal
+        (close)="onShopModalClose()"
+        (purchaseSuccess)="onPurchaseSuccess($event)">
+      </app-shop-modal>
     </div>
   `,
   styles: [`
@@ -117,6 +126,7 @@ import { LightService } from '../../services/light.service';
 export class RoomComponent implements OnInit, OnDestroy {
   @ViewChild('roomWrapper', { static: true }) roomWrapper!: ElementRef<HTMLDivElement>;
   @ViewChild('inventoryModal') inventoryModal!: InventoryModalComponent;
+  @ViewChild('shopModal') shopModal!: ShopModalComponent;
 
   backgroundImageSrc = sources.scene.roomDayLightOn;
 
@@ -279,9 +289,22 @@ export class RoomComponent implements OnInit, OnDestroy {
    * 打開商店彈窗
    */
   openShopModal() {
-    // TODO: 實現商店彈窗
-    console.log('Open shop modal');
-    alert('商店功能尚未實現');
+    this.shopModal.show();
+  }
+
+  /**
+   * 商店彈窗關閉事件
+   */
+  onShopModalClose() {
+    // 彈窗關閉時不做任何事
+  }
+
+  /**
+   * 購買成功事件
+   */
+  onPurchaseSuccess(event: { itemName: string; quantity: number; totalCost: number }) {
+    console.log(`Purchased: ${event.quantity}x ${event.itemName} for ${event.totalCost} coins`);
+    // 購買成功後，可能需要更新金幣顯示等
   }
 
   /**

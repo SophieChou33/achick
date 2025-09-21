@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { sources } from '../../../sources';
@@ -174,6 +174,8 @@ import { CoinsService } from '../../../services/coins.service';
   `]
 })
 export class HeaderComponent implements OnInit, OnDestroy {
+  @Output() openShopModal = new EventEmitter<void>();
+
   logoSrc = sources.logo.logoHorizonDark;
   coinIcon = sources.otherIcons.coin;
   storeIcon = sources.otherIcons.store;
@@ -234,8 +236,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   openStore() {
-    console.log('Opening store...');
-    // TODO: Implement store modal
+    this.openShopModal.emit();
   }
 
   openCollection() {
