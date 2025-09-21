@@ -586,3 +586,40 @@
     - 蛋狀態且未命名時觸發命名彈窗，其他狀態觸發撫摸事件
     - 在 ngOnDestroy 中正確清理撫摸事件服務計時器
     - 確保撫摸事件與現有命名流程無衝突
+
+#### 33 - 實現髒污觸發邏輯 service
+- **開始時間**: 2025-09-21 22:45
+- **完成時間**: 2025-09-21 23:15
+- **狀態**: 已完成
+- **摘要**:
+  - DirtyObject 型別定義：
+    - 創建 /src/app/types/dirty-object.type.ts 髒污物件型別
+    - 定義 DirtyObject 介面包含 dirtyNo(number) 和 dirtyTime(string) 屬性
+    - 時間格式統一為 yyyy/mm/dd HH:mm:ss 格式
+  - DirtyTriggerService 服務創建：
+    - 創建 /src/app/services/dirty-trigger.service.ts 髒污觸發邏輯服務
+    - 實現私有變數：maxDirtyCounts(3)、lastAddDirtyTime(null)
+    - 實現公開陣列：dirtyObjects(DirtyObject[])，預設為空陣列
+    - 建立每30秒執行的雙重計時器機制（addDirtyObject 和 dirtyPunishing）
+  - 髒污物件新增機制 (addDirtyObject)：
+    - 檢查電子雞 rare 狀態，為 null 時重置 lastAddDirtyTime
+    - 檢查 timeStoping 狀態和當前髒污數量，防止超過上限
+    - 實現1小時間隔檢查，時間到後新增髒污物件
+    - 智能 dirtyNo 分配邏輯，自動尋找1-3中未使用的編號
+    - 確保髒污物件數量不超過 maxDirtyCounts 限制
+  - 髒污懲罰機制 (dirtyPunishing)：
+    - 每30秒檢查所有髒污物件的存在時間
+    - 髒污物件存在超過20分鐘觸發懲罰機制
+    - 健康度-1、好感度-1，確保數值不會小於0
+    - 整合 ToastrService 顯示懲罰通知訊息
+    - 動態顯示電子雞名字在懲罰訊息中
+  - 時間管理系統：
+    - 整合 UserDataService.formatDateTime 進行時間格式化
+    - 實現時間字串解析和比較邏輯 (parseTimeString)
+    - 正確處理1小時和20分鐘的時間間隔計算
+    - 支援 yyyy/mm/dd HH:mm:ss 格式的完整時間操作
+  - 服務管理功能：
+    - 實現計時器啟動/停止控制方法 (startTimers/stopTimers)
+    - 提供髒污狀態重置功能 (resetDirtyState)
+    - 提供單個髒污物件移除功能 (removeDirtyObject)
+    - 提供髒污數量查詢和最大數量檢查功能
