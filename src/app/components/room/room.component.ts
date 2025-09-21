@@ -1,5 +1,6 @@
-import { Component, OnInit, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { HeaderComponent } from './header/header.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { WindowComponent } from './window/window.component';
@@ -9,6 +10,7 @@ import { BedComponent } from './bed/bed.component';
 import { ToastrComponent } from '../shared/toastr/toastr.component';
 import { DirtyDisplayComponent } from './dirty-display/dirty-display.component';
 import { sources } from '../../sources';
+import { LightService } from '../../services/light.service';
 
 @Component({
   selector: 'app-room',
@@ -102,14 +104,17 @@ import { sources } from '../../sources';
 
   `]
 })
-export class RoomComponent implements OnInit {
+export class RoomComponent implements OnInit, OnDestroy {
   @ViewChild('roomWrapper', { static: true }) roomWrapper!: ElementRef<HTMLDivElement>;
-  
+
   backgroundImageSrc = sources.scene.roomDayLightOn;
-  
+
   private isDragging = false;
   private startX = 0;
   private scrollLeft = 0;
+  private stateSubscription?: Subscription;
+
+  constructor(private lightService: LightService) {}
 
   ngOnInit() {
     // Initialize room state
@@ -121,6 +126,18 @@ export class RoomComponent implements OnInit {
 
     // 重置畫面位置到場景正中間
     this.centerRoom();
+
+    // 初始設定場景圖片
+    this.updateBackgroundImage();
+
+    // 開始監控狀態變化
+    this.startStateMonitoring();
+  }
+
+  ngOnDestroy() {
+    if (this.stateSubscription) {
+      this.stateSubscription.unsubscribe();
+    }
   }
 
   private centerRoom() {
@@ -198,8 +215,38 @@ export class RoomComponent implements OnInit {
   onDragEnd(event: MouseEvent | TouchEvent) {
     if (!this.isDragging) return;
     this.isDragging = false;
-    
+
     const background = this.roomWrapper.nativeElement.querySelector('.room-background');
     background?.classList.remove('dragging');
+  }
+
+  private startStateMonitoring() {
+    // 每1秒檢查一次狀態變化
+    this.stateSubscription = new Subscription();
+    const interval = setInterval(() => {
+      this.updateBackgroundImage();
+    }, 1000);
+
+    this.stateSubscription.add(() => clearInterval(interval));
+  }
+
+  private updateBackgroundImage() {
+    const isLightOn = this.lightService.isLightOn;
+    const isDay = this.lightService.isDay;
+
+    // 根據光線和日夜狀態決定場景圖片
+    if (isLightOn === 1 && isDay === 1) {
+      // 若 LightService 的 isLightOn = 1 且 isDay = 1
+      this.backgroundImageSrc = sources.scene.roomDayLightOn;
+    } else if (isLightOn === 0 && isDay === 1) {
+      // 若 LightService 的 isLightOn = 0 且 isDay = 1
+      this.backgroundImageSrc = sources.scene.roomDayLightOff;
+    } else if (isLightOn === 1 && isDay === 0) {
+      // 若 LightService 的 isLightOn = 1 且 isDay = 0
+      this.backgroundImageSrc = sources.scene.roomNightLightOn;
+    } else if (isLightOn === 0 && isDay === 0) {
+      // 若 LightService 的 isLightOn = 0 且 isDay = 0
+      this.backgroundImageSrc = sources.scene.roomNightLightOff;
+    }
   }
 }
