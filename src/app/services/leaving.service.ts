@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { PetStatsService } from '../data/pet-stats-data';
 import { UserDataService } from '../data/user-data';
 import { ToastrService } from '../components/shared/toastr/toastr.component';
+import { LifecycleService } from './lifecycle.service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +14,7 @@ export class LeavingService {
   private clickTimes: number = 0;
   private resetInterval?: number;
 
-  constructor() {
+  constructor(private lifecycleService: LifecycleService) {
     this.startResetTimer();
   }
 
@@ -85,7 +86,8 @@ export class LeavingService {
     } else if (randomValue < 0.2) {
       // 10%機率：電子雞死亡
       this.clickTimes = 0;
-      this.doKill(petName);
+      ToastrService.show(`${petName}在弱肉強食的世界中不幸被淘汰了，愛要及時啊！`, 'error');
+      this.lifecycleService.doKill();
 
     } else {
       // 80%機率：沒有找到
@@ -93,28 +95,6 @@ export class LeavingService {
     }
   }
 
-  /**
-   * 處理電子雞死亡
-   */
-  private doKill(petName: string): void {
-    const currentPetStats = PetStatsService.loadPetStats();
-    const currentUserData = UserDataService.loadUserData();
-
-    // 設置電子雞為死亡狀態
-    const updatedStats = {
-      ...currentPetStats,
-      isDead: true,
-      timeStopping: true,
-      isLeaving: false
-    };
-
-    PetStatsService.savePetStats(updatedStats);
-
-    // 添加死亡記錄
-    UserDataService.addPetEnding('DEAD', 0, currentUserData);
-
-    ToastrService.show(`${petName}在弱肉強食的世界中不幸被淘汰了，愛要及時啊！`, 'error');
-  }
 
   /**
    * 每30秒執行一次：重置窗戶累積點擊次數
