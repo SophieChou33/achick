@@ -4,6 +4,9 @@ import { PetStats } from '../types/pet-stats.type';
 import { UserDataService } from '../data/user-data';
 import { StateDataService } from '../data/state-data';
 import { ToastrService } from '../components/shared/toastr/toastr.component';
+import { WhiteTransitionService } from './white-transition.service';
+import { CollectionService } from '../data/collection-data';
+import { sources } from '../sources';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +18,7 @@ export class TouchEventService {
   private touchedTimes: number = 0;
   private resetInterval?: number;
 
-  constructor() {
+  constructor(private whiteTransitionService: WhiteTransitionService) {
     this.startResetTimer();
   }
 
@@ -70,6 +73,9 @@ export class TouchEventService {
       this.getTouchingCoin(currentPetStats);
     } else {
       ToastrService.show(`${currentPetStats.name || '電子雞'}對你的愛意達到了頂點`, 'info');
+
+      // 檢查進化條件
+      this.checkEvolutionConditions(currentPetStats);
     }
 
     // 6. touchedTimes +1 後重新賦值給 touchedTimes
@@ -180,6 +186,115 @@ export class TouchEventService {
     if (this.resetInterval) {
       clearInterval(this.resetInterval);
       this.resetInterval = undefined;
+    }
+  }
+
+  /**
+   * 檢查進化條件
+   */
+  private checkEvolutionConditions(currentPetStats: PetStats): void {
+    // 檢查進化條件：好感度100，健康度100，並且飼養滿120小時
+    if (currentPetStats.currentFriendship === 100 &&
+        currentPetStats.currentWellness === 100 &&
+        this.hasRaisedFor120Hours(currentPetStats)) {
+
+      this.triggerSpecialTouchEvent(currentPetStats);
+    }
+  }
+
+  /**
+   * 檢查是否已飼養滿120小時
+   */
+  private hasRaisedFor120Hours(currentPetStats: PetStats): boolean {
+    const currentUserData = UserDataService.loadUserData();
+    const currentPetRecord = UserDataService.getCurrentPetRecord(currentUserData);
+
+    if (!currentPetRecord || !currentPetRecord.birthTime) {
+      return false;
+    }
+
+    const birthTime = this.parseTimeString(currentPetRecord.birthTime);
+    const currentTime = new Date();
+    const timeDiff = currentTime.getTime() - birthTime.getTime();
+    const hoursRaised = timeDiff / (1000 * 60 * 60); // 轉換為小時
+
+    return hoursRaised >= 120;
+  }
+
+  /**
+   * 觸發特殊撫摸事件（進化相關）
+   */
+  private triggerSpecialTouchEvent(currentPetStats: PetStats): void {
+    const random = Math.random() * 100;
+
+    if (random < 40) {
+      // 40% 機率額外觸發文字toastr
+      ToastrService.show(`${currentPetStats.name || '電子雞'}蹭蹭你的手`, 'info');
+    } else if (random < 90) {
+      // 50% 機率額外觸發文字toastr
+      ToastrService.show(`${currentPetStats.name || '電子雞'}充滿活力`, 'success');
+    } else {
+      // 10% 機率觸發進化
+      this.triggerEvolution(currentPetStats);
+    }
+  }
+
+  /**
+   * 觸發進化事件
+   */
+  private triggerEvolution(currentPetStats: PetStats): void {
+    const petName = currentPetStats.name || '電子雞';
+    const confirmed = confirm(`${petName}發光了！`);
+
+    if (confirmed) {
+      this.executeEvolution(currentPetStats);
+    }
+  }
+
+  /**
+   * 執行進化過程
+   */
+  private executeEvolution(currentPetStats: PetStats): void {
+    // 設置白光回調，在白光遮住畫面時執行進化
+    this.whiteTransitionService.onWhiteReady(() => {
+      this.performEvolutionChanges(currentPetStats);
+    });
+
+    // 觸發白光淡入
+    this.whiteTransitionService.fadeIn();
+
+    // 1秒後觸發白光淡出
+    setTimeout(() => {
+      this.whiteTransitionService.onSceneReady();
+    }, 1000);
+  }
+
+  /**
+   * 執行進化改變（在白光遮住畫面時）
+   */
+  private performEvolutionChanges(currentPetStats: PetStats): void {
+    // 更新生命週期為進化狀態
+    const updatedStats = {
+      ...currentPetStats,
+      lifeCycle: 'EVOLUTION' as const
+    };
+    PetStatsService.savePetStats(updatedStats);
+
+    // 記錄進化時間到使用者飼養歷程
+    const currentUserData = UserDataService.loadUserData();
+    const currentTime = UserDataService.formatDateTime(new Date());
+
+    const lastRecordIndex = currentUserData.petHistory.length - 1;
+    if (lastRecordIndex >= 0) {
+      UserDataService.updatePetRecord(lastRecordIndex, {
+        evolutionTime: currentTime
+      }, currentUserData);
+    }
+
+    // 解鎖圖鑑中的進化形態
+    if (currentPetStats.breedName) {
+      const currentCollectionData = CollectionService.loadCollectionData();
+      CollectionService.unlockBreed(currentPetStats.breedName, 'EVOLUTION', currentCollectionData);
     }
   }
 
