@@ -80,7 +80,7 @@ export class ItemUsageService {
 
     if (effect.currentHealth !== 0) {
       const healthChange = effect.currentHealth * quantity;
-      updatedStats.currentHealth = Math.max(0, updatedStats.currentHealth + healthChange);
+      updatedStats.currentHealth = Math.max(0, Math.min(updatedStats.maxHealth, updatedStats.currentHealth + healthChange));
       effects.push(`生命值 ${healthChange > 0 ? '+' : ''}${healthChange}`);
     }
 

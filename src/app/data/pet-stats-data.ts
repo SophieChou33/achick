@@ -54,8 +54,10 @@ export class PetStatsService {
 
   static savePetStats(stats: PetStats): void {
     try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(stats));
-      this.petStatsSubject.next(stats); // 通知所有訂閱者
+      // 應用數值邊界檢查
+      const validatedStats = this.validateStatsLimits(stats);
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(validatedStats));
+      this.petStatsSubject.next(validatedStats); // 通知所有訂閱者
     } catch (error) {
       console.error('Failed to save pet stats:', error);
     }
@@ -114,5 +116,26 @@ export class PetStatsService {
     if (avgCondition >= 40) return 'fair';
     if (avgCondition >= 20) return 'poor';
     return 'critical';
+  }
+
+  /**
+   * 驗證並修正電子雞數值邊界
+   */
+  static validateStatsLimits(stats: PetStats): PetStats {
+    const validatedStats = { ...stats };
+
+    // 當前好感度：0-100
+    validatedStats.currentFriendship = Math.max(0, Math.min(100, stats.currentFriendship));
+
+    // 當前生命值：0-最大生命值
+    validatedStats.currentHealth = Math.max(0, Math.min(stats.maxHealth, stats.currentHealth));
+
+    // 當前飢餓度：0-100
+    validatedStats.currentHunger = Math.max(0, Math.min(100, stats.currentHunger));
+
+    // 當前健康度：0-100
+    validatedStats.currentWellness = Math.max(0, Math.min(100, stats.currentWellness));
+
+    return validatedStats;
   }
 }
