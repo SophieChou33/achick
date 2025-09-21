@@ -674,3 +674,31 @@
     - 更新 DirtyDisplayComponent 使用新的 cleanEvent 方法
     - 保持原有的視覺更新機制
     - 確保金幣獎勵與髒污清理同步執行
+
+## 任務 #36：實現低好感度事件觸發邏輯
+**時間**：2025-09-21 16:18
+**狀態**：已完成
+**描述**：創建低好感度事件觸發邏輯服務，實現好感度監控、離家出走判定和健康度懲罰機制
+
+**實現內容**：
+  - 低好感度事件觸發服務 (LowLikabilityEventService)：
+    - 創建 /src/app/services/low-likability-event.service.ts
+    - 實現私有變數 lastPunishTime 進行懲罰時間追蹤
+    - 建立30秒間隔的計時器機制，持續監控好感度狀態
+    - 整合 StateDataService 管理 lowLikability 狀態啟用/停用
+  - 好感度懲罰機制 (likabilityPunishing)：
+    - 檢查電子雞 rare 狀態，為 null 時重置懲罰時間
+    - 檢查 timeStopping 和好感度閾值（>30），符合條件時停用狀態
+    - 啟用低好感度狀態，觸發離家出走判定
+    - 實現20分鐘間隔的健康度懲罰機制（健康度-2）
+    - 整合 ToastrService 顯示懲罰訊息
+  - 離家出走判定機制 (shouldLeaveHouse)：
+    - 好感度≥10時設置 isLeaving 為 false，維持正常狀態
+    - 好感度<10時設置 isLeaving 為 true，timeStopping 為 true
+    - 直接操作 PetStats 數據，實現即時狀態切換
+    - 返回布林值指示是否觸發離家出走
+  - 時間管理系統：
+    - 整合 UserDataService.formatDateTime 進行時間格式化
+    - 實現時間字串解析和20分鐘間隔計算
+    - 支援 yyyy/mm/dd HH:mm:ss 格式的完整時間操作
+    - 正確處理計時器啟動/停止控制和記憶體清理
