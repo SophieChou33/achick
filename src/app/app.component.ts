@@ -5,6 +5,7 @@ import { WelcomeComponent } from './components/welcome/welcome.component';
 import { RoomComponent } from './components/room/room.component';
 import { WhiteTransitionComponent } from './components/white-transition/white-transition.component';
 import { WhiteTransitionService } from './services/white-transition.service';
+import { HungerManagerService } from './services/hunger-manager.service';
 
 @Component({
   selector: 'app-root',
@@ -32,7 +33,10 @@ export class AppComponent implements OnInit, OnDestroy {
   showWelcome = true;
   showRoom = false;
 
-  constructor(private whiteTransitionService: WhiteTransitionService) {}
+  constructor(
+    private whiteTransitionService: WhiteTransitionService,
+    private hungerManagerService: HungerManagerService
+  ) {}
 
   ngOnInit() {
     // 註冊場景準備回調函數
@@ -42,7 +46,8 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    // Service會自動清理
+    // 停止飢餓系統
+    this.hungerManagerService.stopHungerSystem();
   }
 
   private prepareScene() {
