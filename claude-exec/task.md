@@ -419,3 +419,22 @@
     - 添加 ViewChild 引用房間組件
     - 在場景切換完成後調用 resetToCenter() 確保居中
     - 添加 200ms 延遲等待房間組件完全渲染
+
+#### 27 - 角色顯示邏輯系統重構
+- **開始時間**: 2025-09-21 17:30
+- **完成時間**: 2025-09-21 17:45
+- **狀態**: 已完成
+- **摘要**:
+  - 角色顯示邏輯標準化：
+    - 若 rare 有值且 lifeCycle 為 EGG，角色圖片顯示 sources.character.egg.{{rare}}
+    - 若 lifeCycle 有值且為 CHILD，角色圖片顯示 sources.character.child.child
+    - 若 breed 與 lifeCycle 有值且 lifeCycle 不為 EGG 也不為 CHILD，角色圖片顯示 sources.character.{{lifeCycle}}.{{breed}}
+  - CharacterComponent 重構：
+    - 移除模擬數據，整合真實的 PetStatsService
+    - 修正型別命名不一致問題（小寫改為大寫）
+    - 實現符合需求的三段式顯示邏輯
+    - 整合 breed-data.ts 中的品種資料映射
+  - 型別系統優化：
+    - 統一使用 PetStats 介面的大寫命名規範
+    - 確保 rare 和 lifeCycle 型別一致性
+    - 添加 breedName 到 breed 的正確映射邏輯

@@ -1,12 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { sources } from '../../../sources';
-
-interface CharacterData {
-  lifeCycle: 'egg' | 'child' | 'evolution' | 'cooked' | 'dead';
-  rare: 'normal' | 'special' | 'superSpecial' | 'bad';
-  breed: string;
-}
+import { PetStatsService } from '../../../data/pet-stats-data';
+import { PetStats } from '../../../types/pet-stats.type';
+import { getBreedByName } from '../../../data/breed-data';
 
 @Component({
   selector: 'app-character',
@@ -110,12 +107,11 @@ export class CharacterComponent implements OnInit {
   isFreezing = false;
   freezingIcon = sources.character.others.isFreezing;
 
-  // Sample character data - in real app this would come from a service
-  private characterData: CharacterData = {
-    lifeCycle: 'evolution',
-    rare: 'normal',
-    breed: 'cute'
-  };
+  private petStats: PetStats;
+
+  constructor() {
+    this.petStats = PetStatsService.loadPetStats();
+  }
 
   ngOnInit() {
     this.setCharacterImage();
@@ -126,48 +122,61 @@ export class CharacterComponent implements OnInit {
   }
 
   private setCharacterImage() {
-    const { lifeCycle, rare, breed } = this.characterData;
+    const { lifeCycle, rare, breedName } = this.petStats;
 
-    switch (lifeCycle) {
-      case 'egg':
-        this.characterImage = this.getEggImage(rare);
-        this.characterName = 'Egg';
-        break;
-
-      case 'child':
-        this.characterImage = sources.character.child.child;
-        this.characterName = 'Child';
-        break;
-
-      case 'evolution':
-        this.characterImage = this.getEvolutionImage(breed);
-        this.characterName = `Evolution - ${breed}`;
-        break;
-
-      case 'cooked':
-        this.characterImage = this.getCookedImage(breed);
-        this.characterName = `Cooked - ${breed}`;
-        break;
-
-      case 'dead':
-        this.characterImage = sources.character.dead.dead;
-        this.characterName = 'Dead';
-        break;
-
-      default:
-        this.characterImage = sources.character.child.child;
-        this.characterName = 'Unknown';
+    // 根據任務四的邏輯：
+    // 若rare有值且lifecycle為EGG，角色圖片顯示sources.character.egg.{{rare}}
+    if (rare && lifeCycle === 'EGG') {
+      this.characterImage = this.getEggImage(rare);
+      this.characterName = 'Egg';
+      return;
     }
+
+    // 若lifeCycle有值且為CHILD，角色圖片顯示sources.character.child.child
+    if (lifeCycle === 'CHILD') {
+      this.characterImage = sources.character.child.child;
+      this.characterName = 'Child';
+      return;
+    }
+
+    // 若breed與lifecycle有值且lifeCycle不為EGG也不為CHILD，角色圖片顯示sources.character.{{lifeCycle}}.{{breed}}
+    if (breedName && lifeCycle && (lifeCycle === 'EVOLUTION' || lifeCycle === 'COOKED')) {
+      const breedData = getBreedByName(breedName);
+      if (breedData) {
+        const breed = breedData.breed;
+
+        if (lifeCycle === 'EVOLUTION') {
+          this.characterImage = this.getEvolutionImage(breed);
+          this.characterName = breedData.breedName || `Evolution - ${breed}`;
+        } else if (lifeCycle === 'COOKED') {
+          this.characterImage = this.getCookedImage(breed);
+          this.characterName = `Cooked - ${breedData.breedName || breed}`;
+        }
+        return;
+      }
+    }
+
+    // 處理死亡狀態 - 使用 isDead 屬性判斷
+    if (this.petStats.isDead) {
+      this.characterImage = sources.character.dead.dead;
+      this.characterName = 'Dead';
+      return;
+    }
+
+    // 預設情況：顯示child圖片
+    this.characterImage = sources.character.child.child;
+    this.characterName = 'Unknown';
   }
 
-  private getEggImage(rare: string): string {
+  private getEggImage(rare: PetStats['rare']): string {
     switch (rare) {
-      case 'bad':
+      case 'BAD':
         return sources.character.egg.bad;
-      case 'special':
+      case 'SPECIAL':
         return sources.character.egg.special;
-      case 'superSpecial':
+      case 'SUPER_SPECIAL':
         return sources.character.egg.superSpecial;
+      case 'NORMAL':
       default:
         return sources.character.egg.normal;
     }

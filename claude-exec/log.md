@@ -1309,3 +1309,68 @@
 **遺漏或未完成項目**: 無
 
 **專案報錯狀況**: 無報錯
+
+---
+
+## 評測時間：2025-09-21 17:45
+
+### 第二十輪任務完成度評測
+
+#### 任務系列：角色顯示邏輯系統重構 (任務一至任務七)
+- **狀態**: ✅ 完全完成
+- **評測結果**: 成功重構角色顯示邏輯，實現標準化的三段式顯示規則
+- **完成時間**: 2025-09-21 17:45
+
+#### 詳細任務評估:
+
+**任務一**: ✅ 文件檢查完成 - 成功讀取 claude-exec/task.md
+**任務二**: ✅ 內容參考完成 - 理解專案現有架構與角色組件結構
+**任務三**: ✅ 規劃完成 - 確認所有必要資料和前置文件存在
+**任務四**: ✅ 角色顯示邏輯系統重構完成
+  - 角色顯示邏輯標準化：實現三段式顯示規則
+    - 若 rare 有值且 lifeCycle 為 EGG，顯示 sources.character.egg.{{rare}}
+    - 若 lifeCycle 有值且為 CHILD，顯示 sources.character.child.child
+    - 若 breed 與 lifeCycle 有值且不為 EGG/CHILD，顯示 sources.character.{{lifeCycle}}.{{breed}}
+  - CharacterComponent 完全重構：移除模擬數據，整合真實 PetStatsService
+  - 型別系統修正：統一使用大寫命名規範（BAD/NORMAL/SPECIAL/SUPER_SPECIAL）
+  - breedName 到 breed 映射邏輯實現：整合 breed-data.ts 中的品種資料
+**任務五**: ✅ 文件記錄完成 - task.md 更新任務 #27 記錄
+**任務六**: ✅ 編譯檢查完成 - TypeScript 編譯通過，修正型別不一致問題
+**任務七**: ✅ 評測記錄完成 - 本次 log.md 更新
+
+### 第二十輪整體評測結果
+
+**總體完成率**: 100% (7/7 任務完成)
+
+**角色顯示邏輯重構實現項目**:
+- ✅ 三段式角色顯示邏輯實現（EGG/CHILD/其他狀態）
+- ✅ CharacterComponent 真實數據整合（移除 CharacterData 模擬介面）
+- ✅ PetStatsService 完整整合（loadPetStats 自動載入）
+- ✅ 型別命名統一化（小寫改為大寫，符合 PetStats 介面）
+- ✅ breedName 映射邏輯（getBreedByName 品種資料查詢）
+- ✅ 死亡狀態處理優化（使用 isDead 屬性而非 lifeCycle）
+- ✅ TypeScript 編譯錯誤修正（型別不匹配問題解決）
+
+**專案狀態**:
+- ✅ 無編譯錯誤
+- ✅ 型別安全性確保
+- ✅ 與現有架構完全相容
+- ✅ 角色顯示邏輯完整性
+
+**技術特點**:
+- 完整的三段式角色顯示邏輯實現
+- 真實寵物數據動態綁定顯示
+- 品種資料與圖片資源正確映射
+- TypeScript 嚴格型別檢查支援
+- Angular 服務依賴注入架構
+- 符合需求規格的精確邏輯實現
+
+**修正記錄**:
+- 修正 CharacterData 介面型別不一致問題
+- 統一 rare 和 lifeCycle 命名規範為大寫
+- 修正條件判斷邏輯，避免型別重疊錯誤
+- 優化死亡狀態判斷，使用 isDead 而非不存在的 'DEAD' lifeCycle
+
+**遺漏或未完成項目**: 無
+
+**專案報錯狀況**: 無報錯
