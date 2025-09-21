@@ -556,3 +556,33 @@
     - 命名彈窗支援鍵盤輸入和表單驗證
     - 金幣動畫在畫面上方中央顯示
     - 所有動畫和過渡效果流暢自然
+
+#### 32 - 實現撫摸事件 service
+- **開始時間**: 2025-09-21 22:00
+- **完成時間**: 2025-09-21 22:30
+- **狀態**: 已完成
+- **摘要**:
+  - TouchEventService 服務創建：
+    - 創建 /src/app/services/touch-event.service.ts 撫摸事件管理服務
+    - 實現私有變數：maxTouchTime(15)、isCanTouch(true)、lastTimeReset(null)、touchedTimes(0)
+    - 建立每30秒執行的重置撫摸次數計時器機制
+  - 撫摸事件主函數實現：
+    - 檢查電子雞 rare 狀態和 timeStoping 狀態，防止無效撫摸
+    - 檢查 isSleeping 狀態，睡眠中時不允許撫摸
+    - 實現撫摸次數限制機制，超過15次時顯示拒絕訊息
+    - 好感度上升邏輯：當前好感度≤最大好感度-0.05時增加0.05
+    - 整合 getTouchingCoin 函數執行金幣獎勵判斷
+    - 2秒冷卻機制防止連續點擊
+  - 重置撫摸次數機制：
+    - 每30秒檢查電子雞狀態，rare為null時重置計時器
+    - timeStoping為true時重置撫摸次數
+    - 達到撫摸上限後開始1小時倒計時，時間到自動重置
+  - 撫摸獎勵金幣系統：
+    - 15%機率獲得金幣獎勵
+    - CHILD生命週期：10金幣，EVOLUTION生命週期：15金幣
+    - 整合 UserDataService 自動更新使用者持有金幣
+  - CharacterComponent 整合：
+    - 修改 onCharacterClick 方法整合撫摸事件
+    - 蛋狀態且未命名時觸發命名彈窗，其他狀態觸發撫摸事件
+    - 在 ngOnDestroy 中正確清理撫摸事件服務計時器
+    - 確保撫摸事件與現有命名流程無衝突

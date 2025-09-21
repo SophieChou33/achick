@@ -10,6 +10,7 @@ import { UserDataService } from '../../../data/user-data';
 import { BirthOverlayComponent } from '../birth-overlay/birth-overlay.component';
 import { NamingModalComponent } from '../naming-modal/naming-modal.component';
 import { CoinAnimationComponent } from '../coin-animation/coin-animation.component';
+import { TouchEventService } from '../../../services/touch-event.service';
 
 @Component({
   selector: 'app-character',
@@ -182,7 +183,10 @@ export class CharacterComponent implements OnInit, OnDestroy {
   private petStats: PetStats;
   private petStatsSubscription?: Subscription;
 
-  constructor(private rareBreedService: RareBreedService) {
+  constructor(
+    private rareBreedService: RareBreedService,
+    private touchEventService: TouchEventService
+  ) {
     this.petStats = PetStatsService.loadPetStats();
   }
 
@@ -202,6 +206,9 @@ export class CharacterComponent implements OnInit, OnDestroy {
     if (this.petStatsSubscription) {
       this.petStatsSubscription.unsubscribe();
     }
+
+    // 清理撫摸事件服務的計時器
+    this.touchEventService.stopResetTimer();
   }
 
   get hasEffects(): boolean {
@@ -339,13 +346,17 @@ export class CharacterComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * 角色點擊事件（用於命名）
+   * 角色點擊事件（用於命名和撫摸）
    */
   onCharacterClick(): void {
     // 只有在蛋狀態且沒有名字時才能命名
     if (this.petStats.lifeCycle === 'EGG' && this.petStats.name === null) {
       this.namingModal.show();
+      return;
     }
+
+    // 其他狀態下觸發撫摸事件
+    this.touchEventService.touchingEvent();
   }
 
   /**

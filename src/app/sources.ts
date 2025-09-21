@@ -15,7 +15,7 @@ export const sources = {
       superSpecial: 'assets/images/character/egg-super-special.png',
     },
     child: {
-      child: 'assets/images/character/character-normal.png',
+      child: 'assets/images/character/child-normal.png',
     },
     evolution: {
       mud: 'assets/images/character/evolution-mud.png',
