@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { sources } from '../../../sources';
+import { LightService } from '../../../services/light.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -68,9 +69,10 @@ export class SidebarComponent {
   sleepIcon = sources.otherIcons.sleep;
   feedIcon = sources.otherIcons.feed;
 
+  constructor(private lightService: LightService) {}
+
   toggleLight() {
-    console.log('Toggling light...');
-    // TODO: Implement light toggle functionality
+    this.lightService.lampToggle();
   }
 
   sleep() {
