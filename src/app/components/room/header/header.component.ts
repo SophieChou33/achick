@@ -125,6 +125,7 @@ import { CoinsService } from '../../../services/coins.service';
       background-color: rgba(255,255,255,0.2);
     }
 
+
     .function-icon {
       width: 44px;
       height: 44px;
@@ -241,4 +242,5 @@ export class HeaderComponent implements OnInit, OnDestroy {
     console.log('Opening collection...');
     // TODO: Implement collection modal
   }
+
 }

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PetStatsService } from '../../../data/pet-stats-data';
 import { PetStats } from '../../../types/pet-stats.type';
+import { ToastrService } from '../../shared/toastr/toastr.component';
 
 interface PetInfo {
   name: string;
@@ -310,6 +311,8 @@ export class StatusBarComponent implements OnInit {
 
   togglePanel() {
     this.isPanelVisible = !this.isPanelVisible;
+    // 通知 ToastrService 狀態面板狀態變化
+    ToastrService.setStatusExpanded(this.isPanelVisible);
   }
 
   onHover(isHovering: boolean) {

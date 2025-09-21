@@ -438,3 +438,52 @@
     - 統一使用 PetStats 介面的大寫命名規範
     - 確保 rare 和 lifeCycle 型別一致性
     - 添加 breedName 到 breed 的正確映射邏輯
+
+#### 28 - 實作 toastr 樣式系統
+- **開始時間**: 2025-09-21 18:10
+- **完成時間**: 2025-09-21 18:25
+- **狀態**: 已完成
+- **摘要**:
+  - ToastrComponent 實作：
+    - 創建 /src/app/components/shared/toastr/toastr.component.ts
+    - 實現白色圓角矩形底色設計 (#fff6f3)，添加毛玻璃效果
+    - 文字顏色設為 #847170，添加陰影效果
+    - 支援四種類型：info、success、warning、error
+  - 響應式位置系統：
+    - 狀態區塊收起時：bottom: 50px, right: 15px
+    - 狀態區塊展開時：bottom: 150px, right: 15px
+    - 平滑過渡動畫 (transition: bottom 0.3s ease)
+  - ToastrService 服務實現：
+    - 提供 show()、success()、error()、warning()、info() 方法
+    - 自動移除機制 (預設3-4秒)
+    - 與 StatusBarComponent 整合，監聽狀態面板展開狀態
+  - 動畫效果：
+    - slideInRight 進入動畫
+    - 左側彩色邊框區分訊息類型
+    - 圓角矩形背景與專案視覺風格統一
+
+#### 29 - Toastr 樣式與動畫優化
+- **開始時間**: 2025-09-21 18:30
+- **完成時間**: 2025-09-21 19:15
+- **狀態**: 已完成
+- **摘要**:
+  - 測試按鈕實作與移除：
+    - 在 HeaderComponent 添加測試按鈕以便測試 toastr 功能
+    - 實現 testToastr() 方法依序顯示三種不同類型訊息
+    - 按用戶要求完全移除測試按鈕及相關代碼與樣式
+  - 位置系統優化：
+    - 狀態區塊收起時：bottom: 120px → 120px, right: 25px
+    - 狀態區塊展開時：bottom: 340px → 350px, right: 15px
+    - 實現位置變化的平滑過渡動畫
+  - 樣式大幅改進：
+    - 移除邊框設計，改為純毛玻璃效果
+    - 背景顏色更新：#fff6f3 → rgba(32, 30, 30, 0.75)
+    - 文字顏色改為白色以配合深色背景
+    - 毛玻璃模糊效果：10px → 5px（減弱模糊強度）
+  - 動畫系統重構：
+    - 進出動畫時間延長：0.3s → 0.8s
+    - 採用 cubic-bezier 緩動函數實現更自然動畫
+    - 添加縮放效果：scale 0.8 ↔ 1.0
+    - 實現完整的移除動畫（slideOutRight）
+    - 顯示持續時間延長：3秒 → 5秒
+    - 修正 ToastrService.remove() 方法，先觸發移除動畫後再從 DOM 移除
