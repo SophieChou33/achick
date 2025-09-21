@@ -27,7 +27,7 @@ import { DirtyObject } from '../../../types/dirty-object.type';
         <div class="modal-content">
           <div class="modal-header">
             <h3 class="modal-title">🔧 工程師模式</h3>
-            <button type="button" class="close-btn" (click)="close()">×</button>
+            <button type="button" class="close-btn" (click)="onClose()">×</button>
           </div>
 
           <div class="modal-body">
@@ -82,7 +82,7 @@ import { DirtyObject } from '../../../types/dirty-object.type';
               <div class="adjust-grid">
                 <div class="adjust-item">
                   <label>生命值:</label>
-                  <input type="number" [(ngModel)]="editableStats.currentHealth" min="0" [max]="editableStats.maxHealth">
+                  <input type="number" [(ngModel)]="editableStats.currentHealth" min="0" [max]="editableStats.maxHealth || 100">
                 </div>
                 <div class="adjust-item">
                   <label>最大生命值:</label>
