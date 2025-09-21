@@ -6,7 +6,8 @@
       "Bash(npx ng lint:*)",
       "Bash(npx tsc:*)",
       "Bash(sed:*)",
-      "Bash(ng lint)"
+      "Bash(ng lint)",
+      "Bash(ng build:*)"
     ],
     "deny": [],
     "ask": []

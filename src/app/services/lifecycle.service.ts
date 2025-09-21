@@ -131,11 +131,15 @@ export class LifecycleService {
     const currentPetStats = PetStatsService.loadPetStats();
 
     if (currentPetStats.isDead) {
-      const confirmed = confirm('是否開始培養新的電子雞?');
-      if (confirmed) {
-        this.clearCurrentChickenState();
+      const firstConfirm = confirm('是否開始飼養新的電子雞？');
+      if (firstConfirm) {
+        const secondConfirm = confirm('是否開始飼養新的電子雞？');
+        if (secondConfirm) {
+          this.clearCurrentChickenState();
+          return true;
+        }
       }
-      return confirmed;
+      return false;
     }
 
     return false;
