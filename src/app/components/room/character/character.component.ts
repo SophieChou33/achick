@@ -250,6 +250,13 @@ export class CharacterComponent implements OnInit, OnDestroy {
     // 有lifeCycle時才顯示角色，但如果isLeaving為true則隱藏
     this.isCharacterVisible = !this.petStats.isLeaving;
 
+    // 處理冰凍狀態 - 優先於其他狀態顯示
+    if (this.petStats.timeStopping) {
+      this.characterImage = sources.character.others.isFreezing;
+      this.characterName = 'Frozen';
+      return;
+    }
+
     // 根據任務四的邏輯：
     // 若rare有值且lifecycle為EGG，角色圖片顯示sources.character.egg.{{rare}}
     if (rare && lifeCycle === 'EGG') {

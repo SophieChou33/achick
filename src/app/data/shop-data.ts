@@ -13,107 +13,238 @@ const defaultProductEffect: ProductDataEffect = {
 export const defaultShopData: ShopData = {
   food: [
     {
-      itemName: '小魚乾',
-      productType: '食物',
+      itemName: '麵包蟲',
+      productType: 'food',
       price: 10,
       reborn: 0,
       freeze: 0,
       effect: {
         ...defaultProductEffect,
-        currentHunger: 20,
-        currentFriendship: 5
+        currentHunger: 5,
+        currentFriendship: 2
       }
     },
     {
-      itemName: '高級飼料',
-      productType: '食物',
-      price: 25,
+      itemName: '營養米',
+      productType: 'food',
+      price: 11,
       reborn: 0,
       freeze: 0,
       effect: {
         ...defaultProductEffect,
-        currentHunger: 50,
-        currentFriendship: 10,
-        currentWellness: 5
+        currentHunger: 8,
+        currentFriendship: 2
       }
-    }
-  ],
-  health: [
+    },
     {
-      itemName: '維他命',
-      productType: '健康',
+      itemName: '炸雞',
+      productType: 'food',
       price: 30,
       reborn: 0,
       freeze: 0,
       effect: {
         ...defaultProductEffect,
-        currentWellness: 25,
-        currentHealth: 10
+        currentHunger: 20,
+        currentFriendship: 8
       }
     },
     {
-      itemName: '特效藥',
-      productType: '健康',
-      price: 80,
+      itemName: '糖果',
+      productType: 'food',
+      price: 10,
       reborn: 0,
       freeze: 0,
       effect: {
         ...defaultProductEffect,
-        currentWellness: 50,
-        currentHealth: 30,
-        maxHealth: 10
+        currentHunger: 5,
+        currentFriendship: 8
       }
-    }
-  ],
-  gift: [
+    },
     {
-      itemName: '小玩具',
-      productType: '禮物',
+      itemName: '煙燻鮭魚',
+      productType: 'food',
       price: 15,
       reborn: 0,
       freeze: 0,
       effect: {
         ...defaultProductEffect,
-        currentFriendship: 30
+        currentHunger: 15,
+        currentFriendship: 5
       }
     },
     {
-      itemName: '珍貴寶石',
-      productType: '禮物',
-      price: 100,
+      itemName: '狗飼料',
+      productType: 'food',
+      price: 13,
       reborn: 0,
       freeze: 0,
       effect: {
         ...defaultProductEffect,
-        currentFriendship: 80,
-        currentHealth: 5
+        currentHunger: 20,
+        currentFriendship: 2
+      }
+    },
+    {
+      itemName: '冰淇淋',
+      productType: 'food',
+      price: 10,
+      reborn: 0,
+      freeze: 0,
+      effect: {
+        ...defaultProductEffect,
+        currentHunger: 2,
+        currentFriendship: 10
       }
     }
   ],
-  decoration: [
+  health: [
     {
-      itemName: '彩色地毯',
-      productType: '裝飾',
-      price: 50,
+      itemName: '西藥',
+      productType: 'health',
+      price: 10,
       reborn: 0,
       freeze: 0,
       effect: {
         ...defaultProductEffect,
-        currentFriendship: 15,
-        currentWellness: 10
+        currentHealth: 10,
+        currentWellness: 15,
+        maxHealth: -10
       }
     },
     {
-      itemName: '豪華燈具',
-      productType: '裝飾',
+      itemName: '人蔘',
+      productType: 'health',
+      price: 80,
+      reborn: 0,
+      freeze: 0,
+      effect: {
+        ...defaultProductEffect,
+        currentHealth: 2,
+        currentWellness: 10,
+        maxHealth: 5
+      }
+    },
+    {
+      itemName: '中藥包',
+      productType: 'health',
+      price: 40,
+      reborn: 0,
+      freeze: 0,
+      effect: {
+        ...defaultProductEffect,
+        currentHealth: 1,
+        currentWellness: 1,
+        maxHealth: 1
+      }
+    },
+    {
+      itemName: '頭痛藥',
+      productType: 'health',
+      price: 10,
+      reborn: 0,
+      freeze: 0,
+      effect: {
+        ...defaultProductEffect,
+        currentHealth: 2,
+        currentWellness: 15,
+        maxHealth: -2
+      }
+    },
+    {
+      itemName: '整腸藥',
+      productType: 'health',
+      price: 10,
+      reborn: 0,
+      freeze: 0,
+      effect: {
+        ...defaultProductEffect,
+        currentHealth: 2,
+        currentWellness: 15,
+        maxHealth: -2
+      }
+    },
+    {
+      itemName: '胃藥',
+      productType: 'health',
+      price: 10,
+      reborn: 0,
+      freeze: 0,
+      effect: {
+        ...defaultProductEffect,
+        currentHealth: 2,
+        currentWellness: 15,
+        maxHealth: -2
+      }
+    },
+    {
+      itemName: '感冒藥',
+      productType: 'health',
+      price: 10,
+      reborn: 0,
+      freeze: 0,
+      effect: {
+        ...defaultProductEffect,
+        currentHealth: 2,
+        currentWellness: 15,
+        maxHealth: -2
+      }
+    },
+    {
+      itemName: '死者甦醒',
+      productType: 'health',
+      price: 1000,
+      reborn: 1,
+      freeze: 0,
+      effect: {
+        ...defaultProductEffect,
+        maxHealth: -2
+      }
+    },
+    {
+      itemName: '冰凍藥丸',
+      productType: 'health',
+      price: 300,
+      reborn: 0,
+      freeze: 1,
+      effect: {
+        ...defaultProductEffect
+      }
+    }
+  ],
+  gift: [
+    {
+      itemName: '小雞娃娃',
+      productType: 'gifts',
+      price: 30,
+      reborn: 0,
+      freeze: 0,
+      effect: {
+        ...defaultProductEffect,
+        currentFriendship: 5
+      }
+    },
+    {
+      itemName: '智慧型手機',
+      productType: 'gifts',
       price: 150,
       reborn: 0,
       freeze: 0,
       effect: {
         ...defaultProductEffect,
-        currentFriendship: 40,
-        currentWellness: 20,
-        maxHealth: 5
+        currentFriendship: 50
+      }
+    }
+  ],
+  decoration: [
+    {
+      itemName: '星星裝飾',
+      productType: 'decorations',
+      price: 100,
+      reborn: 0,
+      freeze: 0,
+      effect: {
+        ...defaultProductEffect,
+        currentFriendship: 5
       }
     }
   ]
