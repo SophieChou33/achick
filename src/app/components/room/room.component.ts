@@ -7,6 +7,7 @@ import { StatusBarComponent } from './status-bar/status-bar.component';
 import { CharacterComponent } from './character/character.component';
 import { BedComponent } from './bed/bed.component';
 import { ToastrComponent } from '../shared/toastr/toastr.component';
+import { DirtyDisplayComponent } from './dirty-display/dirty-display.component';
 import { sources } from '../../sources';
 
 @Component({
@@ -20,7 +21,8 @@ import { sources } from '../../sources';
     StatusBarComponent,
     CharacterComponent,
     BedComponent,
-    ToastrComponent
+    ToastrComponent,
+    DirtyDisplayComponent
   ],
   template: `
     <div class="room-wrapper" #roomWrapper>
@@ -31,6 +33,7 @@ import { sources } from '../../sources';
         <app-window></app-window>
         <app-bed></app-bed>
         <app-character></app-character>
+        <app-dirty-display></app-dirty-display>
       </div>
       <app-header></app-header>
       <app-sidebar></app-sidebar>

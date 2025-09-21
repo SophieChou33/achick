@@ -623,3 +623,33 @@
     - 提供髒污狀態重置功能 (resetDirtyState)
     - 提供單個髒污物件移除功能 (removeDirtyObject)
     - 提供髒污數量查詢和最大數量檢查功能
+
+## 任務 #34：實現髒污顯示功能
+**時間**：2025-09-21 15:42
+**狀態**：已完成
+**描述**：實現髒污物件的視覺顯示功能和清潔互動系統
+
+**實現內容**：
+  - 髒污顯示元件 (DirtyDisplayComponent)：
+    - 創建 /src/app/components/room/dirty-display/dirty-display.component.ts
+    - 實現三個髒污物件的 float 定位顯示（dirty01, dirty02, dirty03）
+    - 每個髒污物件獨立定位：髒污1(60%,20%)、髒污2(70%,60%)、髒污3(50%,80%)
+    - 整合 DirtyTriggerService 即時同步髒污物件狀態
+    - 實現每秒更新的視覺同步機制 (updateDirtyDisplay)
+    - 設置 z-index: 500 確保髒污物件顯示在適當層級
+  - 清潔事件服務 (CleaningEventService)：
+    - 創建 /src/app/services/cleaning-event.service.ts
+    - 實現單個髒污物件清理功能 (cleanDirtyObject)
+    - 實現全部髒污物件清理功能 (cleanAllDirtyObjects)
+    - 清理獎勵機制：健康度+1、好感度+0.5（單個），批量清理有額外獎勵
+    - 整合 ToastrService 顯示清理成功訊息
+    - 確保數值不會超過最大值限制
+  - 房間元件整合：
+    - 在 RoomComponent 中整合 DirtyDisplayComponent
+    - 髒污顯示覆蓋在房間場景之上，不影響其他互動
+    - 點擊髒污物件觸發清理事件，即時更新顯示狀態
+    - 保持原有房間拖拽功能不受影響
+  - 圖片資源整合：
+    - 使用 sources.otherIcons.dirty01、dirty02、dirty03 圖片資源
+    - 髒污物件尺寸設定為 50x50px，支援 hover 放大效果
+    - 實現 pointer-events 管理，確保互動性正確
