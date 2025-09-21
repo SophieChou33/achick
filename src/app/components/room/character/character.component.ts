@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 import { sources } from '../../../sources';
 import { PetStatsService } from '../../../data/pet-stats-data';
 import { PetStats } from '../../../types/pet-stats.type';
@@ -10,7 +11,7 @@ import { getBreedByName } from '../../../data/breed-data';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="character-area-wrapper">
+    <div class="character-area-wrapper" *ngIf="isCharacterVisible">
       <div class="character-area">
         <div class="character-shadow"></div>
         <div class="character-container">
@@ -101,20 +102,36 @@ import { getBreedByName } from '../../../data/breed-data';
 
   `]
 })
-export class CharacterComponent implements OnInit {
+export class CharacterComponent implements OnInit, OnDestroy {
   characterImage = '';
   characterName = '';
   isFreezing = false;
   freezingIcon = sources.character.others.isFreezing;
+  isCharacterVisible = false;
 
   private petStats: PetStats;
+  private petStatsSubscription?: Subscription;
 
   constructor() {
     this.petStats = PetStatsService.loadPetStats();
   }
 
   ngOnInit() {
+    // 設定初始圖片
     this.setCharacterImage();
+
+    // 訂閱角色資料變化
+    this.petStatsSubscription = PetStatsService.getPetStats$().subscribe(petStats => {
+      this.petStats = petStats;
+      this.setCharacterImage();
+    });
+  }
+
+  ngOnDestroy() {
+    // 清理訂閱
+    if (this.petStatsSubscription) {
+      this.petStatsSubscription.unsubscribe();
+    }
   }
 
   get hasEffects(): boolean {
@@ -123,6 +140,15 @@ export class CharacterComponent implements OnInit {
 
   private setCharacterImage() {
     const { lifeCycle, rare, breedName } = this.petStats;
+
+    // 若lifeCycle為null，隱藏角色區塊
+    if (lifeCycle === null) {
+      this.isCharacterVisible = false;
+      return;
+    }
+
+    // 有lifeCycle時才顯示角色
+    this.isCharacterVisible = true;
 
     // 根據任務四的邏輯：
     // 若rare有值且lifecycle為EGG，角色圖片顯示sources.character.egg.{{rare}}

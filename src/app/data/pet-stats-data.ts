@@ -1,4 +1,5 @@
 import { PetStats } from '../types/pet-stats.type';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 export const defaultPetStats: PetStats = {
   rare: null,
@@ -21,12 +22,21 @@ export const defaultPetStats: PetStats = {
 
 export class PetStatsService {
   private static readonly STORAGE_KEY = 'achick_pet_stats';
+  private static petStatsSubject = new BehaviorSubject<PetStats>(PetStatsService.loadPetStatsFromStorage());
 
-  static loadPetStats(): PetStats {
+  private static loadPetStatsFromStorage(): PetStats {
     const saved = localStorage.getItem(this.STORAGE_KEY);
     if (saved) {
       try {
-        return { ...defaultPetStats, ...JSON.parse(saved) };
+        const parsedStats = JSON.parse(saved);
+        // 只填補缺失的屬性，不覆蓋已存在的值
+        const mergedStats: PetStats = { ...defaultPetStats };
+        Object.keys(parsedStats).forEach(key => {
+          if (key in mergedStats) {
+            (mergedStats as any)[key] = parsedStats[key];
+          }
+        });
+        return mergedStats;
       } catch (error) {
         console.error('Failed to parse pet stats:', error);
       }
@@ -34,16 +44,26 @@ export class PetStatsService {
     return { ...defaultPetStats };
   }
 
+  static loadPetStats(): PetStats {
+    return this.petStatsSubject.value;
+  }
+
+  static getPetStats$(): Observable<PetStats> {
+    return this.petStatsSubject.asObservable();
+  }
+
   static savePetStats(stats: PetStats): void {
     try {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(stats));
+      this.petStatsSubject.next(stats); // 通知所有訂閱者
     } catch (error) {
       console.error('Failed to save pet stats:', error);
     }
   }
 
-  static updatePetStats(updates: Partial<PetStats>, currentStats: PetStats): PetStats {
-    const updatedStats = { ...currentStats, ...updates };
+  static updatePetStats(updates: Partial<PetStats>, currentStats?: PetStats): PetStats {
+    const current = currentStats || this.petStatsSubject.value;
+    const updatedStats = { ...current, ...updates };
     this.savePetStats(updatedStats);
     return updatedStats;
   }

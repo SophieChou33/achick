@@ -41,11 +41,10 @@ import { CoinsService } from '../../../services/coins.service';
       top: 0;
       left: 0;
       width: 100%;
-      height: 70px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 20px;
+      padding: 5px 20px 0 20px;
       z-index: 1000;
       box-sizing: border-box;
     }

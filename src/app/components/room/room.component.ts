@@ -43,7 +43,7 @@ import { sources } from '../../sources';
       overflow-y: hidden;
       scrollbar-width: none; /* Firefox */
       -ms-overflow-style: none; /* Internet Explorer 10+ */
-      scroll-behavior: smooth;
+      scroll-behavior: auto; /* 改為 auto，避免拖動時的過渡動畫 */
     }
 
     .room-background {
@@ -143,15 +143,8 @@ export class RoomComponent implements OnInit {
     // 計算居中位置：容器寬度減去可視寬度，再除以2
     const centerPosition = Math.max(0, (containerWidth - wrapperWidth) / 2);
 
-    // 立即設置滾動位置到居中（無動畫）
-    const originalScrollBehavior = roomWrapper.style.scrollBehavior;
-    roomWrapper.style.scrollBehavior = 'auto';
+    // 直接設置滾動位置到居中（無需切換行為，因為已經是 auto）
     roomWrapper.scrollLeft = centerPosition;
-
-    // 恢復原始滾動行為
-    setTimeout(() => {
-      roomWrapper.style.scrollBehavior = originalScrollBehavior;
-    }, 0);
   }
 
   /**
@@ -185,8 +178,12 @@ export class RoomComponent implements OnInit {
     if (!this.isDragging) return;
 
     const clientX = event instanceof MouseEvent ? event.clientX : event.touches[0].clientX;
-    const walk = (this.startX - clientX) * 1.5; // 調整移動速度
-    this.roomWrapper.nativeElement.scrollLeft = this.scrollLeft + walk;
+    const walk = (this.startX - clientX) * 1; // 改為 1:1 移動比例，更直觀
+    const newScrollLeft = this.scrollLeft + walk;
+
+    // 確保滾動位置在有效範圍內
+    const maxScrollLeft = this.roomWrapper.nativeElement.scrollWidth - this.roomWrapper.nativeElement.clientWidth;
+    this.roomWrapper.nativeElement.scrollLeft = Math.max(0, Math.min(newScrollLeft, maxScrollLeft));
 
     event.preventDefault();
     event.stopPropagation();

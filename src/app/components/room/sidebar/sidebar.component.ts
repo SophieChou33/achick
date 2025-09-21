@@ -13,7 +13,7 @@ import { sources } from '../../../sources';
           <img [src]="lampIcon" alt="電燈" class="sidebar-icon" />
         </button>
         <button class="sidebar-btn" (click)="sleep()" [title]="'睡眠'">
-          <div class="sleep-icon">💤</div>
+          <img [src]="sleepIcon" alt="睡眠" class="sidebar-icon" />
         </button>
         <button class="sidebar-btn" (click)="feed()" [title]="'餵食'">
           <img [src]="feedIcon" alt="餵食" class="sidebar-icon" />
@@ -61,14 +61,11 @@ import { sources } from '../../../sources';
       height: 40px;
     }
 
-    .sleep-icon {
-      font-size: 32px;
-    }
-
   `]
 })
 export class SidebarComponent {
   lampIcon = sources.otherIcons.lamp;
+  sleepIcon = sources.otherIcons.sleep;
   feedIcon = sources.otherIcons.feed;
 
   toggleLight() {
