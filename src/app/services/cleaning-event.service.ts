@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { DirtyTriggerService } from './dirty-trigger.service';
 import { PetStatsService } from '../data/pet-stats-data';
+import { UserDataService } from '../data/user-data';
 import { ToastrService } from '../components/shared/toastr/toastr.component';
 
 @Injectable({
@@ -11,6 +12,43 @@ export class CleaningEventService {
   constructor(
     private dirtyTriggerService: DirtyTriggerService
   ) {}
+
+  /**
+   * 判斷是否給予清潔事件獎勵金幣
+   */
+  private getCleaningCoin(): void {
+    const shouldGetCoins: boolean = Math.random() < 0.2; // 20% 機率為 true
+    let getCoinsCount: number = 0;
+
+    const currentPetStats = PetStatsService.loadPetStats();
+
+    if (currentPetStats.lifeCycle === 'CHILD') {
+      getCoinsCount = 20;
+    } else if (currentPetStats.lifeCycle === 'EVOLUTION') {
+      getCoinsCount = 30;
+    }
+
+    if (shouldGetCoins && getCoinsCount > 0) {
+      const currentUserData = UserDataService.loadUserData();
+      UserDataService.addCoins(getCoinsCount, currentUserData);
+    }
+  }
+
+  /**
+   * 處理點擊畫面上的髒污圖片時的事件
+   */
+  public cleanEvent(dirtyNo: number): void {
+    const targetDirtyObject = this.dirtyTriggerService.dirtyObjects.find(
+      dirty => dirty.dirtyNo === dirtyNo
+    );
+
+    if (!targetDirtyObject) {
+      return;
+    }
+
+    this.getCleaningCoin();
+    this.dirtyTriggerService.removeDirtyObject(dirtyNo);
+  }
 
   /**
    * 清理指定的髒污物件

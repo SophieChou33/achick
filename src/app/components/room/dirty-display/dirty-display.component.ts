@@ -112,7 +112,7 @@ export class DirtyDisplayComponent implements OnInit, OnDestroy {
   }
 
   onDirtyClick(dirtyNo: number): void {
-    this.cleaningEventService.cleanDirtyObject(dirtyNo);
+    this.cleaningEventService.cleanEvent(dirtyNo);
     this.updateDirtyDisplay();
   }
 }
