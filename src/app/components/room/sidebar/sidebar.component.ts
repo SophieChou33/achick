@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { sources } from '../../../sources';
 import { LightService } from '../../../services/light.service';
@@ -66,6 +66,8 @@ import { SleepService } from '../../../services/sleep.service';
   `]
 })
 export class SidebarComponent {
+  @Output() openInventory = new EventEmitter<void>();
+
   lampIcon = sources.otherIcons.lamp;
   sleepIcon = sources.otherIcons.sleep;
   feedIcon = sources.otherIcons.feed;
@@ -84,7 +86,6 @@ export class SidebarComponent {
   }
 
   feed() {
-    console.log('Feed function...');
-    // TODO: Implement feeding functionality
+    this.openInventory.emit();
   }
 }

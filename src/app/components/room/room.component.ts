@@ -9,6 +9,7 @@ import { CharacterComponent } from './character/character.component';
 import { BedComponent } from './bed/bed.component';
 import { ToastrComponent } from '../shared/toastr/toastr.component';
 import { DirtyDisplayComponent } from './dirty-display/dirty-display.component';
+import { InventoryModalComponent } from './inventory-modal/inventory-modal.component';
 import { sources } from '../../sources';
 import { LightService } from '../../services/light.service';
 
@@ -24,7 +25,8 @@ import { LightService } from '../../services/light.service';
     CharacterComponent,
     BedComponent,
     ToastrComponent,
-    DirtyDisplayComponent
+    DirtyDisplayComponent,
+    InventoryModalComponent
   ],
   template: `
     <div class="room-wrapper" #roomWrapper>
@@ -38,9 +40,17 @@ import { LightService } from '../../services/light.service';
         <app-dirty-display></app-dirty-display>
       </div>
       <app-header></app-header>
-      <app-sidebar></app-sidebar>
+      <app-sidebar (openInventory)="openInventoryModal()"></app-sidebar>
       <app-status-bar></app-status-bar>
       <app-toastr></app-toastr>
+
+      <!-- 背包彈窗 -->
+      <app-inventory-modal
+        #inventoryModal
+        (close)="onInventoryModalClose()"
+        (openShopModal)="openShopModal()"
+        (itemUsed)="onItemUsed($event)">
+      </app-inventory-modal>
     </div>
   `,
   styles: [`
@@ -106,6 +116,7 @@ import { LightService } from '../../services/light.service';
 })
 export class RoomComponent implements OnInit, OnDestroy {
   @ViewChild('roomWrapper', { static: true }) roomWrapper!: ElementRef<HTMLDivElement>;
+  @ViewChild('inventoryModal') inventoryModal!: InventoryModalComponent;
 
   backgroundImageSrc = sources.scene.roomDayLightOn;
 
@@ -248,5 +259,36 @@ export class RoomComponent implements OnInit, OnDestroy {
       // 若 LightService 的 isLightOn = 0 且 isDay = 0
       this.backgroundImageSrc = sources.scene.roomNightLightOff;
     }
+  }
+
+  /**
+   * 打開背包彈窗
+   */
+  openInventoryModal() {
+    this.inventoryModal.show('food');
+  }
+
+  /**
+   * 背包彈窗關閉事件
+   */
+  onInventoryModalClose() {
+    // 彈窗關閉時不做任何事
+  }
+
+  /**
+   * 打開商店彈窗
+   */
+  openShopModal() {
+    // TODO: 實現商店彈窗
+    console.log('Open shop modal');
+    alert('商店功能尚未實現');
+  }
+
+  /**
+   * 物品使用事件
+   */
+  onItemUsed(event: { itemName: string; effects: string[] }) {
+    console.log(`Used item: ${event.itemName}`, event.effects);
+    // 物品使用後，可能需要更新角色顯示等
   }
 }
