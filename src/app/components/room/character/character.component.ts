@@ -13,6 +13,7 @@ import { CoinAnimationComponent } from '../coin-animation/coin-animation.compone
 import { TouchEventService } from '../../../services/touch-event.service';
 import { LifecycleService } from '../../../services/lifecycle.service';
 import { SleepService } from '../../../services/sleep.service';
+import { StateDataService } from '../../../data/state-data';
 
 @Component({
   selector: 'app-character',
@@ -31,7 +32,7 @@ import { SleepService } from '../../../services/sleep.service';
     </div>
 
     <!-- 角色顯示區域 -->
-    <div class="character-area-wrapper" *ngIf="isCharacterVisible" (click)="onCharacterClick()">
+    <div class="character-area-wrapper" *ngIf="isCharacterVisible && !isSleeping" (click)="onCharacterClick()">
       <div class="character-area">
         <div class="character-shadow"></div>
         <div class="character-container">
@@ -181,6 +182,7 @@ export class CharacterComponent implements OnInit, OnDestroy {
   isCharacterVisible = false;
   showBirthButton = false;
   showNamingModal = false;
+  isSleeping = false;
 
   private petStats: PetStats;
   private petStatsSubscription?: Subscription;
@@ -195,14 +197,21 @@ export class CharacterComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    // 設定初始圖片
+    // 設定初始圖片和狀態
     this.setCharacterImage();
+    this.updateSleepingState();
 
     // 訂閱角色資料變化
     this.petStatsSubscription = PetStatsService.getPetStats$().subscribe(petStats => {
       this.petStats = petStats;
       this.setCharacterImage();
+      this.updateSleepingState();
     });
+
+    // 每秒檢查睡眠狀態變化
+    setInterval(() => {
+      this.updateSleepingState();
+    }, 1000);
   }
 
   ngOnDestroy() {
@@ -444,5 +453,13 @@ export class CharacterComponent implements OnInit, OnDestroy {
       case 'SUPER_SPECIAL': return 80;
       default: return 0;
     }
+  }
+
+  /**
+   * 更新睡眠狀態
+   */
+  private updateSleepingState(): void {
+    const currentStateData = StateDataService.loadStateData();
+    this.isSleeping = currentStateData.isSleeping.isActive === 1;
   }
 }

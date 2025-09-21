@@ -12,6 +12,11 @@ import { StateDataService } from '../../../data/state-data';
   template: `
     <div class="bed-area" (click)="onBedClick()">
       <img [src]="bedImage" alt="Bed" class="bed-image" />
+
+      <!-- 睡眠狀態指示器 -->
+      <div class="sleep-status-indicator" *ngIf="isSleeping">
+        <img [src]="sleepIcon" alt="Sleeping" class="sleep-icon" />
+      </div>
     </div>
   `,
   styles: [`
@@ -31,10 +36,37 @@ import { StateDataService } from '../../../data/state-data';
       object-fit: contain;
       transition: all 0.3s ease;
     }
+
+    .sleep-status-indicator {
+      position: absolute;
+      right: -40px;
+      top: -40px;
+      z-index: 650;
+      animation: sleepFloat 2s ease-in-out infinite;
+    }
+
+    .sleep-icon {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+    }
+
+    @keyframes sleepFloat {
+      0%, 100% {
+        transform: translateY(0px);
+        opacity: 1;
+      }
+      50% {
+        transform: translateY(-10px);
+        opacity: 0.6;
+      }
+    }
   `]
 })
 export class BedComponent implements OnInit, OnDestroy {
   bedImage = sources.bed.bedEmptyLight;
+  sleepIcon = sources.otherIcons.isSleeping;
+  isSleeping = false;
   private stateSubscription?: Subscription;
 
   constructor(private lightService: LightService) {}
@@ -67,6 +99,9 @@ export class BedComponent implements OnInit, OnDestroy {
     const currentStateData = StateDataService.loadStateData();
     const isLightOn = this.lightService.isLightOn;
     const isSleeping = currentStateData.isSleeping.isActive;
+
+    // 更新睡眠狀態指示器顯示
+    this.isSleeping = isSleeping === 1;
 
     // 根據光線和睡眠狀態決定床圖片
     if (isLightOn === 1 && isSleeping === 1) {
