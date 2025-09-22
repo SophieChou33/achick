@@ -16,6 +16,8 @@ export const sources = {
     },
     child: {
       child: 'assets/images/character/child-normal.png',
+      childAngry: 'assets/images/character/child-angry.png',
+      childHappy: 'assets/images/character/child-happy.png',
     },
     evolution: {
       mud: 'assets/images/character/evolution-mud.png',
