@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { PetStatsService } from '../data/pet-stats-data';
 import { UserDataService } from '../data/user-data';
 import { ToastrService } from '../components/shared/toastr/toastr.component';
+import { CustomTimeService } from './custom-time.service';
 import { LifecycleService } from './lifecycle.service';
 
 @Injectable({
@@ -14,7 +15,10 @@ export class LeavingService {
   private clickTimes: number = 0;
   private resetInterval?: number;
 
-  constructor(private lifecycleService: LifecycleService) {
+  constructor(
+    private lifecycleService: LifecycleService,
+    private customTimeService: CustomTimeService
+  ) {
     this.startResetTimer();
   }
 
@@ -140,7 +144,7 @@ export class LeavingService {
    * 獲取當前時間字串 (yyyy/mm/dd HH:mm:ss)
    */
   private getCurrentTimeString(): string {
-    return UserDataService.formatDateTime(new Date());
+    return this.customTimeService.formatTime();
   }
 
   /**

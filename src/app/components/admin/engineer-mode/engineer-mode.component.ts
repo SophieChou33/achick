@@ -15,6 +15,7 @@ import { LowLikabilityEventService } from '../../../services/low-likability-even
 import { LightService } from '../../../services/light.service';
 import { SleepService } from '../../../services/sleep.service';
 import { TouchEventService } from '../../../services/touch-event.service';
+import { LastCheckTimeManagerService } from '../../../services/last-check-time-manager.service';
 import { PetStats } from '../../../types/pet-stats.type';
 import { DirtyObject } from '../../../types/dirty-object.type';
 
@@ -73,6 +74,14 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                 <div class="info-item">
                   <label>電子雞稀有度:</label>
                   <span>{{ petStats.rare || '未設定' }}</span>
+                </div>
+                <div class="info-item">
+                  <label>是否離家出走:</label>
+                  <span>{{ petStats.isLeaving ? '是' : '否' }}</span>
+                </div>
+                <div class="info-item">
+                  <label>生命週期:</label>
+                  <span>{{ petStats.lifeCycle || '未設定' }}</span>
                 </div>
               </div>
             </div>
@@ -164,6 +173,7 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                   <h5>髒汙控制</h5>
                   <div class="dirty-control">
                     <button class="btn btn-secondary" (click)="addDirtyObject()">產生髒汙</button>
+                    <button class="btn btn-info" (click)="forceDirtyGeneration()">強制產生髒汙（跳過時間限制）</button>
                     <button class="btn btn-secondary" (click)="clearAllDirty()">清除所有髒汙</button>
                     <p>當前髒汙數量: {{ dirtyObjects.length }}</p>
                   </div>
@@ -179,6 +189,15 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                 </div>
 
                 <div class="control-section">
+                  <h5>上次檢查時間管理</h5>
+                  <div class="time-control">
+                    <button class="btn btn-info" (click)="presetAllLastCheckTimes()">手動預設上次檢查時間</button>
+                    <button class="btn btn-warning" (click)="resetAllLastPunishmentTimes()">手動預設上次懲罰時間</button>
+                    <button class="btn btn-secondary" (click)="showLastCheckTimesStatus()">顯示上次檢查時間狀態</button>
+                  </div>
+                </div>
+
+                <div class="control-section">
                   <h5>電子雞狀態控制</h5>
                   <div class="pet-control">
                     <button class="btn btn-warning" (click)="killPet()">使電子雞死亡</button>
@@ -190,6 +209,22 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 檢查時間狀態彈窗 -->
+    <div class="status-modal" [class.show]="showStatusModal" (click)="closeStatusModal()">
+      <div class="status-dialog" (click)="$event.stopPropagation()">
+        <div class="status-header">
+          <h4>上次檢查時間狀態</h4>
+          <button type="button" class="close-btn" (click)="closeStatusModal()">×</button>
+        </div>
+        <div class="status-body">
+          <div class="status-item" *ngFor="let item of statusItems">
+            <div class="status-label">{{ item.label }}:</div>
+            <div class="status-value">{{ item.value || 'null' }}</div>
           </div>
         </div>
       </div>
@@ -500,7 +535,7 @@ import { DirtyObject } from '../../../types/dirty-object.type';
       color: #495057;
     }
 
-    .coin-control, .dirty-control, .pet-control, .limit-control {
+    .coin-control, .dirty-control, .pet-control, .limit-control, .time-control {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
@@ -512,6 +547,93 @@ import { DirtyObject } from '../../../types/dirty-object.type';
       border: 1px solid #ddd;
       border-radius: 4px;
       width: 120px;
+    }
+
+    /* 狀態彈窗樣式 */
+    .status-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 3000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .status-modal.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .status-dialog {
+      background: white;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+    }
+
+    .status-modal.show .status-dialog {
+      transform: scale(1);
+    }
+
+    .status-header {
+      padding: 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8f9fa;
+    }
+
+    .status-header h4 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .status-body {
+      padding: 20px;
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .status-item:last-child {
+      border-bottom: none;
+    }
+
+    .status-label {
+      font-weight: 600;
+      color: #333;
+      flex: 1;
+    }
+
+    .status-value {
+      font-family: monospace;
+      color: #666;
+      background: #f8f9fa;
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid #e9ecef;
     }
   `]
 })
@@ -537,6 +659,9 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
   coinsToAdd = 0;
   dirtyObjects: DirtyObject[] = [];
 
+  showStatusModal = false;
+  statusItems: Array<{ label: string; value: string | null }> = [];
+
   private subscriptions: Subscription[] = [];
 
   constructor(
@@ -550,7 +675,8 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
     private lowLikabilityEventService: LowLikabilityEventService,
     private lightService: LightService,
     private sleepService: SleepService,
-    private touchEventService: TouchEventService
+    private touchEventService: TouchEventService,
+    private lastCheckTimeManagerService: LastCheckTimeManagerService
   ) {}
 
   ngOnInit() {
@@ -582,6 +708,7 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
   show() {
     this.isVisible = true;
     this.loadData();
+    this.updateDirtyDisplay();
   }
 
   onClose() {
@@ -596,6 +723,11 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
     this.isCustomTimeEnabled = this.customTimeService.isCustomTimeEnabled();
     this.updateCustomTimeString();
     this.coinsToAdd = this.coinsService.getCoins();
+    this.updateDirtyDisplay();
+  }
+
+  private updateDirtyDisplay() {
+    this.dirtyObjects = [...this.dirtyTriggerService.dirtyObjects];
   }
 
   private loadEditableStats() {
@@ -655,6 +787,8 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
       case 'dirty':
         // 手動觸發髒汙產生邏輯
         (this.dirtyTriggerService as any).addDirtyObject?.();
+        // 更新顯示
+        this.updateDirtyDisplay();
         break;
       case 'dirtyPunish':
         // 手動觸發髒汙懲罰邏輯
@@ -714,18 +848,108 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
   }
 
   addDirtyObject() {
+    // 檢查是否已達到最大髒污數量限制
+    if (this.dirtyTriggerService.dirtyObjects.length >= 3) {
+      console.log('已達到最大髒污數量限制(3個)');
+      return;
+    }
+
+    // 使用DirtyTriggerService的私有方法邏輯來獲取正確的dirtyNo
+    const getNextDirtyNo = (): number => {
+      const maxDirtyCounts = 3;
+      const allDirtyNoArray: number[] = [];
+      for (let i = 1; i <= maxDirtyCounts; i++) {
+        allDirtyNoArray.push(i);
+      }
+
+      for (const num of allDirtyNoArray) {
+        const isUsed = this.dirtyTriggerService.dirtyObjects.some(dirty => dirty.dirtyNo === num);
+        if (!isUsed) {
+          return num;
+        }
+      }
+      return 1; // 備用值
+    };
+
     const currentTime = this.customTimeService.formatTime();
     const newDirty: DirtyObject = {
-      dirtyNo: Math.floor(Math.random() * 5) + 1, // 1-5 隨機髒汙編號
-      dirtyTime: currentTime
+      dirtyNo: getNextDirtyNo(),
+      dirtyTime: currentTime,
+      lastPunishTime: currentTime
     };
+
     this.dirtyTriggerService.dirtyObjects.push(newDirty);
-    this.dirtyObjects = this.dirtyTriggerService.dirtyObjects;
+
+    // 觸發儲存髒污資料
+    this.dirtyTriggerService.saveDirtyData();
+
+    // 更新顯示
+    this.updateDirtyDisplay();
+    console.log(`新增髒污 ${newDirty.dirtyNo}，目前總數: ${this.dirtyObjects.length}`);
   }
 
   clearAllDirty() {
-    this.dirtyTriggerService.dirtyObjects = [];
-    this.dirtyObjects = [];
+    // 使用服務的公開方法清除所有髒污並設定時間
+    this.dirtyTriggerService.clearAllDirtyObjects();
+
+    // 更新顯示
+    this.updateDirtyDisplay();
+  }
+
+  forceDirtyGeneration() {
+    const currentPetStats = PetStatsService.loadPetStats();
+
+    // 檢查基本條件
+    if (currentPetStats.rare === null) {
+      console.log('無法產生髒污：電子雞稀有度為 null');
+      return;
+    }
+
+    if (currentPetStats.timeStopping === true) {
+      console.log('無法產生髒污：電子雞時間已停止');
+      return;
+    }
+
+    if (this.dirtyTriggerService.dirtyObjects.length >= 3) {
+      console.log('無法產生髒污：已達到最大髒污數量限制(3個)');
+      return;
+    }
+
+    // 強制產生髒污，跳過時間限制
+    const getNextDirtyNo = (): number => {
+      const maxDirtyCounts = 3;
+      const allDirtyNoArray: number[] = [];
+      for (let i = 1; i <= maxDirtyCounts; i++) {
+        allDirtyNoArray.push(i);
+      }
+
+      for (const num of allDirtyNoArray) {
+        const isUsed = this.dirtyTriggerService.dirtyObjects.some(dirty => dirty.dirtyNo === num);
+        if (!isUsed) {
+          return num;
+        }
+      }
+      return 1;
+    };
+
+    const currentTime = this.customTimeService.formatTime();
+    const newDirty: DirtyObject = {
+      dirtyNo: getNextDirtyNo(),
+      dirtyTime: currentTime,
+      lastPunishTime: currentTime
+    };
+
+    this.dirtyTriggerService.dirtyObjects.push(newDirty);
+
+    // 設定 lastAddDirtyTime 為當前時間
+    (this.dirtyTriggerService as any).lastAddDirtyTime = currentTime;
+
+    // 觸發儲存髒污資料
+    this.dirtyTriggerService.saveDirtyData();
+
+    // 更新顯示
+    this.updateDirtyDisplay();
+    console.log(`強制產生髒污 ${newDirty.dirtyNo}，目前總數: ${this.dirtyObjects.length}`);
   }
 
   killPet() {
@@ -792,6 +1016,49 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
   resetClickLimit() {
     this.leavingService.resetClickLimit();
     console.log('已重置點擊次數限制');
+  }
+
+  /**
+   * 手動預設上次檢查時間
+   */
+  presetAllLastCheckTimes() {
+    this.lastCheckTimeManagerService.presetAllLastCheckTimes();
+    console.log('已手動預設所有服務的上次檢查時間');
+  }
+
+  /**
+   * 手動重置上次懲罰時間
+   */
+  resetAllLastPunishmentTimes() {
+    this.lastCheckTimeManagerService.resetAllLastPunishmentTimes();
+    console.log('已手動重置所有上次懲罰時間');
+  }
+
+  /**
+   * 顯示上次檢查時間狀態
+   */
+  showLastCheckTimesStatus() {
+    const status = this.lastCheckTimeManagerService.getAllLastCheckTimesStatus();
+
+    // 轉換為陣列格式供模板使用
+    this.statusItems = Object.keys(status).map(key => ({
+      label: status[key].label,
+      value: status[key].value
+    }));
+
+    // 顯示彈窗
+    this.showStatusModal = true;
+
+    // 同時在console中顯示，方便開發除錯
+    console.log('所有服務的上次檢查時間狀態：', status);
+  }
+
+  /**
+   * 關閉狀態彈窗
+   */
+  closeStatusModal() {
+    this.showStatusModal = false;
+    this.statusItems = [];
   }
 
 }

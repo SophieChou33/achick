@@ -33,7 +33,7 @@ import { DirtyObject } from '../../../types/dirty-object.type';
       width: 100%;
       height: 100%;
       pointer-events: none;
-      z-index: 500;
+      z-index: 850;
     }
 
     .dirty-item {
@@ -48,25 +48,25 @@ import { DirtyObject } from '../../../types/dirty-object.type';
     }
 
     .dirty-image {
-      width: 50px;
-      height: 50px;
+      width: 100px;
+      height: 100px;
       object-fit: contain;
       user-select: none;
     }
 
     .dirty-item-1 {
-      top: 60%;
-      left: 20%;
+      top: 80px;
+      left: 50px;
     }
 
     .dirty-item-2 {
-      top: 70%;
-      left: 60%;
+      top: 70dvh;
+      left: 100px;
     }
 
     .dirty-item-3 {
-      top: 50%;
-      left: 80%;
+      top: 75dvh;
+      right: 350px;
     }
   `]
 })

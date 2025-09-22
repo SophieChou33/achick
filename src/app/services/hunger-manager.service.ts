@@ -4,6 +4,7 @@ import { PetStats } from '../types/pet-stats.type';
 import { StateDataService } from '../data/state-data';
 import { StateData } from '../types/state-data.type';
 import { ToastrService } from '../components/shared/toastr/toastr.component';
+import { CustomTimeService } from './custom-time.service';
 
 @Injectable({
   providedIn: 'root'
@@ -14,7 +15,7 @@ export class HungerManagerService {
   private hungerDecreaseInterval: any;
   private hungerCheckInterval: any;
 
-  constructor() {
+  constructor(private customTimeService: CustomTimeService) {
     this.startHungerSystem();
   }
 
@@ -31,14 +32,7 @@ export class HungerManagerService {
   }
 
   private getCurrentTimeString(): string {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+    return this.customTimeService.formatTime();
   }
 
   private parseTimeString(timeStr: string): Date {

@@ -3,6 +3,7 @@ import { PetStatsService } from '../data/pet-stats-data';
 import { StateDataService } from '../data/state-data';
 import { UserDataService } from '../data/user-data';
 import { ToastrService } from '../components/shared/toastr/toastr.component';
+import { CustomTimeService } from './custom-time.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +12,7 @@ export class LowLikabilityEventService {
   private lastPunishTime: string | null = null;
   private punishingInterval?: number;
 
-  constructor() {
+  constructor(private customTimeService: CustomTimeService) {
     this.startTimer();
   }
 
@@ -110,7 +111,7 @@ export class LowLikabilityEventService {
    * 獲取當前時間字串 (yyyy/mm/dd HH:mm:ss)
    */
   private getCurrentTimeString(): string {
-    return UserDataService.formatDateTime(new Date());
+    return this.customTimeService.formatTime();
   }
 
   /**

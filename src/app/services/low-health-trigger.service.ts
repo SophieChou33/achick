@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { PetStatsService } from '../data/pet-stats-data';
 import { StateDataService } from '../data/state-data';
 import { UserDataService } from '../data/user-data';
+import { CustomTimeService } from './custom-time.service';
 
 @Injectable({
   providedIn: 'root'
@@ -14,7 +15,7 @@ export class LowHealthTriggerService {
   private healthCheckInterval?: number;
   private diseaseEffectsInterval?: number;
 
-  constructor() {
+  constructor(private customTimeService: CustomTimeService) {
     this.startHealthMonitoring();
   }
 
@@ -74,7 +75,7 @@ export class LowHealthTriggerService {
    * 私有函數：判斷是否執行健康度低導致的生命值扣除
    */
   private checkLifeDamage(): void {
-    const currentTime = UserDataService.formatDateTime(new Date());
+    const currentTime = this.customTimeService.formatTime();
     const currentPetStats = PetStatsService.loadPetStats();
 
     // 若 lastLifeDamageTime 為 null，則將實際當前時間賦值給 lastLifeDamageTime，並且不往下執行邏輯
@@ -85,7 +86,7 @@ export class LowHealthTriggerService {
 
     const currentWellness = currentPetStats.currentWellness;
     const lastDamageTime = new Date(this.lastLifeDamageTime);
-    const now = new Date();
+    const now = this.customTimeService.getCurrentTime();
     const timeDiffMinutes = Math.floor((now.getTime() - lastDamageTime.getTime()) / (1000 * 60));
 
     let shouldDamage = false;
@@ -141,7 +142,7 @@ export class LowHealthTriggerService {
    * 私有函數：判斷是否觸發疾病抽籤事件
    */
   private checkDiseaseCheck(): void {
-    const currentTime = UserDataService.formatDateTime(new Date());
+    const currentTime = this.customTimeService.formatTime();
     const currentPetStats = PetStatsService.loadPetStats();
 
     // 若 lastDiseaseCheckTime 為 null，則將實際當前時間賦值給 lastDiseaseCheckTime，並且不往下執行邏輯
@@ -152,7 +153,7 @@ export class LowHealthTriggerService {
 
     const currentWellness = currentPetStats.currentWellness;
     const lastCheckTime = new Date(this.lastDiseaseCheckTime);
-    const now = new Date();
+    const now = this.customTimeService.getCurrentTime();
     const timeDiffMinutes = Math.floor((now.getTime() - lastCheckTime.getTime()) / (1000 * 60));
 
     let shouldCheck = false;
@@ -243,7 +244,7 @@ export class LowHealthTriggerService {
       return;
     }
 
-    const currentTime = UserDataService.formatDateTime(new Date());
+    const currentTime = this.customTimeService.formatTime();
 
     // 若 lastDiseaseEffectTime1hour 為 null，則將實際當前時間賦值給 lastDiseaseEffectTime1hour，並且不往下執行邏輯
     if (LowHealthTriggerService.lastDiseaseEffectTime1hour === null) {
@@ -252,7 +253,7 @@ export class LowHealthTriggerService {
     }
 
     const lastEffectTime = new Date(LowHealthTriggerService.lastDiseaseEffectTime1hour);
-    const now = new Date();
+    const now = this.customTimeService.getCurrentTime();
     const timeDiffHours = Math.floor((now.getTime() - lastEffectTime.getTime()) / (1000 * 60 * 60));
 
     // 若實際當前時間距離 lastDiseaseEffectTime1hour 已經過 1 小時

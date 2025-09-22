@@ -18,11 +18,46 @@ export class TouchEventService {
   private lastTimeReset: string | null = null;
   private touchedTimes: number = 0;
   private resetInterval?: number;
+  private readonly TOUCH_DATA_KEY = 'achick_touch_data';
 
   private static friendshipIncreaseSubject = new Subject<number>();
 
   constructor(private whiteTransitionService: WhiteTransitionService) {
+    this.loadTouchData();
     this.startResetTimer();
+  }
+
+  /**
+   * 載入撫摸資料
+   */
+  private loadTouchData(): void {
+    try {
+      const touchDataString = localStorage.getItem(this.TOUCH_DATA_KEY);
+      if (touchDataString) {
+        const touchData = JSON.parse(touchDataString);
+        this.touchedTimes = touchData.touchedTimes || 0;
+        this.lastTimeReset = touchData.lastTimeReset || null;
+      }
+    } catch (error) {
+      console.error('載入撫摸資料時發生錯誤:', error);
+      this.touchedTimes = 0;
+      this.lastTimeReset = null;
+    }
+  }
+
+  /**
+   * 保存撫摸資料
+   */
+  private saveTouchData(): void {
+    try {
+      const touchData = {
+        touchedTimes: this.touchedTimes,
+        lastTimeReset: this.lastTimeReset
+      };
+      localStorage.setItem(this.TOUCH_DATA_KEY, JSON.stringify(touchData));
+    } catch (error) {
+      console.error('保存撫摸資料時發生錯誤:', error);
+    }
   }
 
   /**
@@ -92,6 +127,7 @@ export class TouchEventService {
 
     // 7. touchedTimes +1 後重新賦值給 touchedTimes
     this.touchedTimes += 1;
+    this.saveTouchData();
 
     // 8. 兩秒後，本service的isCanTouch賦值為true
     setTimeout(() => {
@@ -115,6 +151,7 @@ export class TouchEventService {
     if (currentPetStats.timeStopping === true) {
       if (this.touchedTimes > 0) {
         this.touchedTimes = 0;
+        this.saveTouchData();
       }
       return;
     }
@@ -127,6 +164,7 @@ export class TouchEventService {
     // 4. 若 lastTimeReset 為 null，則將實際當前時間賦值給 lastTimeReset，並且不往下執行邏輯
     if (this.lastTimeReset === null) {
       this.lastTimeReset = this.getCurrentTimeString();
+      this.saveTouchData();
       return;
     }
 
@@ -139,6 +177,7 @@ export class TouchEventService {
     if (timeDiff >= oneHourInMs) {
       this.touchedTimes = 0;
       this.lastTimeReset = null;
+      this.saveTouchData();
     }
   }
 
@@ -317,6 +356,7 @@ export class TouchEventService {
     this.touchedTimes = 0;
     this.isCanTouch = true;
     this.lastTimeReset = null;
+    this.saveTouchData();
   }
 
   /**
@@ -325,6 +365,7 @@ export class TouchEventService {
   public resetTouchLimit(): void {
     this.touchedTimes = 0;
     this.isCanTouch = true;
+    this.saveTouchData();
   }
 
   /**

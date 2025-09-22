@@ -3,6 +3,7 @@ import { DirtyObject } from '../types/dirty-object.type';
 import { PetStatsService } from '../data/pet-stats-data';
 import { UserDataService } from '../data/user-data';
 import { ToastrService } from '../components/shared/toastr/toastr.component';
+import { CustomTimeService } from './custom-time.service';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +16,10 @@ export class DirtyTriggerService {
   private addDirtyInterval?: number;
   private dirtyPunishingInterval?: number;
 
-  constructor() {
+  private static readonly DIRTY_STORAGE_KEY = 'achick_dirty_data';
+
+  constructor(private customTimeService: CustomTimeService) {
+    this.loadDirtyData();
     this.startTimers();
   }
 
@@ -38,24 +42,36 @@ export class DirtyTriggerService {
    * 每30秒執行一次的私有函數：判斷是否要在 dirtyObjects 陣列新增髒污物件
    */
   private addDirtyObject(): void {
+    console.log('=== 開始髒污產生檢查 ===');
     const currentPetStats = PetStatsService.loadPetStats();
+    console.log('電子雞狀態:', {
+      rare: currentPetStats.rare,
+      timeStopping: currentPetStats.timeStopping,
+      currentDirtyCount: this.dirtyObjects.length,
+      maxDirtyCounts: this.maxDirtyCounts
+    });
 
     // 1. 當電子雞當前數值物件的 rare 為 null 時，將 lastAddDirtyTime 重置為 null，並且不往下執行邏輯
     if (currentPetStats.rare === null) {
+      console.log('髒污產生停止：電子雞稀有度為 null');
       this.lastAddDirtyTime = null;
       return;
     }
 
     // 2. 當電子雞當前數值物件的 timeStoping 為 true 時，或是 dirtyObjects.length ≥ maxDirtyCounts 時，不往下執行邏輯
     if (currentPetStats.timeStopping === true || this.dirtyObjects.length >= this.maxDirtyCounts) {
+      console.log('髒污產生停止：時間停止或已達最大髒污數量');
       return;
     }
 
     // 3. 取得實際當前時間
     const currentTime = this.getCurrentTimeString();
+    console.log('當前時間:', currentTime);
+    console.log('上次添加髒污時間:', this.lastAddDirtyTime);
 
     // 4. 若 lastAddDirtyTime 為 null，則將實際當前時間賦值給 lastAddDirtyTime，並且不往下執行邏輯
     if (this.lastAddDirtyTime === null) {
+      console.log('首次設定上次髒污時間為:', currentTime);
       this.lastAddDirtyTime = currentTime;
       return;
     }
@@ -67,15 +83,34 @@ export class DirtyTriggerService {
     const oneHourInMs = 60 * 60 * 1000; // 1小時 = 3600000毫秒
 
     if (timeDiff >= oneHourInMs) {
-      // 5.1 若已超過 1 小時，向 dirtyObjects 陣列 push 一個 DirtyObject 類型物件
-      const newDirtyNo = this.getNextDirtyNo();
-      const newDirtyObject: DirtyObject = {
-        dirtyNo: newDirtyNo,
-        dirtyTime: currentTime
-      };
+      // 5.1 計算應該產生多少個髒污物件（每小時一個）
+      const hoursElapsed = Math.floor(timeDiff / oneHourInMs);
 
-      this.dirtyObjects.push(newDirtyObject);
-      this.lastAddDirtyTime = currentTime; // 更新最後添加髒污時間
+      // 計算實際可以產生的髒污數量（不超過最大限制）
+      const availableSlots = this.maxDirtyCounts - this.dirtyObjects.length;
+      const dirtyToCreate = Math.min(hoursElapsed, availableSlots);
+
+      console.log(`時間差: ${Math.floor(timeDiff / oneHourInMs)}小時, 可產生髒污: ${dirtyToCreate}個`);
+
+      // 產生對應數量的髒污物件
+      for (let i = 0; i < dirtyToCreate; i++) {
+        const newDirtyNo = this.getNextDirtyNo();
+        const newDirtyObject: DirtyObject = {
+          dirtyNo: newDirtyNo,
+          dirtyTime: currentTime,
+          lastPunishTime: currentTime
+        };
+
+        this.dirtyObjects.push(newDirtyObject);
+      }
+
+      // 更新最後添加髒污時間
+      this.lastAddDirtyTime = currentTime;
+
+      // 儲存髒污資料
+      if (dirtyToCreate > 0) {
+        this.saveDirtyData();
+      }
     }
   }
 
@@ -107,6 +142,7 @@ export class DirtyTriggerService {
    */
   private dirtyPunishing(): void {
     const currentPetStats = PetStatsService.loadPetStats();
+    const currentTime = this.getCurrentTimeString();
 
     // 1. 當電子雞當前數值物件的 rare 為 null 時，或是當電子雞當前數值物件的 timeStoping 為 true 時，
     // 或是 dirtyObjects.length 為 0 時，不往下執行邏輯
@@ -116,39 +152,92 @@ export class DirtyTriggerService {
       return;
     }
 
-    // 2. 取得實際當前時間
-    const currentTime = this.getCurrentTimeString();
+    // 2. 使用已取得的當前時間
     const now = this.parseTimeString(currentTime);
 
-    // 3. foreach 判斷 dirtyObjects 陣列中的每個 DirtyObject 的 dirtyTime
-    this.dirtyObjects.forEach(dirtyObject => {
+    // 3. 計算總懲罰次數
+    let totalPenalties = 0;
+    let dataChanged = false;
+
+    this.dirtyObjects.forEach((dirtyObject, index) => {
       const dirtyTime = this.parseTimeString(dirtyObject.dirtyTime);
-      const timeDiff = now.getTime() - dirtyTime.getTime();
+      const timeDiffFromCreation = now.getTime() - dirtyTime.getTime();
       const twentyMinutesInMs = 20 * 60 * 1000; // 20分鐘 = 1200000毫秒
 
-      // 若實際當前時間距離該 dirtyTime 超過 20 分鐘
-      if (timeDiff >= twentyMinutesInMs) {
-        // 扣除電子雞數值
-        const updatedStats = {
-          ...currentPetStats,
-          currentWellness: Math.max(0, currentPetStats.currentWellness - 1),
-          currentFriendship: Math.max(0, currentPetStats.currentFriendship - 1)
-        };
+      // 只有當髒污存在超過20分鐘才開始懲罰
+      if (timeDiffFromCreation >= twentyMinutesInMs) {
+        // 計算從髒污產生到現在應該懲罰多少次（每20分鐘一次）
+        const totalIntervalsFromCreation = Math.floor(timeDiffFromCreation / twentyMinutesInMs);
 
-        PetStatsService.savePetStats(updatedStats);
+        // 計算已經懲罰過多少次
+        let alreadyPunished = 0;
+        if (dirtyObject.lastPunishTime) {
+          const lastPunishTime = this.parseTimeString(dirtyObject.lastPunishTime);
+          const timeDiffFromLastPunish = lastPunishTime.getTime() - dirtyTime.getTime();
+          alreadyPunished = Math.floor(timeDiffFromLastPunish / twentyMinutesInMs);
+        }
 
-        // 顯示 toastr 訊息
-        const petName = currentPetStats.name || '電子雞';
-        ToastrService.show(`${petName}因環境骯髒而身心靈受創，健康度-1，好感度-1`, 'warning');
+        // 計算需要新增的懲罰次數
+        const newPenalties = totalIntervalsFromCreation - alreadyPunished;
+
+        if (newPenalties > 0) {
+          totalPenalties += newPenalties;
+
+          // 更新最後懲罰時間
+          this.dirtyObjects[index].lastPunishTime = currentTime;
+          dataChanged = true;
+
+          console.log(`髒污 ${dirtyObject.dirtyNo}: 存在 ${Math.floor(timeDiffFromCreation / (60 * 1000))} 分鐘, 新增懲罰 ${newPenalties} 次`);
+        }
       }
     });
+
+    // 如果有懲罰，扣除電子雞數值
+    if (totalPenalties > 0) {
+      console.log('懲罰前數值:', {
+        currentWellness: currentPetStats.currentWellness,
+        currentFriendship: currentPetStats.currentFriendship,
+        totalPenalties: totalPenalties
+      });
+
+      const updatedStats = {
+        ...currentPetStats,
+        currentWellness: Math.max(0, currentPetStats.currentWellness - totalPenalties),
+        currentFriendship: Math.max(0, currentPetStats.currentFriendship - totalPenalties)
+      };
+
+      console.log('懲罰後數值:', {
+        currentWellness: updatedStats.currentWellness,
+        currentFriendship: updatedStats.currentFriendship
+      });
+
+      PetStatsService.savePetStats(updatedStats);
+
+      // 驗證是否成功儲存
+      const verifyStats = PetStatsService.loadPetStats();
+      console.log('儲存後驗證數值:', {
+        currentWellness: verifyStats.currentWellness,
+        currentFriendship: verifyStats.currentFriendship
+      });
+
+      // 顯示 toastr 訊息
+      const petName = currentPetStats.name || '電子雞';
+      ToastrService.show(`${petName}因環境骯髒而身心靈受創，健康度-${totalPenalties}，好感度-${totalPenalties}`, 'warning');
+
+      console.log(`髒污懲罰執行: 總共扣除 ${totalPenalties} 點健康度和好感度`);
+    }
+
+    // 如果有更新髒污物件的懲罰時間，儲存資料
+    if (dataChanged) {
+      this.saveDirtyData();
+    }
   }
 
   /**
    * 獲取當前時間字串 (yyyy/mm/dd HH:mm:ss)
    */
   private getCurrentTimeString(): string {
-    return UserDataService.formatDateTime(new Date());
+    return this.customTimeService.formatTime();
   }
 
   /**
@@ -182,7 +271,17 @@ export class DirtyTriggerService {
    */
   public resetDirtyState(): void {
     this.dirtyObjects = [];
-    this.lastAddDirtyTime = null;
+    this.lastAddDirtyTime = this.getCurrentTimeString(); // 設定為當前時間
+    this.saveDirtyData();
+  }
+
+  /**
+   * 清除所有髒污並設定上次添加髒污時間為當前時間
+   */
+  public clearAllDirtyObjects(): void {
+    this.dirtyObjects = [];
+    this.lastAddDirtyTime = this.getCurrentTimeString(); // 設定為當前時間
+    this.saveDirtyData();
   }
 
   /**
@@ -190,6 +289,13 @@ export class DirtyTriggerService {
    */
   public removeDirtyObject(dirtyNo: number): void {
     this.dirtyObjects = this.dirtyObjects.filter(dirty => dirty.dirtyNo !== dirtyNo);
+
+    // 如果清除所有髒污，設定上次添加髒污時間為當前時間
+    if (this.dirtyObjects.length === 0) {
+      this.lastAddDirtyTime = this.getCurrentTimeString();
+    }
+
+    this.saveDirtyData();
   }
 
   /**
@@ -204,5 +310,59 @@ export class DirtyTriggerService {
    */
   public isMaxDirty(): boolean {
     return this.dirtyObjects.length >= this.maxDirtyCounts;
+  }
+
+  /**
+   * 載入髒污資料
+   */
+  private loadDirtyData(): void {
+    try {
+      const savedData = localStorage.getItem(DirtyTriggerService.DIRTY_STORAGE_KEY);
+      if (savedData) {
+        const dirtyData = JSON.parse(savedData);
+        this.dirtyObjects = dirtyData.dirtyObjects || [];
+        this.lastAddDirtyTime = dirtyData.lastAddDirtyTime || null;
+      }
+    } catch (error) {
+      console.error('Failed to load dirty data:', error);
+      this.dirtyObjects = [];
+      this.lastAddDirtyTime = null;
+    }
+  }
+
+  /**
+   * 儲存髒污資料
+   */
+  public saveDirtyData(): void {
+    try {
+      const dirtyData = {
+        dirtyObjects: this.dirtyObjects,
+        lastAddDirtyTime: this.lastAddDirtyTime
+      };
+      localStorage.setItem(DirtyTriggerService.DIRTY_STORAGE_KEY, JSON.stringify(dirtyData));
+    } catch (error) {
+      console.error('Failed to save dirty data:', error);
+    }
+  }
+
+  /**
+   * 載入髒污資料（用於匯入功能）
+   */
+  public loadDirtyDataFromObject(data: any): void {
+    if (data && typeof data === 'object') {
+      this.dirtyObjects = data.dirtyObjects || [];
+      this.lastAddDirtyTime = data.lastAddDirtyTime || null;
+      this.saveDirtyData();
+    }
+  }
+
+  /**
+   * 匯出髒污資料（用於匯出功能）
+   */
+  public exportDirtyData(): any {
+    return {
+      dirtyObjects: this.dirtyObjects,
+      lastAddDirtyTime: this.lastAddDirtyTime
+    };
   }
 }

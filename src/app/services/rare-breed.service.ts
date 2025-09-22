@@ -4,6 +4,7 @@ import { PetStats } from '../types/pet-stats.type';
 import { PetStatsService } from '../data/pet-stats-data';
 import { UserDataService } from '../data/user-data';
 import { CustomTimeService } from './custom-time.service';
+import { LastCheckTimeManagerService } from './last-check-time-manager.service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +13,10 @@ export class RareBreedService {
   private rare: 'BAD' | 'NORMAL' | 'SPECIAL' | 'SUPER_SPECIAL' | null = null;
   private breed: string | null = null;
 
-  constructor(private customTimeService: CustomTimeService) {}
+  constructor(
+    private customTimeService: CustomTimeService,
+    private lastCheckTimeManagerService: LastCheckTimeManagerService
+  ) {}
 
   /**
    * 於電子雞出生時隨機抽取稀有度
@@ -142,6 +146,9 @@ export class RareBreedService {
 
     // 確保電子雞孵化時，工程師模式的自定義時間要重置成當前實際時間
     this.customTimeService.forceResetToRealTime();
+
+    // 初始化所有服務的上次檢查時間為孵化時間
+    this.lastCheckTimeManagerService.initializeAllLastCheckTimes();
 
     // 儲存到localStorage
     PetStatsService.savePetStats(newPetStats);

@@ -3,6 +3,7 @@ import { PetStatsService } from '../data/pet-stats-data';
 import { UserDataService } from '../data/user-data';
 import { StateDataService } from '../data/state-data';
 import { UserInventoryService } from '../data/user-inventory-data';
+import { DirtyTriggerService } from './dirty-trigger.service';
 
 export interface GameProgress {
   version: string;
@@ -11,6 +12,7 @@ export interface GameProgress {
   userData: any;
   stateData: any;
   inventory: any;
+  dirtyData: any;
 }
 
 @Injectable({
@@ -18,7 +20,7 @@ export interface GameProgress {
 })
 export class GameProgressService {
 
-  constructor() { }
+  constructor(private dirtyTriggerService: DirtyTriggerService) { }
 
   /**
    * 匯出遊戲進度（包含物件位置）
@@ -30,7 +32,8 @@ export class GameProgressService {
       petStats: PetStatsService.loadPetStats(),
       userData: UserDataService.loadUserData(),
       stateData: StateDataService.loadStateData(), // 包含角色和床的位置
-      inventory: UserInventoryService.loadUserInventory()
+      inventory: UserInventoryService.loadUserInventory(),
+      dirtyData: this.dirtyTriggerService.exportDirtyData() // 包含髒污物件狀態
     };
 
     return JSON.stringify(gameProgress, null, 2);
@@ -64,6 +67,10 @@ export class GameProgressService {
 
       if (gameProgress.inventory) {
         UserInventoryService.saveUserInventory(gameProgress.inventory);
+      }
+
+      if (gameProgress.dirtyData) {
+        this.dirtyTriggerService.loadDirtyDataFromObject(gameProgress.dirtyData);
       }
 
       return { success: true, message: '遊戲進度匯入成功' };
