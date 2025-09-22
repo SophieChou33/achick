@@ -23,7 +23,7 @@ import { StateDataService } from '../../../data/state-data';
   template: `
     <!-- 出生按鈕區域 -->
     <div class="character-area-wrapper" *ngIf="showBirthButton">
-      <div class="character-area">
+      <div class="birth-area-centered">
         <div class="birth-button-container">
           <button class="birth-button" (click)="onBirthClick()">
             點擊按鈕出生
@@ -79,14 +79,29 @@ import { StateDataService } from '../../../data/state-data';
       display: flex;
       justify-content: center;
       align-items: center;
-      animation: characterFloat 3s ease-in-out infinite;
       transition: none;
+    }
+
+    .character-area:not(.dragging) {
+      animation: characterFloat 3s ease-in-out infinite;
     }
 
     .character-area.dragging {
       animation: none;
       cursor: grabbing;
       transition: none;
+    }
+
+
+    .birth-area-centered {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 700;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     @keyframes characterFloat {
@@ -141,21 +156,24 @@ import { StateDataService } from '../../../data/state-data';
       height: 3dvh;
       background: radial-gradient(ellipse, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.5) 50%, transparent 100%);
       border-radius: 50%;
-      animation: shadowFloat 3s ease-in-out infinite;
       z-index: 600;
       filter: blur(0.8dvh);
     }
 
+    .character-area:not(.dragging) .character-shadow {
+      animation: shadowFloat 3s ease-in-out infinite;
+    }
+
     @keyframes shadowFloat {
       0%, 100% {
-        transform: translateX(-50%) translateY(0) scale(1.3);
-        opacity: 0.9;
-        filter: blur(0.5dvh);
+        transform: translateX(-50%) translateY(0) scale(1.0);
+        opacity: 0.7;
+        filter: blur(0.8dvh);
       }
       50% {
-        transform: translateX(-50%) translateY(1.5dvh) scale(0.7);
-        opacity: 0.3;
-        filter: blur(1.2dvh);
+        transform: translateX(-50%) translateY(0.8dvh) scale(0.8);
+        opacity: 0.4;
+        filter: blur(1.0dvh);
       }
     }
 
