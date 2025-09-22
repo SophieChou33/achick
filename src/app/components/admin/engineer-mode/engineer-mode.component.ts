@@ -64,6 +64,10 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                   <span>{{ petStats.currentWellness }}</span>
                 </div>
                 <div class="info-item">
+                  <label>當前飢餓度:</label>
+                  <span>{{ petStats.currentHunger }}</span>
+                </div>
+                <div class="info-item">
                   <label>飢餓速度:</label>
                   <span>{{ petStats.hungerSpeed }}</span>
                 </div>
@@ -107,6 +111,10 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                   <input type="number" [(ngModel)]="editableStats.currentWellness" min="0" max="100">
                 </div>
                 <div class="adjust-item">
+                  <label>飢餓度:</label>
+                  <input type="number" [(ngModel)]="editableStats.currentHunger" min="0" max="100">
+                </div>
+                <div class="adjust-item">
                   <label>飢餓速度:</label>
                   <input type="number" [(ngModel)]="editableStats.hungerSpeed" min="0" step="0.1">
                 </div>
@@ -118,7 +126,8 @@ import { DirtyObject } from '../../../types/dirty-object.type';
             <div class="tab-content" *ngIf="activeTab === 'timers'">
               <h4>手動觸發定時檢查器</h4>
               <div class="timer-grid">
-                <button class="btn btn-secondary" (click)="triggerTimer('hunger')">飢餓管理器</button>
+                <button class="btn btn-secondary" (click)="triggerTimer('hungerDecrease')">飢餓度減少檢查</button>
+                <button class="btn btn-secondary" (click)="triggerTimer('hungerPenalty')">飢餓度懲罰扣值檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('health')">生命值檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('lowHealth')">低生命值觸發器</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('leaving')">離家出走檢查</button>
@@ -736,6 +745,7 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
       maxHealth: this.petStats.maxHealth,
       currentFriendship: this.petStats.currentFriendship,
       currentWellness: this.petStats.currentWellness,
+      currentHunger: this.petStats.currentHunger,
       hungerSpeed: this.petStats.hungerSpeed
     };
   }
@@ -763,10 +773,13 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
     console.log(`Triggering timer: ${type}`);
 
     switch (type) {
-      case 'hunger':
-        // 手動觸發飢餓檢查（通常是私有方法，需要通過公開方法觸發）
-        (this.hungerManagerService as any).hungerDecrease?.();
-        (this.hungerManagerService as any).hungerPenalty?.();
+      case 'hungerDecrease':
+        // 手動觸發飢餓度減少檢查
+        this.hungerManagerService.manualTriggerHungerDecrease();
+        break;
+      case 'hungerPenalty':
+        // 手動觸發飢餓度懲罰扣值檢查
+        this.hungerManagerService.manualTriggerHungerPenalty();
         break;
       case 'health':
         // 手動觸發生命值檢查

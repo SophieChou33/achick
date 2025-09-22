@@ -52,65 +52,100 @@ export class HungerManagerService {
     return Math.abs(date2.getTime() - date1.getTime()) / (1000 * 60);
   }
 
-  private decreaseHunger(): void {
+  private decreaseHunger(forceExecute: boolean = false): void {
     const petStats = PetStatsService.loadPetStats();
 
     // 當電子雞當前數值物件的 rare 為 null 時，重置上次飢餓時間並返回
     if (petStats.rare === null) {
       this.lastHungerTime = null;
+      this.saveHungerTimes();
       return;
     }
 
-    // 當 timeStopping 為 true 或當前飢餓度為 0 時，不執行邏輯
-    if (petStats.timeStopping || petStats.currentHunger === 0) {
+    // 當 timeStopping 為 true 或當前飢餓度為 0 時，不執行邏輯（除非強制執行）
+    if (!forceExecute && (petStats.timeStopping || petStats.currentHunger === 0)) {
       return;
     }
 
     const currentTime = this.getCurrentTimeString();
 
-    // 若上次飢餓時間為 null，則初始化並返回
+    // 若上次飢餓時間為 null，則初始化
     if (this.lastHungerTime === null) {
       this.lastHungerTime = currentTime;
       this.saveHungerTimes();
+
+      // 如果是強制執行，執行一次扣除
+      if (forceExecute && petStats.currentHunger > 0) {
+        const newHunger = Math.max(0, petStats.currentHunger - petStats.hungerSpeed);
+        PetStatsService.updatePetStats({
+          currentHunger: newHunger
+        });
+        console.log(`強制執行飢餓度減少：扣除 ${petStats.hungerSpeed}，新飢餓度 ${newHunger}`);
+      }
       return;
     }
 
-    // 檢查是否已過一小時
+    // 檢查是否已過一小時並計算累積扣除
     const timeDiff = this.getTimeDifferenceInMinutes(this.lastHungerTime, currentTime);
-    if (timeDiff >= 60) {
-      // 更新上次飢餓時間
-      this.lastHungerTime = currentTime;
 
-      // 計算新的飢餓度
-      const newHunger = Math.max(0, petStats.currentHunger - petStats.hungerSpeed);
+    // 強制執行時，至少執行一次扣除
+    let shouldExecute = forceExecute || timeDiff >= 60;
+
+    if (shouldExecute && petStats.currentHunger > 0) {
+      let decreaseCount = 1; // 強制執行時至少執行一次
+
+      if (timeDiff >= 60) {
+        // 正常情況下計算累積扣除次數
+        decreaseCount = Math.floor(timeDiff / 60);
+      }
+
+      // 計算總扣除的飢餓度
+      const totalHungerDecrease = decreaseCount * petStats.hungerSpeed;
+      const newHunger = Math.max(0, petStats.currentHunger - totalHungerDecrease);
 
       // 更新電子雞數值
       PetStatsService.updatePetStats({
         currentHunger: newHunger
       });
 
+      // 更新上次飢餓時間
+      if (timeDiff >= 60) {
+        // 正常情況：更新為最後一次扣除的時間點
+        const lastHungerTime = this.parseTimeString(this.lastHungerTime);
+        const newLastHungerTime = new Date(lastHungerTime.getTime() + (decreaseCount * 60 * 60 * 1000));
+        this.lastHungerTime = this.formatTimeFromDate(newLastHungerTime);
+      } else {
+        // 強制執行：更新為當前時間
+        this.lastHungerTime = currentTime;
+      }
+
       // 保存時間
       this.saveHungerTimes();
+
+      const executionType = forceExecute && timeDiff < 60 ? '強制執行' : '累積減少';
+      console.log(`飢餓度${executionType}：執行 ${decreaseCount} 次扣除，每次扣除 ${petStats.hungerSpeed}，總共扣除 ${totalHungerDecrease}，新飢餓度 ${newHunger}`);
     }
   }
 
-  private checkHungerState(): void {
+  private checkHungerState(forceExecute: boolean = false): void {
     const petStats = PetStatsService.loadPetStats();
 
     // 當電子雞當前數值物件的 rare 為 null 時，重置飢餓狀態時間並返回
     if (petStats.rare === null) {
       this.hungerStateStartTime = null;
+      this.saveHungerTimes();
       return;
     }
 
     const stateData = StateDataService.loadStateData();
 
-    // 當 timeStopping 為 true 或當前飢餓度大於 35 時，取消飢餓狀態
-    if (petStats.timeStopping || petStats.currentHunger > 35) {
+    // 當 timeStopping 為 true 或當前飢餓度大於 35 時，取消飢餓狀態（除非強制執行）
+    if (!forceExecute && (petStats.timeStopping || petStats.currentHunger > 35)) {
       if (stateData.hungry.isActive === 1) {
         StateDataService.deactivateState('hungry', stateData);
       }
       this.hungerStateStartTime = null;
+      this.saveHungerTimes();
       return;
     }
 
@@ -121,57 +156,44 @@ export class HungerManagerService {
       StateDataService.activateState('hungry', stateData);
       this.hungerStateStartTime = currentTime;
       this.saveHungerTimes();
+
+      // 如果是強制執行且飢餓度在懲罰範圍內，執行一次懲罰
+      if (forceExecute && petStats.currentHunger <= 35) {
+        this.executeHungerPenalty(petStats, 1);
+      }
       return;
     }
 
     // 檢查是否已進入飢餓狀態 20 分鐘
     const timeDiff = this.getTimeDifferenceInMinutes(this.hungerStateStartTime, currentTime);
-    if (timeDiff >= 20) {
-      // 計算應該執行的懲罰次數（每20分鐘一次）
-      const punishmentCount = Math.floor(timeDiff / 20);
 
-      // 根據飢餓度閾值確定每次扣除的數值
-      let friendshipDecreasePerTime = 0;
-      let wellnessDecreasePerTime = 0;
+    // 強制執行時，至少執行一次懲罰
+    let shouldExecute = forceExecute || timeDiff >= 20;
 
-      if (petStats.currentHunger >= 16 && petStats.currentHunger <= 35) {
-        friendshipDecreasePerTime = 5;
-        wellnessDecreasePerTime = 1;
-      } else if (petStats.currentHunger >= 0 && petStats.currentHunger <= 15) {
-        friendshipDecreasePerTime = 15;
-        wellnessDecreasePerTime = 2;
+    if (shouldExecute && petStats.currentHunger <= 35) {
+      let punishmentCount = 1; // 強制執行時至少執行一次
+
+      if (timeDiff >= 20) {
+        // 正常情況下計算累積懲罰次數
+        punishmentCount = Math.floor(timeDiff / 20);
       }
 
-      if (friendshipDecreasePerTime > 0 || wellnessDecreasePerTime > 0) {
-        // 計算總扣除數值
-        const totalFriendshipDecrease = punishmentCount * friendshipDecreasePerTime;
-        const totalWellnessDecrease = punishmentCount * wellnessDecreasePerTime;
+      // 執行懲罰
+      this.executeHungerPenalty(petStats, punishmentCount);
 
-        // 計算新的數值，確保不小於 0
-        const newFriendship = Math.max(0, petStats.currentFriendship - totalFriendshipDecrease);
-        const newWellness = Math.max(0, petStats.currentWellness - totalWellnessDecrease);
-
-        // 更新電子雞數值
-        PetStatsService.updatePetStats({
-          currentFriendship: newFriendship,
-          currentWellness: newWellness
-        });
-
-        // 更新飢餓狀態開始時間為最後一次懲罰的時間點
+      // 更新飢餓狀態開始時間
+      if (timeDiff >= 20) {
+        // 正常情況：更新為最後一次懲罰的時間點
         const hungerStateStartTime = this.parseTimeString(this.hungerStateStartTime);
         const newHungerStateStartTime = new Date(hungerStateStartTime.getTime() + (punishmentCount * 20 * 60 * 1000));
         this.hungerStateStartTime = this.formatTimeFromDate(newHungerStateStartTime);
-
-        // 顯示 toastr 通知
-        const petName = petStats.name || 'Achick';
-        const message = `${petName}因長時間飢餓對你不滿，健康度-${totalWellnessDecrease}，好感度-${totalFriendshipDecrease}（${punishmentCount}次懲罰）`;
-        ToastrService.show(message, 'warning', 6000);
-
-        // 保存時間
-        this.saveHungerTimes();
-
-        console.log(`飢餓累積懲罰：飢餓度 ${petStats.currentHunger}，執行 ${punishmentCount} 次懲罰，健康度-${totalWellnessDecrease}，好感度-${totalFriendshipDecrease}`);
+      } else {
+        // 強制執行：更新為當前時間
+        this.hungerStateStartTime = currentTime;
       }
+
+      // 保存時間
+      this.saveHungerTimes();
     }
   }
 
@@ -194,6 +216,62 @@ export class HungerManagerService {
     this.lastHungerTime = null;
     this.hungerStateStartTime = null;
     this.saveHungerTimes();
+  }
+
+  /**
+   * 執行飢餓懲罰的核心邏輯
+   */
+  private executeHungerPenalty(petStats: any, punishmentCount: number): void {
+    // 根據飢餓度閾值確定每次扣除的數值
+    let friendshipDecreasePerTime = 0;
+    let wellnessDecreasePerTime = 0;
+
+    if (petStats.currentHunger >= 16 && petStats.currentHunger <= 35) {
+      friendshipDecreasePerTime = 5;
+      wellnessDecreasePerTime = 1;
+    } else if (petStats.currentHunger >= 0 && petStats.currentHunger <= 15) {
+      friendshipDecreasePerTime = 15;
+      wellnessDecreasePerTime = 2;
+    }
+
+    if (friendshipDecreasePerTime > 0 || wellnessDecreasePerTime > 0) {
+      // 計算總扣除數值
+      const totalFriendshipDecrease = punishmentCount * friendshipDecreasePerTime;
+      const totalWellnessDecrease = punishmentCount * wellnessDecreasePerTime;
+
+      // 計算新的數值，確保不小於 0
+      const newFriendship = Math.max(0, petStats.currentFriendship - totalFriendshipDecrease);
+      const newWellness = Math.max(0, petStats.currentWellness - totalWellnessDecrease);
+
+      // 更新電子雞數值
+      PetStatsService.updatePetStats({
+        currentFriendship: newFriendship,
+        currentWellness: newWellness
+      });
+
+      // 顯示 toastr 通知
+      const petName = petStats.name || 'Achick';
+      const message = `${petName}因飢餓對你不滿，健康度-${totalWellnessDecrease}，好感度-${totalFriendshipDecrease}（${punishmentCount}次懲罰）`;
+      ToastrService.show(message, 'warning', 6000);
+
+      console.log(`飢餓懲罰：飢餓度 ${petStats.currentHunger}，執行 ${punishmentCount} 次懲罰，健康度-${totalWellnessDecrease}，好感度-${totalFriendshipDecrease}`);
+    }
+  }
+
+  /**
+   * 手動觸發飢餓度減少檢查（工程師模式使用）
+   */
+  public manualTriggerHungerDecrease(): void {
+    console.log('手動觸發飢餓度減少檢查');
+    this.decreaseHunger(true); // 強制執行
+  }
+
+  /**
+   * 手動觸發飢餓度懲罰扣值檢查（工程師模式使用）
+   */
+  public manualTriggerHungerPenalty(): void {
+    console.log('手動觸發飢餓度懲罰扣值檢查');
+    this.checkHungerState(true); // 強制執行
   }
 
 
