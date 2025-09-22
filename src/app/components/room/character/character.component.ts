@@ -34,7 +34,6 @@ import { StateDataService } from '../../../data/state-data';
 
     <!-- 角色顯示區域 -->
     <div class="character-area-wrapper" *ngIf="isCharacterVisible && !isSleeping"
-         (click)="onCharacterClick()"
          (mousedown)="onDragStart($event)"
          (touchstart)="onDragStart($event)">
       <div class="character-area" [style.left]="characterPosition.left" [style.top]="characterPosition.top">
@@ -225,6 +224,8 @@ export class CharacterComponent implements OnInit, OnDestroy {
   private dragStartY = 0;
   private startLeft = 0;
   private startTop = 0;
+  private hasMoved = false;
+  private dragThreshold = 5; // 像素閾值，超過此距離視為拖動
   private petStats: PetStats;
   private petStatsSubscription?: Subscription;
 
@@ -431,34 +432,6 @@ export class CharacterComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * 角色點擊事件（用於命名、撫摸、喚醒和解凍）
-   */
-  onCharacterClick(): void {
-    // 處理死亡狀態的點擊
-    if (this.petStats.isDead) {
-      this.lifecycleService.showDeathConfirmDialog();
-      return;
-    }
-
-    // 處理冷凍狀態的點擊
-    if (this.petStats.timeStopping) {
-      this.unfreezeModal.show();
-      return;
-    }
-
-    // 嘗試喚醒（如果在睡眠中，此函數會處理喚醒邏輯）
-    this.sleepService.wakeUp();
-
-    // 只有在蛋狀態且沒有名字時才能命名
-    if (this.petStats.lifeCycle === 'EGG' && this.petStats.name === null) {
-      this.namingModal.show();
-      return;
-    }
-
-    // 其他狀態下觸發撫摸事件
-    this.touchEventService.touchingEvent();
-  }
 
   /**
    * 命名確認事件
@@ -589,12 +562,13 @@ export class CharacterComponent implements OnInit, OnDestroy {
    * 拖曳開始事件
    */
   onDragStart(event: MouseEvent | TouchEvent): void {
-    // 如果是死亡狀態，不允許拖曳
+    // 如果是死亡狀態，不允許操作
     if (this.petStats.isDead) {
       return;
     }
 
     this.isDragging = true;
+    this.hasMoved = false;
     const clientX = event instanceof MouseEvent ? event.clientX : event.touches[0].clientX;
     const clientY = event instanceof MouseEvent ? event.clientY : event.touches[0].clientY;
 
@@ -606,10 +580,6 @@ export class CharacterComponent implements OnInit, OnDestroy {
     const viewportHeight = window.innerHeight;
     this.startLeft = parseFloat(this.characterPosition.left) * viewportWidth / 100;
     this.startTop = parseFloat(this.characterPosition.top) * viewportHeight / 100;
-
-    // 添加拖曳樣式
-    const characterArea = document.querySelector('.character-area');
-    characterArea?.classList.add('dragging');
 
     event.preventDefault();
     event.stopPropagation();
@@ -627,23 +597,35 @@ export class CharacterComponent implements OnInit, OnDestroy {
     const deltaX = clientX - this.dragStartX;
     const deltaY = clientY - this.dragStartY;
 
-    const newLeft = this.startLeft + deltaX;
-    const newTop = this.startTop + deltaY;
+    // 檢查是否超過拖動閾值
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    if (!this.hasMoved && distance > this.dragThreshold) {
+      this.hasMoved = true;
+      // 添加拖曳樣式和重置動畫
+      const characterArea = document.querySelector('.character-area');
+      characterArea?.classList.add('dragging');
+    }
 
-    // 限制在螢幕範圍內
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const boundedLeft = Math.max(0, Math.min(newLeft, viewportWidth - 100)); // 預留100px邊距
-    const boundedTop = Math.max(0, Math.min(newTop, viewportHeight - 100));
+    // 只有確認為拖動時才更新位置
+    if (this.hasMoved) {
+      const newLeft = this.startLeft + deltaX;
+      const newTop = this.startTop + deltaY;
 
-    // 轉換回百分比
-    const leftPercent = (boundedLeft / viewportWidth) * 100;
-    const topPercent = (boundedTop / viewportHeight) * 100;
+      // 限制在螢幕範圍內
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const boundedLeft = Math.max(0, Math.min(newLeft, viewportWidth - 100)); // 預留100px邊距
+      const boundedTop = Math.max(0, Math.min(newTop, viewportHeight - 100));
 
-    this.characterPosition = {
-      left: `${leftPercent}%`,
-      top: `${topPercent}%`
-    };
+      // 轉換回百分比
+      const leftPercent = (boundedLeft / viewportWidth) * 100;
+      const topPercent = (boundedTop / viewportHeight) * 100;
+
+      this.characterPosition = {
+        left: `${leftPercent}%`,
+        top: `${topPercent}%`
+      };
+    }
 
     event.preventDefault();
     event.stopPropagation();
@@ -657,11 +639,48 @@ export class CharacterComponent implements OnInit, OnDestroy {
 
     this.isDragging = false;
 
-    // 移除拖曳樣式
-    const characterArea = document.querySelector('.character-area');
-    characterArea?.classList.remove('dragging');
+    if (this.hasMoved) {
+      // 這是拖動操作：移除拖曳樣式並儲存位置
+      const characterArea = document.querySelector('.character-area');
+      characterArea?.classList.remove('dragging');
 
-    // 儲存新位置
-    StateDataService.updateCharacterPosition(this.characterPosition);
+      // 儲存新位置
+      StateDataService.updateCharacterPosition(this.characterPosition);
+    } else {
+      // 這是點擊操作：觸發撫摸事件
+      this.handleCharacterClick();
+    }
+
+    // 重置狀態
+    this.hasMoved = false;
+  }
+
+  /**
+   * 處理角色點擊事件（撫摸、命名、喚醒和解凍）
+   */
+  private handleCharacterClick(): void {
+    // 處理死亡狀態的點擊
+    if (this.petStats.isDead) {
+      this.lifecycleService.showDeathConfirmDialog();
+      return;
+    }
+
+    // 處理冷凍狀態的點擊
+    if (this.petStats.timeStopping) {
+      this.unfreezeModal.show();
+      return;
+    }
+
+    // 嘗試喚醒（如果在睡眠中，此函數會處理喚醒邏輯）
+    this.sleepService.wakeUp();
+
+    // 只有在蛋狀態且沒有名字時才能命名
+    if (this.petStats.lifeCycle === 'EGG' && this.petStats.name === null) {
+      this.namingModal.show();
+      return;
+    }
+
+    // 其他狀態下觸發撫摸事件
+    this.touchEventService.touchingEvent();
   }
 }
