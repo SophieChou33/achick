@@ -14,6 +14,7 @@ import { LeavingService } from '../../../services/leaving.service';
 import { LowLikabilityEventService } from '../../../services/low-likability-event.service';
 import { LightService } from '../../../services/light.service';
 import { SleepService } from '../../../services/sleep.service';
+import { TouchEventService } from '../../../services/touch-event.service';
 import { PetStats } from '../../../types/pet-stats.type';
 import { DirtyObject } from '../../../types/dirty-object.type';
 
@@ -22,7 +23,7 @@ import { DirtyObject } from '../../../types/dirty-object.type';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="engineer-modal" [class.show]="isVisible" (click)="onBackdropClick($event)">
+    <div class="engineer-modal" [class.show]="isVisible">
       <div class="modal-dialog" (click)="$event.stopPropagation()">
         <div class="modal-content">
           <div class="modal-header">
@@ -165,6 +166,15 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                     <button class="btn btn-secondary" (click)="addDirtyObject()">產生髒汙</button>
                     <button class="btn btn-secondary" (click)="clearAllDirty()">清除所有髒汙</button>
                     <p>當前髒汙數量: {{ dirtyObjects.length }}</p>
+                  </div>
+                </div>
+
+                <div class="control-section">
+                  <h5>次數限制重置</h5>
+                  <div class="limit-control">
+                    <button class="btn btn-secondary" (click)="resetAllLimits()">重置所有次數限制</button>
+                    <button class="btn btn-secondary" (click)="resetTouchLimit()">重置撫摸次數</button>
+                    <button class="btn btn-secondary" (click)="resetClickLimit()">重置窗戶點擊次數</button>
                   </div>
                 </div>
 
@@ -490,7 +500,7 @@ import { DirtyObject } from '../../../types/dirty-object.type';
       color: #495057;
     }
 
-    .coin-control, .dirty-control, .pet-control {
+    .coin-control, .dirty-control, .pet-control, .limit-control {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
@@ -539,7 +549,8 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
     private leavingService: LeavingService,
     private lowLikabilityEventService: LowLikabilityEventService,
     private lightService: LightService,
-    private sleepService: SleepService
+    private sleepService: SleepService,
+    private touchEventService: TouchEventService
   ) {}
 
   ngOnInit() {
@@ -578,11 +589,6 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
     this.close.emit();
   }
 
-  onBackdropClick(event: MouseEvent) {
-    if (event.target === event.currentTarget) {
-      this.onClose();
-    }
-  }
 
   private loadData() {
     this.petStats = PetStatsService.loadPetStats();
@@ -762,4 +768,30 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
       this.customTimeService.forceResetToRealTime();
     }
   }
+
+  /**
+   * 重置所有次數限制
+   */
+  resetAllLimits() {
+    this.resetTouchLimit();
+    this.resetClickLimit();
+    console.log('已重置所有次數限制');
+  }
+
+  /**
+   * 重置撫摸次數限制
+   */
+  resetTouchLimit() {
+    this.touchEventService.resetTouchLimit();
+    console.log('已重置撫摸次數限制');
+  }
+
+  /**
+   * 重置點擊次數限制
+   */
+  resetClickLimit() {
+    this.leavingService.resetClickLimit();
+    console.log('已重置點擊次數限制');
+  }
+
 }

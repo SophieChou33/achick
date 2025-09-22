@@ -24,7 +24,7 @@ import { TouchEventService } from '../../../services/touch-event.service';
   styles: [`
     .mood-status-container {
       position: absolute;
-      top: 50px;
+      top: 0px;
       right: 10px;
       opacity: 0;
       transform: translateY(60px);
@@ -39,15 +39,15 @@ import { TouchEventService } from '../../../services/touch-event.service';
     @keyframes moodFloat {
       0% {
         opacity: 0;
-        transform: translateY(70px);
+        transform: translateY(40px);
       }
       50% {
         opacity: 1;
-        transform: translateY(20px);
+        transform: translateY(5px);
       }
       60% {
         opacity: 1;
-        transform: translateY(10px);
+        transform: translateY(-2px);
       }
       100% {
         opacity: 0;

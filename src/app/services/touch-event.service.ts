@@ -320,6 +320,14 @@ export class TouchEventService {
   }
 
   /**
+   * 重置撫摸次數限制（工程師模式用）
+   */
+  public resetTouchLimit(): void {
+    this.touchedTimes = 0;
+    this.isCanTouch = true;
+  }
+
+  /**
    * 獲取好感度增加事件的Observable
    */
   public static getFriendshipIncrease$(): Observable<number> {

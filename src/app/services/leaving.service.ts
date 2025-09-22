@@ -186,4 +186,12 @@ export class LeavingService {
     this.lastTimeReset = null;
     this.isCanClick = true;
   }
+
+  /**
+   * 重置點擊次數限制（工程師模式用）
+   */
+  public resetClickLimit(): void {
+    this.clickTimes = 0;
+    this.isCanClick = true;
+  }
 }
