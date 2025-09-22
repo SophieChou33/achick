@@ -15,10 +15,13 @@ export class LeavingService {
   private clickTimes: number = 0;
   private resetInterval?: number;
 
+  private static readonly LEAVING_STORAGE_KEY = 'achick_leaving_times';
+
   constructor(
     private lifecycleService: LifecycleService,
     private customTimeService: CustomTimeService
   ) {
+    this.loadLeavingTimes();
     this.startResetTimer();
   }
 
@@ -124,6 +127,7 @@ export class LeavingService {
     // 3. 若 lastTimeReset 為 null，則將實際當前時間賦值給 lastTimeReset
     if (this.lastTimeReset === null) {
       this.lastTimeReset = this.getCurrentTimeString();
+      this.saveLeavingTimes();
       return;
     }
 
@@ -137,6 +141,7 @@ export class LeavingService {
     if (timeDiff >= oneHourInMs) {
       this.clickTimes = 0;
       this.lastTimeReset = currentTime;
+      this.saveLeavingTimes();
     }
   }
 
@@ -189,6 +194,7 @@ export class LeavingService {
     this.clickTimes = 0;
     this.lastTimeReset = null;
     this.isCanClick = true;
+    this.saveLeavingTimes();
   }
 
   /**
@@ -197,5 +203,38 @@ export class LeavingService {
   public resetClickLimit(): void {
     this.clickTimes = 0;
     this.isCanClick = true;
+  }
+
+  /**
+   * 載入離家時間資料
+   */
+  private loadLeavingTimes(): void {
+    try {
+      const savedData = localStorage.getItem(LeavingService.LEAVING_STORAGE_KEY);
+      if (savedData) {
+        const leavingData = JSON.parse(savedData);
+        this.lastTimeReset = leavingData.lastTimeReset || null;
+        this.clickTimes = leavingData.clickTimes || 0;
+      }
+    } catch (error) {
+      console.error('Failed to load leaving times:', error);
+      this.lastTimeReset = null;
+      this.clickTimes = 0;
+    }
+  }
+
+  /**
+   * 儲存離家時間資料
+   */
+  private saveLeavingTimes(): void {
+    try {
+      const leavingData = {
+        lastTimeReset: this.lastTimeReset,
+        clickTimes: this.clickTimes
+      };
+      localStorage.setItem(LeavingService.LEAVING_STORAGE_KEY, JSON.stringify(leavingData));
+    } catch (error) {
+      console.error('Failed to save leaving times:', error);
+    }
   }
 }

@@ -122,7 +122,7 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                 <button class="btn btn-secondary" (click)="triggerTimer('health')">生命值檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('lowHealth')">低生命值觸發器</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('leaving')">離家出走檢查</button>
-                <button class="btn btn-secondary" (click)="triggerTimer('lowLikability')">低好感度事件</button>
+                <button class="btn btn-secondary" (click)="triggerTimer('lowLikability')">低好感度扣值檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('dirty')">髒汙產生</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('dirtyPunish')">髒汙懲罰</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('light')">燈光檢查</button>
@@ -769,20 +769,21 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
         (this.hungerManagerService as any).hungerPenalty?.();
         break;
       case 'health':
-        // 手動觸發生命值檢查（通常是私有方法，需要通過公開方法觸發）
-        console.log('Triggering health check manually');
+        // 手動觸發生命值檢查
+        this.healthCheckService.manualCheck();
         break;
       case 'lowHealth':
-        // 手動觸發低生命值檢查（通常是私有方法，需要通過公開方法觸發）
-        console.log('Triggering low health check manually');
+        // 手動觸發低生命值檢查
+        this.lowHealthTriggerService.manualHealthCheck();
+        this.lowHealthTriggerService.manualDiseaseEffects();
         break;
       case 'leaving':
-        // 手動觸發離家出走檢查（通常是私有方法，需要通過公開方法觸發）
-        console.log('Triggering leaving check manually');
+        // 手動觸發離家出走檢查
+        this.lowLikabilityEventService.manualTriggerLeavingCheck();
         break;
       case 'lowLikability':
-        // 手動觸發低好感度事件（通常是私有方法，需要通過公開方法觸發）
-        console.log('Triggering low likability event manually');
+        // 手動觸發低好感度事件（健康度扣除）
+        this.lowLikabilityEventService.manualTriggerLikabilityCheck();
         break;
       case 'dirty':
         // 手動觸發髒汙產生邏輯
@@ -795,12 +796,13 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
         (this.dirtyTriggerService as any).dirtyPunishing?.();
         break;
       case 'light':
-        // 手動觸發燈光檢查（通常是私有方法，需要通過公開方法觸發）
-        console.log('Triggering light check manually');
+        // 手動觸發燈光檢查
+        this.lightService.manualLightCheck();
+        this.lightService.manualDayNightCheck();
         break;
       case 'sleep':
-        // 手動觸發睡眠檢查（通常是私有方法，需要通過公開方法觸發）
-        console.log('Triggering sleep check manually');
+        // 手動觸發睡眠檢查
+        this.sleepService.manualSleepCheck();
         break;
       default:
         console.warn(`Unknown timer type: ${type}`);
@@ -990,6 +992,13 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
     if (confirm('確定要重置電子雞嗎？這將清除所有數據！')) {
       PetStatsService.resetPetStats();
       this.customTimeService.forceResetToRealTime();
+      // 重置所有上次檢查時間為 null
+      this.lastCheckTimeManagerService.resetAllLastCheckTimesToNull();
+      // 清除所有髒污物件
+      this.dirtyTriggerService.clearAllDirtyObjects();
+      // 更新顯示
+      this.updateDirtyDisplay();
+      console.log('電子雞已完全重置，包括所有上次執行時間');
     }
   }
 

@@ -15,7 +15,10 @@ export class LowHealthTriggerService {
   private healthCheckInterval?: number;
   private diseaseEffectsInterval?: number;
 
+  private static readonly LOW_HEALTH_STORAGE_KEY = 'achick_low_health_times';
+
   constructor(private customTimeService: CustomTimeService) {
+    this.loadLowHealthTimes();
     this.startHealthMonitoring();
   }
 
@@ -45,6 +48,7 @@ export class LowHealthTriggerService {
       this.lastSickCheckTime = null;
       this.lastLifeDamageTime = null;
       this.lastDiseaseCheckTime = null;
+      this.saveLowHealthTimes();
       return;
     }
 
@@ -81,60 +85,65 @@ export class LowHealthTriggerService {
     // 若 lastLifeDamageTime 為 null，則將實際當前時間賦值給 lastLifeDamageTime，並且不往下執行邏輯
     if (this.lastLifeDamageTime === null) {
       this.lastLifeDamageTime = currentTime;
+      this.saveLowHealthTimes();
       return;
     }
 
     const currentWellness = currentPetStats.currentWellness;
-    const lastDamageTime = new Date(this.lastLifeDamageTime);
-    const now = this.customTimeService.getCurrentTime();
-    const timeDiffMinutes = Math.floor((now.getTime() - lastDamageTime.getTime()) / (1000 * 60));
+    const lastDamageTime = this.parseTimeString(this.lastLifeDamageTime);
+    const now = this.parseTimeString(currentTime);
+    const timeDiffMs = now.getTime() - lastDamageTime.getTime();
 
-    let shouldDamage = false;
-    let healthDamage = 0;
-    let maxHealthDamage = 0;
+    // 根據健康度範圍確定間隔時間和每次傷害
+    let intervalMinutes = 0;
+    let healthDamagePerInterval = 0;
+    let maxHealthDamagePerInterval = 0;
 
-    // 判斷電子雞當前數值物件的當前健康度範圍並執行對應邏輯
     if (currentWellness === 0) {
-      // 若當前健康度為 0：若實際當前時間距離 lastLifeDamageTime 已經過 10 分鐘
-      if (timeDiffMinutes >= 10) {
-        shouldDamage = true;
-        healthDamage = 10;
-        maxHealthDamage = 5;
-      }
+      intervalMinutes = 10;
+      healthDamagePerInterval = 10;
+      maxHealthDamagePerInterval = 5;
     } else if (currentWellness >= 1 && currentWellness <= 9) {
-      // 若當前健康度為 1-9：若實際當前時間距離 lastLifeDamageTime 已經過 10 分鐘
-      if (timeDiffMinutes >= 10) {
-        shouldDamage = true;
-        healthDamage = 1;
-        maxHealthDamage = 0;
-      }
+      intervalMinutes = 10;
+      healthDamagePerInterval = 1;
+      maxHealthDamagePerInterval = 0;
     } else if (currentWellness >= 10 && currentWellness <= 39) {
-      // 若當前健康度為 10-39：若實際當前時間距離 lastLifeDamageTime 已經過 30 分鐘
-      if (timeDiffMinutes >= 30) {
-        shouldDamage = true;
-        healthDamage = 1;
-        maxHealthDamage = 0;
-      }
+      intervalMinutes = 30;
+      healthDamagePerInterval = 1;
+      maxHealthDamagePerInterval = 0;
     }
 
-    if (shouldDamage) {
-      // 計算新的最大生命值
-      const newMaxHealth = Math.max(0, currentPetStats.maxHealth - maxHealthDamage);
-      let newCurrentHealth = Math.max(0, currentPetStats.currentHealth - healthDamage);
+    if (intervalMinutes > 0) {
+      const intervalMs = intervalMinutes * 60 * 1000;
 
-      // 檢查當前生命值是否溢出新的最大生命值
-      if (newCurrentHealth > newMaxHealth) {
-        newCurrentHealth = newMaxHealth;
+      if (timeDiffMs >= intervalMs) {
+        // 計算應該執行的懲罰次數
+        const damageCount = Math.floor(timeDiffMs / intervalMs);
+        const totalHealthDamage = damageCount * healthDamagePerInterval;
+        const totalMaxHealthDamage = damageCount * maxHealthDamagePerInterval;
+
+        // 計算新的最大生命值和當前生命值
+        const newMaxHealth = Math.max(0, currentPetStats.maxHealth - totalMaxHealthDamage);
+        let newCurrentHealth = Math.max(0, currentPetStats.currentHealth - totalHealthDamage);
+
+        // 檢查當前生命值是否溢出新的最大生命值
+        if (newCurrentHealth > newMaxHealth) {
+          newCurrentHealth = newMaxHealth;
+        }
+
+        // 扣除生命值
+        const updatedStats = PetStatsService.updatePetStats({
+          currentHealth: newCurrentHealth,
+          maxHealth: newMaxHealth
+        });
+
+        // 更新 lastLifeDamageTime 為最後一次傷害的時間點
+        const newLastDamageTime = new Date(lastDamageTime.getTime() + (damageCount * intervalMs));
+        this.lastLifeDamageTime = this.formatTimeFromDate(newLastDamageTime);
+        this.saveLowHealthTimes();
+
+        console.log(`低健康度累積傷害：健康度範圍 ${currentWellness}，執行 ${damageCount} 次傷害，生命值-${totalHealthDamage}，最大生命值-${totalMaxHealthDamage}`);
       }
-
-      // 扣除生命值
-      const updatedStats = PetStatsService.updatePetStats({
-        currentHealth: newCurrentHealth,
-        maxHealth: newMaxHealth
-      });
-
-      // 更新 lastLifeDamageTime
-      this.lastLifeDamageTime = currentTime;
     }
   }
 
@@ -148,6 +157,7 @@ export class LowHealthTriggerService {
     // 若 lastDiseaseCheckTime 為 null，則將實際當前時間賦值給 lastDiseaseCheckTime，並且不往下執行邏輯
     if (this.lastDiseaseCheckTime === null) {
       this.lastDiseaseCheckTime = currentTime;
+      this.saveLowHealthTimes();
       return;
     }
 
@@ -181,6 +191,7 @@ export class LowHealthTriggerService {
       this.randomGetSick();
       // 更新 lastDiseaseCheckTime
       this.lastDiseaseCheckTime = currentTime;
+      this.saveLowHealthTimes();
     }
   }
 
@@ -249,19 +260,28 @@ export class LowHealthTriggerService {
     // 若 lastDiseaseEffectTime1hour 為 null，則將實際當前時間賦值給 lastDiseaseEffectTime1hour，並且不往下執行邏輯
     if (LowHealthTriggerService.lastDiseaseEffectTime1hour === null) {
       LowHealthTriggerService.lastDiseaseEffectTime1hour = currentTime;
+      this.saveLowHealthTimes();
       return;
     }
 
-    const lastEffectTime = new Date(LowHealthTriggerService.lastDiseaseEffectTime1hour);
-    const now = this.customTimeService.getCurrentTime();
-    const timeDiffHours = Math.floor((now.getTime() - lastEffectTime.getTime()) / (1000 * 60 * 60));
+    const lastEffectTime = this.parseTimeString(LowHealthTriggerService.lastDiseaseEffectTime1hour);
+    const now = this.parseTimeString(currentTime);
+    const timeDiffMs = now.getTime() - lastEffectTime.getTime();
+    const oneHourInMs = 60 * 60 * 1000;
 
     // 若實際當前時間距離 lastDiseaseEffectTime1hour 已經過 1 小時
-    if (timeDiffHours >= 1) {
+    if (timeDiffMs >= oneHourInMs) {
+      // 計算應該執行的懲罰次數（每小時一次）
+      const effectCount = Math.floor(timeDiffMs / oneHourInMs);
+
+      // 計算總傷害
+      const maxHealthReductionPerHour = Math.ceil(activeDiseaseCount / 2);
+      const totalMaxHealthReduction = effectCount * maxHealthReductionPerHour;
+      const totalHealthReduction = effectCount * activeDiseaseCount;
+
       // 扣除生命值和最大生命值
-      const maxHealthReduction = Math.ceil(activeDiseaseCount / 2); // 無條件進位
-      const newMaxHealth = Math.max(0, currentPetStats.maxHealth - maxHealthReduction);
-      let newCurrentHealth = Math.max(0, currentPetStats.currentHealth - activeDiseaseCount);
+      const newMaxHealth = Math.max(0, currentPetStats.maxHealth - totalMaxHealthReduction);
+      let newCurrentHealth = Math.max(0, currentPetStats.currentHealth - totalHealthReduction);
 
       // 檢查當前生命值是否溢出新的最大生命值
       if (newCurrentHealth > newMaxHealth) {
@@ -273,8 +293,12 @@ export class LowHealthTriggerService {
         maxHealth: newMaxHealth
       });
 
-      // 更新時間
-      LowHealthTriggerService.lastDiseaseEffectTime1hour = currentTime;
+      // 更新時間為最後一次效果的時間點
+      const newLastEffectTime = new Date(lastEffectTime.getTime() + (effectCount * oneHourInMs));
+      LowHealthTriggerService.lastDiseaseEffectTime1hour = this.formatTimeFromDate(newLastEffectTime);
+      this.saveLowHealthTimes();
+
+      console.log(`疾病累積效果：${activeDiseaseCount} 個疾病，執行 ${effectCount} 次效果，生命值-${totalHealthReduction}，最大生命值-${totalMaxHealthReduction}`);
     }
   }
 
@@ -307,5 +331,69 @@ export class LowHealthTriggerService {
    */
   public manualDiseaseEffects(): void {
     this.diseaseEffects();
+  }
+
+  /**
+   * 解析時間字串為 Date 物件
+   */
+  private parseTimeString(timeString: string): Date {
+    const [datePart, timePart] = timeString.split(' ');
+    const [year, month, day] = datePart.split('/').map(Number);
+    const [hours, minutes, seconds] = timePart.split(':').map(Number);
+
+    return new Date(year, month - 1, day, hours, minutes, seconds);
+  }
+
+  /**
+   * 將 Date 物件格式化為時間字串 (yyyy/mm/dd HH:mm:ss)
+   */
+  private formatTimeFromDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+    return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+  }
+
+  /**
+   * 載入低生命值時間資料
+   */
+  private loadLowHealthTimes(): void {
+    try {
+      const savedData = localStorage.getItem(LowHealthTriggerService.LOW_HEALTH_STORAGE_KEY);
+      if (savedData) {
+        const healthData = JSON.parse(savedData);
+        this.lastSickCheckTime = healthData.lastSickCheckTime || null;
+        this.lastLifeDamageTime = healthData.lastLifeDamageTime || null;
+        this.lastDiseaseCheckTime = healthData.lastDiseaseCheckTime || null;
+        LowHealthTriggerService.lastDiseaseEffectTime1hour = healthData.lastDiseaseEffectTime1hour || null;
+      }
+    } catch (error) {
+      console.error('Failed to load low health times:', error);
+      this.lastSickCheckTime = null;
+      this.lastLifeDamageTime = null;
+      this.lastDiseaseCheckTime = null;
+      LowHealthTriggerService.lastDiseaseEffectTime1hour = null;
+    }
+  }
+
+  /**
+   * 儲存低生命值時間資料
+   */
+  private saveLowHealthTimes(): void {
+    try {
+      const healthData = {
+        lastSickCheckTime: this.lastSickCheckTime,
+        lastLifeDamageTime: this.lastLifeDamageTime,
+        lastDiseaseCheckTime: this.lastDiseaseCheckTime,
+        lastDiseaseEffectTime1hour: LowHealthTriggerService.lastDiseaseEffectTime1hour
+      };
+      localStorage.setItem(LowHealthTriggerService.LOW_HEALTH_STORAGE_KEY, JSON.stringify(healthData));
+    } catch (error) {
+      console.error('Failed to save low health times:', error);
+    }
   }
 }

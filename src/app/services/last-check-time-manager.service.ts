@@ -54,7 +54,24 @@ export class LastCheckTimeManagerService {
     (this.hungerManagerService as any).lastHungerTime = currentTime;
     (this.hungerManagerService as any).hungerStateStartTime = currentTime;
 
+    // 強制觸發所有服務的保存方法
+    this.forceUpdateAllLastCheckTimes();
+
     console.log('已初始化所有服務的上次檢查時間為:', currentTime);
+  }
+
+  /**
+   * 強制觸發所有服務保存其時間數據
+   */
+  private forceUpdateAllLastCheckTimes(): void {
+    // 觸發各服務的保存方法
+    (this.dirtyTriggerService as any).saveDirtyData?.();
+    (this.lightService as any).saveLightTimes?.();
+    (this.leavingService as any).saveLeavingTimes?.();
+    (this.touchEventService as any).saveTouchData?.();
+    (this.lowHealthTriggerService as any).saveLowHealthTimes?.();
+    (this.lowLikabilityEventService as any).saveLowLikabilityTimes?.();
+    (this.hungerManagerService as any).saveHungerTimes?.();
   }
 
   /**
@@ -87,8 +104,8 @@ export class LastCheckTimeManagerService {
     (this.hungerManagerService as any).lastHungerTime = presetTime;
     (this.hungerManagerService as any).hungerStateStartTime = presetTime;
 
-    // 儲存髒污資料（因為 DirtyTriggerService 有 localStorage）
-    this.dirtyTriggerService.saveDirtyData();
+    // 強制觸發所有服務的保存方法
+    this.forceUpdateAllLastCheckTimes();
 
     console.log('已手動設定所有服務的上次檢查時間為:', presetTime);
   }
@@ -114,7 +131,49 @@ export class LastCheckTimeManagerService {
     // 重置飢餓管理服務的飢餓狀態開始時間（用於懲罰計算）
     (this.hungerManagerService as any).hungerStateStartTime = currentTime;
 
+    // 強制觸發所有服務的保存方法
+    this.forceUpdateAllLastCheckTimes();
+
     console.log('已重置所有上次懲罰時間為:', currentTime);
+  }
+
+  /**
+   * 重置所有上次檢查時間為 null（電子雞重置時使用）
+   */
+  resetAllLastCheckTimesToNull(): void {
+    // 重置髒污觸發服務的上次添加髒污時間
+    (this.dirtyTriggerService as any).lastAddDirtyTime = null;
+
+    // 重置燈光服務的上次檢查時間
+    (this.lightService as any).lastLightCheckTime = null;
+
+    // 重置離家出走服務的上次重置時間
+    (this.leavingService as any).lastTimeReset = null;
+
+    // 重置觸摸事件服務的上次重置時間
+    (this.touchEventService as any).lastTimeReset = null;
+
+    // 重置低生命值觸發服務的相關時間
+    (this.lowHealthTriggerService as any).lastSickCheckTime = null;
+    (this.lowHealthTriggerService as any).lastLifeDamageTime = null;
+    (this.lowHealthTriggerService as any).lastDiseaseCheckTime = null;
+
+    // 重置低好感度事件服務的上次懲罰時間
+    (this.lowLikabilityEventService as any).lastPunishTime = null;
+
+    // 重置飢餓管理服務的上次飢餓時間和飢餓狀態開始時間
+    (this.hungerManagerService as any).lastHungerTime = null;
+    (this.hungerManagerService as any).hungerStateStartTime = null;
+
+    // 清空所有髒污物件的上次懲罰時間
+    this.dirtyTriggerService.dirtyObjects.forEach(dirty => {
+      delete dirty.lastPunishTime;
+    });
+
+    // 強制觸發所有服務的保存方法
+    this.forceUpdateAllLastCheckTimes();
+
+    console.log('已重置所有服務的上次檢查時間為 null');
   }
 
   /**

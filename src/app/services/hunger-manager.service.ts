@@ -15,7 +15,10 @@ export class HungerManagerService {
   private hungerDecreaseInterval: any;
   private hungerCheckInterval: any;
 
+  private static readonly HUNGER_STORAGE_KEY = 'achick_hunger_times';
+
   constructor(private customTimeService: CustomTimeService) {
+    this.loadHungerTimes();
     this.startHungerSystem();
   }
 
@@ -68,6 +71,7 @@ export class HungerManagerService {
     // 若上次飢餓時間為 null，則初始化並返回
     if (this.lastHungerTime === null) {
       this.lastHungerTime = currentTime;
+      this.saveHungerTimes();
       return;
     }
 
@@ -84,6 +88,9 @@ export class HungerManagerService {
       PetStatsService.updatePetStats({
         currentHunger: newHunger
       });
+
+      // 保存時間
+      this.saveHungerTimes();
     }
   }
 
@@ -113,31 +120,36 @@ export class HungerManagerService {
     if (this.hungerStateStartTime === null) {
       StateDataService.activateState('hungry', stateData);
       this.hungerStateStartTime = currentTime;
+      this.saveHungerTimes();
       return;
     }
 
     // 檢查是否已進入飢餓狀態 20 分鐘
     const timeDiff = this.getTimeDifferenceInMinutes(this.hungerStateStartTime, currentTime);
     if (timeDiff >= 20) {
-      // 重置飢餓狀態開始時間，準備下一輪計算
-      this.hungerStateStartTime = currentTime;
+      // 計算應該執行的懲罰次數（每20分鐘一次）
+      const punishmentCount = Math.floor(timeDiff / 20);
 
-      // 根據飢餓度閾值扣除好感度和健康度
-      let friendshipDecrease = 0;
-      let wellnessDecrease = 0;
+      // 根據飢餓度閾值確定每次扣除的數值
+      let friendshipDecreasePerTime = 0;
+      let wellnessDecreasePerTime = 0;
 
       if (petStats.currentHunger >= 16 && petStats.currentHunger <= 35) {
-        friendshipDecrease = 5;
-        wellnessDecrease = 1;
+        friendshipDecreasePerTime = 5;
+        wellnessDecreasePerTime = 1;
       } else if (petStats.currentHunger >= 0 && petStats.currentHunger <= 15) {
-        friendshipDecrease = 15;
-        wellnessDecrease = 2;
+        friendshipDecreasePerTime = 15;
+        wellnessDecreasePerTime = 2;
       }
 
-      if (friendshipDecrease > 0 || wellnessDecrease > 0) {
+      if (friendshipDecreasePerTime > 0 || wellnessDecreasePerTime > 0) {
+        // 計算總扣除數值
+        const totalFriendshipDecrease = punishmentCount * friendshipDecreasePerTime;
+        const totalWellnessDecrease = punishmentCount * wellnessDecreasePerTime;
+
         // 計算新的數值，確保不小於 0
-        const newFriendship = Math.max(0, petStats.currentFriendship - friendshipDecrease);
-        const newWellness = Math.max(0, petStats.currentWellness - wellnessDecrease);
+        const newFriendship = Math.max(0, petStats.currentFriendship - totalFriendshipDecrease);
+        const newWellness = Math.max(0, petStats.currentWellness - totalWellnessDecrease);
 
         // 更新電子雞數值
         PetStatsService.updatePetStats({
@@ -145,10 +157,20 @@ export class HungerManagerService {
           currentWellness: newWellness
         });
 
+        // 更新飢餓狀態開始時間為最後一次懲罰的時間點
+        const hungerStateStartTime = this.parseTimeString(this.hungerStateStartTime);
+        const newHungerStateStartTime = new Date(hungerStateStartTime.getTime() + (punishmentCount * 20 * 60 * 1000));
+        this.hungerStateStartTime = this.formatTimeFromDate(newHungerStateStartTime);
+
         // 顯示 toastr 通知
         const petName = petStats.name || 'Achick';
-        const message = `${petName}因飢餓對你不滿，健康度-${wellnessDecrease}，好感度-${friendshipDecrease}`;
+        const message = `${petName}因長時間飢餓對你不滿，健康度-${totalWellnessDecrease}，好感度-${totalFriendshipDecrease}（${punishmentCount}次懲罰）`;
         ToastrService.show(message, 'warning', 6000);
+
+        // 保存時間
+        this.saveHungerTimes();
+
+        console.log(`飢餓累積懲罰：飢餓度 ${petStats.currentHunger}，執行 ${punishmentCount} 次懲罰，健康度-${totalWellnessDecrease}，好感度-${totalFriendshipDecrease}`);
       }
     }
   }
@@ -171,5 +193,54 @@ export class HungerManagerService {
   public resetHungerTimes(): void {
     this.lastHungerTime = null;
     this.hungerStateStartTime = null;
+    this.saveHungerTimes();
+  }
+
+
+  /**
+   * 將 Date 物件格式化為時間字串 (yyyy/mm/dd HH:mm:ss)
+   */
+  private formatTimeFromDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+    return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+  }
+
+  /**
+   * 載入飢餓時間資料
+   */
+  private loadHungerTimes(): void {
+    try {
+      const savedData = localStorage.getItem(HungerManagerService.HUNGER_STORAGE_KEY);
+      if (savedData) {
+        const hungerData = JSON.parse(savedData);
+        this.lastHungerTime = hungerData.lastHungerTime || null;
+        this.hungerStateStartTime = hungerData.hungerStateStartTime || null;
+      }
+    } catch (error) {
+      console.error('Failed to load hunger times:', error);
+      this.lastHungerTime = null;
+      this.hungerStateStartTime = null;
+    }
+  }
+
+  /**
+   * 儲存飢餓時間資料
+   */
+  private saveHungerTimes(): void {
+    try {
+      const hungerData = {
+        lastHungerTime: this.lastHungerTime,
+        hungerStateStartTime: this.hungerStateStartTime
+      };
+      localStorage.setItem(HungerManagerService.HUNGER_STORAGE_KEY, JSON.stringify(hungerData));
+    } catch (error) {
+      console.error('Failed to save hunger times:', error);
+    }
   }
 }
