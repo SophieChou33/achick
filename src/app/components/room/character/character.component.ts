@@ -33,8 +33,11 @@ import { StateDataService } from '../../../data/state-data';
     </div>
 
     <!-- 角色顯示區域 -->
-    <div class="character-area-wrapper" *ngIf="isCharacterVisible && !isSleeping" (click)="onCharacterClick()">
-      <div class="character-area">
+    <div class="character-area-wrapper" *ngIf="isCharacterVisible && !isSleeping"
+         (click)="onCharacterClick()"
+         (mousedown)="onDragStart($event)"
+         (touchstart)="onDragStart($event)">
+      <div class="character-area" [style.left]="characterPosition.left" [style.top]="characterPosition.top">
         <div class="character-shadow"></div>
         <div class="character-container">
           <img [src]="characterImage" [alt]="characterName" class="character-image" />
@@ -72,13 +75,18 @@ import { StateDataService } from '../../../data/state-data';
     }
     .character-area {
       position: absolute;
-      left: 40%;
-      top: 35dvh;
       z-index: 700;
       display: flex;
       justify-content: center;
       align-items: center;
       animation: characterFloat 3s ease-in-out infinite;
+      transition: none;
+    }
+
+    .character-area.dragging {
+      animation: none;
+      cursor: grabbing;
+      transition: none;
     }
 
     @keyframes characterFloat {
@@ -192,7 +200,13 @@ export class CharacterComponent implements OnInit, OnDestroy {
   showBirthButton = false;
   showNamingModal = false;
   isSleeping = false;
+  characterPosition = { left: '40%', top: '35dvh' };
 
+  private isDragging = false;
+  private dragStartX = 0;
+  private dragStartY = 0;
+  private startLeft = 0;
+  private startTop = 0;
   private petStats: PetStats;
   private petStatsSubscription?: Subscription;
 
@@ -206,13 +220,26 @@ export class CharacterComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    // 載入位置資料
+    this.loadCharacterPosition();
+
     // 設定初始圖片和狀態
     this.setCharacterImage();
     this.updateSleepingState();
 
     // 訂閱角色資料變化
     this.petStatsSubscription = PetStatsService.getPetStats$().subscribe(petStats => {
+      const previousStats = this.petStats;
       this.petStats = petStats;
+
+      // 檢查是否狀態變為 DEAD 或 COOKED，如果是則重置位置
+      if (previousStats && !previousStats.isDead && petStats.isDead) {
+        this.resetPositionsToDefault();
+      }
+      if (previousStats && previousStats.lifeCycle !== 'COOKED' && petStats.lifeCycle === 'COOKED') {
+        this.resetPositionsToDefault();
+      }
+
       this.setCharacterImage();
       this.updateSleepingState();
     });
@@ -221,6 +248,12 @@ export class CharacterComponent implements OnInit, OnDestroy {
     setInterval(() => {
       this.updateSleepingState();
     }, 1000);
+
+    // 添加全域拖曳事件監聽器
+    document.addEventListener('mousemove', this.onDragMove.bind(this));
+    document.addEventListener('mouseup', this.onDragEnd.bind(this));
+    document.addEventListener('touchmove', this.onDragMove.bind(this));
+    document.addEventListener('touchend', this.onDragEnd.bind(this));
   }
 
   ngOnDestroy() {
@@ -231,6 +264,12 @@ export class CharacterComponent implements OnInit, OnDestroy {
 
     // 清理撫摸事件服務的計時器
     this.touchEventService.stopResetTimer();
+
+    // 清理拖曳事件監聽器
+    document.removeEventListener('mousemove', this.onDragMove.bind(this));
+    document.removeEventListener('mouseup', this.onDragEnd.bind(this));
+    document.removeEventListener('touchmove', this.onDragMove.bind(this));
+    document.removeEventListener('touchend', this.onDragEnd.bind(this));
   }
 
   get hasEffects(): boolean {
@@ -507,5 +546,104 @@ export class CharacterComponent implements OnInit, OnDestroy {
    */
   onUnfreezeModalClose(): void {
     // 彈窗關閉時不做任何事
+  }
+
+  /**
+   * 載入角色位置
+   */
+  private loadCharacterPosition(): void {
+    const stateData = StateDataService.loadStateData();
+    this.characterPosition = stateData.characterPosition;
+  }
+
+  /**
+   * 重置位置到預設值
+   */
+  private resetPositionsToDefault(): void {
+    // 重置資料中的位置
+    StateDataService.resetPositionsToDefault();
+
+    // 重新載入位置到組件
+    this.loadCharacterPosition();
+  }
+
+  /**
+   * 拖曳開始事件
+   */
+  onDragStart(event: MouseEvent | TouchEvent): void {
+    // 如果是死亡狀態，不允許拖曳
+    if (this.petStats.isDead) {
+      return;
+    }
+
+    this.isDragging = true;
+    const clientX = event instanceof MouseEvent ? event.clientX : event.touches[0].clientX;
+    const clientY = event instanceof MouseEvent ? event.clientY : event.touches[0].clientY;
+
+    this.dragStartX = clientX;
+    this.dragStartY = clientY;
+
+    // 將百分比轉換為像素進行計算
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    this.startLeft = parseFloat(this.characterPosition.left) * viewportWidth / 100;
+    this.startTop = parseFloat(this.characterPosition.top) * viewportHeight / 100;
+
+    // 添加拖曳樣式
+    const characterArea = document.querySelector('.character-area');
+    characterArea?.classList.add('dragging');
+
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  /**
+   * 拖曳移動事件
+   */
+  onDragMove(event: MouseEvent | TouchEvent): void {
+    if (!this.isDragging) return;
+
+    const clientX = event instanceof MouseEvent ? event.clientX : event.touches[0].clientX;
+    const clientY = event instanceof MouseEvent ? event.clientY : event.touches[0].clientY;
+
+    const deltaX = clientX - this.dragStartX;
+    const deltaY = clientY - this.dragStartY;
+
+    const newLeft = this.startLeft + deltaX;
+    const newTop = this.startTop + deltaY;
+
+    // 限制在螢幕範圍內
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const boundedLeft = Math.max(0, Math.min(newLeft, viewportWidth - 100)); // 預留100px邊距
+    const boundedTop = Math.max(0, Math.min(newTop, viewportHeight - 100));
+
+    // 轉換回百分比
+    const leftPercent = (boundedLeft / viewportWidth) * 100;
+    const topPercent = (boundedTop / viewportHeight) * 100;
+
+    this.characterPosition = {
+      left: `${leftPercent}%`,
+      top: `${topPercent}%`
+    };
+
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  /**
+   * 拖曳結束事件
+   */
+  onDragEnd(_event: MouseEvent | TouchEvent): void {
+    if (!this.isDragging) return;
+
+    this.isDragging = false;
+
+    // 移除拖曳樣式
+    const characterArea = document.querySelector('.character-area');
+    characterArea?.classList.remove('dragging');
+
+    // 儲存新位置
+    StateDataService.updateCharacterPosition(this.characterPosition);
   }
 }

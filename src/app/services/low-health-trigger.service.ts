@@ -223,7 +223,10 @@ export class LowHealthTriggerService {
 
     // 計算當前疾病狀態數量
     const activeDiseaseCount = ['headache', 'diarrhea', 'gastricUlcer', 'flu'].filter(
-      disease => currentStateData[disease as keyof typeof currentStateData].isActive === 1
+      disease => {
+        const stateValue = currentStateData[disease as keyof typeof currentStateData];
+        return 'isActive' in stateValue && (stateValue as any).isActive === 1;
+      }
     ).length;
 
     // 若沒有疾病狀態，不往下執行邏輯

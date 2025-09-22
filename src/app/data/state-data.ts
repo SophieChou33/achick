@@ -48,6 +48,14 @@ export const defaultStateData: StateData = {
   isSleeping: {
     stateText: '睡眠中',
     isActive: 0
+  },
+  characterPosition: {
+    left: '40%',
+    top: '35dvh'
+  },
+  bedPosition: {
+    left: '19%',
+    top: '53dvh'
   }
 };
 
@@ -121,6 +129,45 @@ export class StateDataService {
   }
 
   static isStateActive(stateName: keyof StateData, stateData: StateData): boolean {
-    return stateData[stateName].isActive === 1;
+    const stateValue = stateData[stateName];
+    // 只有 StateDataType 有 isActive 屬性
+    return (stateValue as any).isActive === 1;
+  }
+
+  static updateCharacterPosition(position: { left: string; top: string }): StateData {
+    const currentData = this.loadStateData();
+    const updatedData = {
+      ...currentData,
+      characterPosition: position
+    };
+    this.saveStateData(updatedData);
+    return updatedData;
+  }
+
+  static updateBedPosition(position: { left: string; top: string }): StateData {
+    const currentData = this.loadStateData();
+    const updatedData = {
+      ...currentData,
+      bedPosition: position
+    };
+    this.saveStateData(updatedData);
+    return updatedData;
+  }
+
+  static resetPositionsToDefault(): StateData {
+    const currentData = this.loadStateData();
+    const updatedData = {
+      ...currentData,
+      characterPosition: {
+        left: '40%',
+        top: '35dvh'
+      },
+      bedPosition: {
+        left: '19%',
+        top: '53dvh'
+      }
+    };
+    this.saveStateData(updatedData);
+    return updatedData;
   }
 }

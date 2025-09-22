@@ -100,7 +100,11 @@ export class LifecycleService {
     // 將狀態資料物件中每個物件的 isActive 屬性都設定為 0
     const resetStateData = { ...currentStateData };
     Object.keys(resetStateData).forEach(key => {
-      resetStateData[key as keyof typeof resetStateData].isActive = 0;
+      const stateValue = resetStateData[key as keyof typeof resetStateData];
+      // 只有 StateDataType 有 isActive 屬性，位置資料沒有
+      if ('isActive' in stateValue) {
+        (stateValue as any).isActive = 0;
+      }
     });
     StateDataService.saveStateData(resetStateData);
 

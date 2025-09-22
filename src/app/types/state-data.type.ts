@@ -3,6 +3,11 @@ export interface StateDataType {
   isActive: 0 | 1;
 }
 
+export interface ComponentPosition {
+  left: string;
+  top: string;
+}
+
 export interface StateData {
   angry: StateDataType;
   hungry: StateDataType;
@@ -16,4 +21,6 @@ export interface StateData {
   gastricUlcer: StateDataType;
   flu: StateDataType;
   isSleeping: StateDataType;
+  characterPosition: ComponentPosition;
+  bedPosition: ComponentPosition;
 }
