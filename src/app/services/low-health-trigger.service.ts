@@ -117,10 +117,19 @@ export class LowHealthTriggerService {
     }
 
     if (shouldDamage) {
+      // 計算新的最大生命值
+      const newMaxHealth = Math.max(0, currentPetStats.maxHealth - maxHealthDamage);
+      let newCurrentHealth = Math.max(0, currentPetStats.currentHealth - healthDamage);
+
+      // 檢查當前生命值是否溢出新的最大生命值
+      if (newCurrentHealth > newMaxHealth) {
+        newCurrentHealth = newMaxHealth;
+      }
+
       // 扣除生命值
       const updatedStats = PetStatsService.updatePetStats({
-        currentHealth: Math.max(0, currentPetStats.currentHealth - healthDamage),
-        maxHealth: Math.max(0, currentPetStats.maxHealth - maxHealthDamage)
+        currentHealth: newCurrentHealth,
+        maxHealth: newMaxHealth
       });
 
       // 更新 lastLifeDamageTime
@@ -250,10 +259,17 @@ export class LowHealthTriggerService {
     if (timeDiffHours >= 1) {
       // 扣除生命值和最大生命值
       const maxHealthReduction = Math.ceil(activeDiseaseCount / 2); // 無條件進位
+      const newMaxHealth = Math.max(0, currentPetStats.maxHealth - maxHealthReduction);
+      let newCurrentHealth = Math.max(0, currentPetStats.currentHealth - activeDiseaseCount);
+
+      // 檢查當前生命值是否溢出新的最大生命值
+      if (newCurrentHealth > newMaxHealth) {
+        newCurrentHealth = newMaxHealth;
+      }
 
       PetStatsService.updatePetStats({
-        currentHealth: Math.max(0, currentPetStats.currentHealth - activeDiseaseCount),
-        maxHealth: Math.max(0, currentPetStats.maxHealth - maxHealthReduction)
+        currentHealth: newCurrentHealth,
+        maxHealth: newMaxHealth
       });
 
       // 更新時間

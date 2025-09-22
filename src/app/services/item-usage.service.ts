@@ -106,6 +106,11 @@ export class ItemUsageService {
       const maxHealthChange = effect.maxHealth * quantity;
       updatedStats.maxHealth = Math.max(1, updatedStats.maxHealth + maxHealthChange);
       effects.push(`最大生命值 ${maxHealthChange > 0 ? '+' : ''}${maxHealthChange}`);
+
+      // 檢查當前生命值是否溢出新的最大生命值
+      if (updatedStats.currentHealth > updatedStats.maxHealth) {
+        updatedStats.currentHealth = updatedStats.maxHealth;
+      }
     }
 
     // 儲存更新後的電子雞數值
