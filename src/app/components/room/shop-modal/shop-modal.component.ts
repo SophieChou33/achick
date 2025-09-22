@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ShopDataService } from '../../../data/shop-data';
 import { UserDataService } from '../../../data/user-data';
 import { ItemUsageService } from '../../../services/item-usage.service';
+import { ModalService } from '../../../services/modal.service';
 import { ShopData, ProductItem } from '../../../types/product-data.type';
 import { sources } from '../../../sources';
 
@@ -580,6 +581,8 @@ export class ShopModalComponent implements OnInit {
 
   shopData: ShopData = ShopDataService.loadShopData();
 
+  constructor(private modalService: ModalService) {}
+
   tabs: TabItem[] = [
     { key: 'food', label: '食物' },
     { key: 'health', label: '健康' },
@@ -705,10 +708,10 @@ export class ShopModalComponent implements OnInit {
       this.closeConfirmModal();
 
       // 顯示成功訊息
-      alert(purchaseResult.message);
+      this.modalService.alert(purchaseResult.message, '購買成功');
     } else {
       // 顯示錯誤訊息
-      alert(purchaseResult.message);
+      this.modalService.alert(purchaseResult.message, '購買失敗');
     }
   }
 

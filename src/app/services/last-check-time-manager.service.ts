@@ -3,7 +3,7 @@ import { DirtyTriggerService } from './dirty-trigger.service';
 import { LightService } from './light.service';
 import { LeavingService } from './leaving.service';
 import { TouchEventService } from './touch-event.service';
-import { LowHealthTriggerService } from './low-health-trigger.service';
+import { WellnessCheckService } from './wellness-check.service';
 import { LowLikabilityEventService } from './low-likability-event.service';
 import { HungerManagerService } from './hunger-manager.service';
 import { CustomTimeService } from './custom-time.service';
@@ -18,7 +18,7 @@ export class LastCheckTimeManagerService {
     private lightService: LightService,
     private leavingService: LeavingService,
     private touchEventService: TouchEventService,
-    private lowHealthTriggerService: LowHealthTriggerService,
+    private wellnessCheckService: WellnessCheckService,
     private lowLikabilityEventService: LowLikabilityEventService,
     private hungerManagerService: HungerManagerService,
     private customTimeService: CustomTimeService
@@ -42,10 +42,10 @@ export class LastCheckTimeManagerService {
     // 設定觸摸事件服務的上次重置時間
     (this.touchEventService as any).lastTimeReset = currentTime;
 
-    // 設定低生命值觸發服務的相關時間
-    (this.lowHealthTriggerService as any).lastSickCheckTime = currentTime;
-    (this.lowHealthTriggerService as any).lastLifeDamageTime = currentTime;
-    (this.lowHealthTriggerService as any).lastDiseaseCheckTime = currentTime;
+    // 設定健康度檢查服務的相關時間
+    (this.wellnessCheckService as any).lastSickCheckTime = currentTime;
+    (this.wellnessCheckService as any).lastLifeDamageTime = currentTime;
+    (this.wellnessCheckService as any).lastDiseaseCheckTime = currentTime;
 
     // 設定低好感度事件服務的上次懲罰時間
     (this.lowLikabilityEventService as any).lastPunishTime = currentTime;
@@ -69,7 +69,7 @@ export class LastCheckTimeManagerService {
     (this.lightService as any).saveLightTimes?.();
     (this.leavingService as any).saveLeavingTimes?.();
     (this.touchEventService as any).saveTouchData?.();
-    (this.lowHealthTriggerService as any).saveLowHealthTimes?.();
+    (this.wellnessCheckService as any).saveWellnessTimes?.();
     (this.lowLikabilityEventService as any).saveLowLikabilityTimes?.();
     (this.hungerManagerService as any).saveHungerTimes?.();
   }
@@ -92,10 +92,10 @@ export class LastCheckTimeManagerService {
     // 設定觸摸事件服務的上次重置時間
     (this.touchEventService as any).lastTimeReset = presetTime;
 
-    // 設定低生命值觸發服務的相關時間
-    (this.lowHealthTriggerService as any).lastSickCheckTime = presetTime;
-    (this.lowHealthTriggerService as any).lastLifeDamageTime = presetTime;
-    (this.lowHealthTriggerService as any).lastDiseaseCheckTime = presetTime;
+    // 設定健康度檢查服務的相關時間
+    (this.wellnessCheckService as any).lastSickCheckTime = presetTime;
+    (this.wellnessCheckService as any).lastLifeDamageTime = presetTime;
+    (this.wellnessCheckService as any).lastDiseaseCheckTime = presetTime;
 
     // 設定低好感度事件服務的上次懲罰時間
     (this.lowLikabilityEventService as any).lastPunishTime = presetTime;
@@ -125,8 +125,8 @@ export class LastCheckTimeManagerService {
     // 重置低好感度事件服務的上次懲罰時間
     (this.lowLikabilityEventService as any).lastPunishTime = currentTime;
 
-    // 重置低生命值觸發服務的相關懲罰時間
-    (this.lowHealthTriggerService as any).lastLifeDamageTime = currentTime;
+    // 重置健康度檢查服務的相關懲罰時間
+    (this.wellnessCheckService as any).lastLifeDamageTime = currentTime;
 
     // 重置飢餓管理服務的飢餓狀態開始時間（用於懲罰計算）
     (this.hungerManagerService as any).hungerStateStartTime = currentTime;
@@ -153,10 +153,10 @@ export class LastCheckTimeManagerService {
     // 重置觸摸事件服務的上次重置時間
     (this.touchEventService as any).lastTimeReset = null;
 
-    // 重置低生命值觸發服務的相關時間
-    (this.lowHealthTriggerService as any).lastSickCheckTime = null;
-    (this.lowHealthTriggerService as any).lastLifeDamageTime = null;
-    (this.lowHealthTriggerService as any).lastDiseaseCheckTime = null;
+    // 重置健康度檢查服務的相關時間
+    (this.wellnessCheckService as any).lastSickCheckTime = null;
+    (this.wellnessCheckService as any).lastLifeDamageTime = null;
+    (this.wellnessCheckService as any).lastDiseaseCheckTime = null;
 
     // 重置低好感度事件服務的上次懲罰時間
     (this.lowLikabilityEventService as any).lastPunishTime = null;
@@ -215,17 +215,17 @@ export class LastCheckTimeManagerService {
         label: '觸摸事件服務 - 上次重置時間',
         value: (this.touchEventService as any).lastTimeReset
       },
-      'lowHealth_lastSickCheckTime': {
-        label: '低生命值觸發 - 上次生病檢查時間',
-        value: (this.lowHealthTriggerService as any).lastSickCheckTime
+      'wellness_lastSickCheckTime': {
+        label: '健康度檢查 - 上次生病檢查時間',
+        value: (this.wellnessCheckService as any).lastSickCheckTime
       },
-      'lowHealth_lastLifeDamageTime': {
-        label: '低生命值觸發 - 上次生命傷害時間',
-        value: (this.lowHealthTriggerService as any).lastLifeDamageTime
+      'wellness_lastLifeDamageTime': {
+        label: '健康度檢查 - 上次生命傷害時間',
+        value: (this.wellnessCheckService as any).lastLifeDamageTime
       },
-      'lowHealth_lastDiseaseCheckTime': {
-        label: '低生命值觸發 - 上次疾病檢查時間',
-        value: (this.lowHealthTriggerService as any).lastDiseaseCheckTime
+      'wellness_lastDiseaseCheckTime': {
+        label: '健康度檢查 - 上次疾病檢查時間',
+        value: (this.wellnessCheckService as any).lastDiseaseCheckTime
       },
       'lowLikability_lastPunishTime': {
         label: '低好感度事件 - 上次懲罰時間',

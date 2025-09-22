@@ -5,6 +5,7 @@ import { StateDataService } from '../data/state-data';
 import { DirtyTriggerService } from './dirty-trigger.service';
 import { WhiteTransitionService } from './white-transition.service';
 import { ToastrService } from '../components/shared/toastr/toastr.component';
+import { ModalService } from './modal.service';
 import { sources } from '../sources';
 
 @Injectable({
@@ -14,7 +15,8 @@ export class LifecycleService {
 
   constructor(
     private dirtyTriggerService: DirtyTriggerService,
-    private whiteTransitionService: WhiteTransitionService
+    private whiteTransitionService: WhiteTransitionService,
+    private modalService: ModalService
   ) {}
 
   /**
@@ -25,11 +27,11 @@ export class LifecycleService {
     const petName = currentPetStats.name || '電子雞';
 
     // 1. 將電子雞當前數值物件的 timeStopping 賦值為 true
-    // 2. 將電子雞當前數值物件的 isDead 賦值為 true
+    // 2. 將電子雞當前數值物件的 lifeCycle 賦值為 'DEAD'
     const updatedStats = {
       ...currentPetStats,
       timeStopping: true,
-      isDead: true
+      lifeCycle: 'DEAD' as const
     };
 
     PetStatsService.savePetStats(updatedStats);
@@ -90,8 +92,8 @@ export class LifecycleService {
       currentWellness: 0,
       maxWellness: 100,
       timeStopping: false,
-      isDead: false,
-      isLeaving: false
+      isLeaving: false,
+      isFreezing: false
     };
 
     PetStatsService.savePetStats(resetStats);
@@ -131,13 +133,13 @@ export class LifecycleService {
   /**
    * 顯示死亡確認對話框
    */
-  public showDeathConfirmDialog(): boolean {
+  public async showDeathConfirmDialog(): Promise<boolean> {
     const currentPetStats = PetStatsService.loadPetStats();
 
-    if (currentPetStats.isDead) {
-      const firstConfirm = confirm('是否開始飼養新的電子雞？');
+    if (currentPetStats.lifeCycle === 'DEAD' || currentPetStats.lifeCycle === 'COOKED') {
+      const firstConfirm = await this.modalService.confirm('是否開始飼養新的電子雞？');
       if (firstConfirm) {
-        const secondConfirm = confirm('是否開始飼養新的電子雞？');
+        const secondConfirm = await this.modalService.confirm('是否開始飼養新的電子雞？', '確認重新開始');
         if (secondConfirm) {
           this.clearCurrentChickenState();
           return true;

@@ -6,6 +6,7 @@ import { UserDataService } from '../../../data/user-data';
 import { getBreedByName } from '../../../data/breed-data';
 import { LifecycleService } from '../../../services/lifecycle.service';
 import { ToastrService } from '../../shared/toastr/toastr.component';
+import { ModalService } from '../../../services/modal.service';
 import { CollectionService } from '../../../data/collection-data';
 import { PetStats } from '../../../types/pet-stats.type';
 
@@ -134,7 +135,10 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
   private petStats: PetStats = PetStatsService.loadPetStats();
   private petStatsSubscription?: Subscription;
 
-  constructor(private lifecycleService: LifecycleService) {}
+  constructor(
+    private lifecycleService: LifecycleService,
+    private modalService: ModalService
+  ) {}
 
   ngOnInit() {
     this.updateButtonState();
@@ -217,16 +221,17 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
     }
   }
 
-  onCookingClick() {
+  async onCookingClick() {
     if (!this.canCook) {
       return;
     }
 
     // 二次確認
     const petName = this.petStats.name || '電子雞';
-    const confirmMessage = `確定要讓 ${petName} 進行熟成嗎？\\n\\n熟成後電子雞將會變成最終形態，但也會結束其生命。`;
+    const confirmMessage = `確定要讓 ${petName} 進行熟成嗎？\n\n熟成後電子雞將會變成最終形態，但也會結束其生命。`;
 
-    if (!confirm(confirmMessage)) {
+    const confirmed = await this.modalService.confirm(confirmMessage, '熟成確認');
+    if (!confirmed) {
       return;
     }
 
@@ -247,7 +252,7 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
       ...this.petStats,
       lifeCycle: 'COOKED' as const,
       timeStopping: true,  // 2. 將 timeStoping 賦值為 true
-      isDead: true         // 3. 將 isDead 賦值為 true
+      // 注意：lifeCycle 已經設為 'COOKED'，不需要額外的 isDead 屬性
     };
 
     PetStatsService.savePetStats(updatedStats);

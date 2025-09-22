@@ -8,7 +8,8 @@
       "Bash(sed:*)",
       "Bash(ng lint)",
       "Bash(ng build:*)",
-      "Bash(npm start)"
+      "Bash(npm start)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

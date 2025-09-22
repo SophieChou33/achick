@@ -268,7 +268,7 @@ export class CharacterComponent implements OnInit, OnDestroy {
       this.petStats = petStats;
 
       // 檢查是否狀態變為 DEAD 或 COOKED，如果是則重置位置
-      if (previousStats && !previousStats.isDead && petStats.isDead) {
+      if (previousStats && previousStats.lifeCycle !== 'DEAD' && petStats.lifeCycle === 'DEAD') {
         this.resetPositionsToDefault();
       }
       if (previousStats && previousStats.lifeCycle !== 'COOKED' && petStats.lifeCycle === 'COOKED') {
@@ -333,8 +333,15 @@ export class CharacterComponent implements OnInit, OnDestroy {
     // 有lifeCycle時才顯示角色，但如果isLeaving為true則隱藏
     this.isCharacterVisible = !this.petStats.isLeaving;
 
-    // 處理冰凍狀態 - 優先於其他狀態顯示
-    if (this.petStats.timeStopping) {
+    // 處理死亡狀態 - 最高優先級
+    if (lifeCycle === 'DEAD') {
+      this.characterImage = sources.character.dead.dead;
+      this.characterName = 'Dead';
+      return;
+    }
+
+    // 處理冰凍狀態 - 高優先級，但低於死亡狀態
+    if (this.petStats.isFreezing) {
       this.characterImage = sources.character.others.isFreezing;
       this.characterName = 'Frozen';
       return;
@@ -372,12 +379,6 @@ export class CharacterComponent implements OnInit, OnDestroy {
       }
     }
 
-    // 處理死亡狀態 - 使用 isDead 屬性判斷
-    if (this.petStats.isDead) {
-      this.characterImage = sources.character.dead.dead;
-      this.characterName = 'Dead';
-      return;
-    }
 
     // 預設情況：顯示child圖片
     this.characterImage = sources.character.child.child;
@@ -535,9 +536,10 @@ export class CharacterComponent implements OnInit, OnDestroy {
    * 解凍確認事件
    */
   onUnfreezeConfirm(): void {
-    // 將『電子雞當前數值』的 timeStoping 賦值為 0
+    // 將『電子雞當前數值』的 isFreezing 和 timeStopping 都賦值為 false
     const updatedStats = {
       ...this.petStats,
+      isFreezing: false,
       timeStopping: false
     };
 
@@ -578,13 +580,13 @@ export class CharacterComponent implements OnInit, OnDestroy {
    * 拖曳開始事件
    */
   onDragStart(event: MouseEvent | TouchEvent): void {
-    // 如果是死亡狀態，不允許操作
-    if (this.petStats.isDead) {
-      return;
-    }
-
     this.isDragging = true;
     this.hasMoved = false;
+
+    // 如果是死亡或熟成狀態，不允許拖曳操作，但仍要設置 isDragging 以便點擊檢測
+    if (this.petStats.lifeCycle === 'DEAD' || this.petStats.lifeCycle === 'COOKED') {
+      return;
+    }
     const clientX = event instanceof MouseEvent ? event.clientX : event.touches[0].clientX;
     const clientY = event instanceof MouseEvent ? event.clientY : event.touches[0].clientY;
 
@@ -679,14 +681,14 @@ export class CharacterComponent implements OnInit, OnDestroy {
    * 處理角色點擊事件（撫摸、命名、喚醒和解凍）
    */
   private handleCharacterClick(): void {
-    // 處理死亡狀態的點擊
-    if (this.petStats.isDead) {
+    // 處理死亡或熟成狀態的點擊
+    if (this.petStats.lifeCycle === 'DEAD' || this.petStats.lifeCycle === 'COOKED') {
       this.lifecycleService.showDeathConfirmDialog();
       return;
     }
 
     // 處理冷凍狀態的點擊
-    if (this.petStats.timeStopping) {
+    if (this.petStats.isFreezing) {
       this.unfreezeModal.show();
       return;
     }

@@ -140,8 +140,8 @@ export class RareBreedService {
       currentWellness: 50, // 初始健康度為50（一半）
       maxWellness: 100,
       timeStopping: false,
-      isDead: false,
-      isLeaving: false
+      isLeaving: false,
+      isFreezing: false
     };
 
     // 確保電子雞孵化時，工程師模式的自定義時間要重置成當前實際時間

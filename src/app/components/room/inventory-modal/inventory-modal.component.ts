@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { UserInventoryService } from '../../../data/user-inventory-data';
 import { ShopDataService } from '../../../data/shop-data';
 import { ItemUsageService } from '../../../services/item-usage.service';
+import { ModalService } from '../../../services/modal.service';
 import { UserInventory, InventoryCategory } from '../../../types/user-inventory.type';
 import { ProductItem } from '../../../types/product-data.type';
 import { sources } from '../../../sources';
@@ -415,6 +416,8 @@ export class InventoryModalComponent implements OnInit {
 
   inventory: UserInventory = UserInventoryService.loadUserInventory();
 
+  constructor(private modalService: ModalService) {}
+
   tabs: TabItem[] = [
     { key: 'food', label: '食物' },
     { key: 'health', label: '健康' },
@@ -494,7 +497,7 @@ export class InventoryModalComponent implements OnInit {
     // 檢查是否可以使用
     const canUseResult = ItemUsageService.canUseItem(this.selectedItem.itemName);
     if (!canUseResult.canUse) {
-      alert(canUseResult.reason);
+      this.modalService.alert(canUseResult.reason, '無法使用');
       return;
     }
 
@@ -516,9 +519,9 @@ export class InventoryModalComponent implements OnInit {
       this.closeConfirmModal();
 
       // 顯示成功訊息
-      alert(`${useResult.message}${useResult.effects ? '\\n效果：' + useResult.effects.join(', ') : ''}`);
+      this.modalService.alert(`${useResult.message}${useResult.effects ? '\n效果：' + useResult.effects.join(', ') : ''}`, '使用成功');
     } else {
-      alert(useResult.message);
+      this.modalService.alert(useResult.message, '使用失敗');
     }
   }
 

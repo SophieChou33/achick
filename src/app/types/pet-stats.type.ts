@@ -1,6 +1,6 @@
 export interface PetStats {
   rare: 'BAD' | 'NORMAL' | 'SPECIAL' | 'SUPER_SPECIAL' | null;
-  lifeCycle: 'EGG' | 'CHILD' | 'EVOLUTION' | 'COOKED' | null;
+  lifeCycle: 'EGG' | 'CHILD' | 'EVOLUTION' | 'COOKED' | 'DEAD' | null;
   breedName: string | null;
   name: string | null;
   currentHealth: number;
@@ -13,6 +13,6 @@ export interface PetStats {
   currentWellness: number;
   maxWellness: number;
   timeStopping: boolean;
-  isDead: boolean;
   isLeaving: boolean;
+  isFreezing: boolean;
 }

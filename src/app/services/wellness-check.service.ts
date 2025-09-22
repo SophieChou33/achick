@@ -7,27 +7,27 @@ import { CustomTimeService } from './custom-time.service';
 @Injectable({
   providedIn: 'root'
 })
-export class LowHealthTriggerService {
+export class WellnessCheckService {
   private lastSickCheckTime: string | null = null;
   private lastLifeDamageTime: string | null = null;
   private lastDiseaseCheckTime: string | null = null;
 
-  private healthCheckInterval?: number;
+  private wellnessCheckInterval?: number;
   private diseaseEffectsInterval?: number;
 
-  private static readonly LOW_HEALTH_STORAGE_KEY = 'achick_low_health_times';
+  private static readonly WELLNESS_STORAGE_KEY = 'achick_wellness_times';
 
   constructor(private customTimeService: CustomTimeService) {
-    this.loadLowHealthTimes();
-    this.startHealthMonitoring();
+    this.loadWellnessTimes();
+    this.startWellnessMonitoring();
   }
 
   /**
-   * 啟動健康監控定時器
+   * 啟動健康度監控定時器
    */
-  private startHealthMonitoring(): void {
-    // 每30秒執行一次健康檢查
-    this.healthCheckInterval = window.setInterval(() => {
+  private startWellnessMonitoring(): void {
+    // 每30秒執行一次健康度檢查
+    this.wellnessCheckInterval = window.setInterval(() => {
       this.healthCheck();
     }, 30000);
 
@@ -48,7 +48,7 @@ export class LowHealthTriggerService {
       this.lastSickCheckTime = null;
       this.lastLifeDamageTime = null;
       this.lastDiseaseCheckTime = null;
-      this.saveLowHealthTimes();
+      this.saveWellnessTimes();
       return;
     }
 
@@ -85,7 +85,7 @@ export class LowHealthTriggerService {
     // 若 lastLifeDamageTime 為 null，則將實際當前時間賦值給 lastLifeDamageTime，並且不往下執行邏輯
     if (this.lastLifeDamageTime === null) {
       this.lastLifeDamageTime = currentTime;
-      this.saveLowHealthTimes();
+      this.saveWellnessTimes();
       return;
     }
 
@@ -140,7 +140,7 @@ export class LowHealthTriggerService {
         // 更新 lastLifeDamageTime 為最後一次傷害的時間點
         const newLastDamageTime = new Date(lastDamageTime.getTime() + (damageCount * intervalMs));
         this.lastLifeDamageTime = this.formatTimeFromDate(newLastDamageTime);
-        this.saveLowHealthTimes();
+        this.saveWellnessTimes();
 
         console.log(`低健康度累積傷害：健康度範圍 ${currentWellness}，執行 ${damageCount} 次傷害，生命值-${totalHealthDamage}，最大生命值-${totalMaxHealthDamage}`);
       }
@@ -157,7 +157,7 @@ export class LowHealthTriggerService {
     // 若 lastDiseaseCheckTime 為 null，則將實際當前時間賦值給 lastDiseaseCheckTime，並且不往下執行邏輯
     if (this.lastDiseaseCheckTime === null) {
       this.lastDiseaseCheckTime = currentTime;
-      this.saveLowHealthTimes();
+      this.saveWellnessTimes();
       return;
     }
 
@@ -191,7 +191,7 @@ export class LowHealthTriggerService {
       this.randomGetSick();
       // 更新 lastDiseaseCheckTime
       this.lastDiseaseCheckTime = currentTime;
-      this.saveLowHealthTimes();
+      this.saveWellnessTimes();
     }
   }
 
@@ -236,8 +236,8 @@ export class LowHealthTriggerService {
     }
 
     // 定義靜態變數來追蹤上次疾病效果時間
-    if (!LowHealthTriggerService.lastDiseaseEffectTime1hour) {
-      LowHealthTriggerService.lastDiseaseEffectTime1hour = null;
+    if (!WellnessCheckService.lastDiseaseEffectTime1hour) {
+      WellnessCheckService.lastDiseaseEffectTime1hour = null;
     }
 
     const currentStateData = StateDataService.loadStateData();
@@ -258,13 +258,13 @@ export class LowHealthTriggerService {
     const currentTime = this.customTimeService.formatTime();
 
     // 若 lastDiseaseEffectTime1hour 為 null，則將實際當前時間賦值給 lastDiseaseEffectTime1hour，並且不往下執行邏輯
-    if (LowHealthTriggerService.lastDiseaseEffectTime1hour === null) {
-      LowHealthTriggerService.lastDiseaseEffectTime1hour = currentTime;
-      this.saveLowHealthTimes();
+    if (WellnessCheckService.lastDiseaseEffectTime1hour === null) {
+      WellnessCheckService.lastDiseaseEffectTime1hour = currentTime;
+      this.saveWellnessTimes();
       return;
     }
 
-    const lastEffectTime = this.parseTimeString(LowHealthTriggerService.lastDiseaseEffectTime1hour);
+    const lastEffectTime = this.parseTimeString(WellnessCheckService.lastDiseaseEffectTime1hour);
     const now = this.parseTimeString(currentTime);
     const timeDiffMs = now.getTime() - lastEffectTime.getTime();
     const oneHourInMs = 60 * 60 * 1000;
@@ -295,8 +295,8 @@ export class LowHealthTriggerService {
 
       // 更新時間為最後一次效果的時間點
       const newLastEffectTime = new Date(lastEffectTime.getTime() + (effectCount * oneHourInMs));
-      LowHealthTriggerService.lastDiseaseEffectTime1hour = this.formatTimeFromDate(newLastEffectTime);
-      this.saveLowHealthTimes();
+      WellnessCheckService.lastDiseaseEffectTime1hour = this.formatTimeFromDate(newLastEffectTime);
+      this.saveWellnessTimes();
 
       console.log(`疾病累積效果：${activeDiseaseCount} 個疾病，執行 ${effectCount} 次效果，生命值-${totalHealthReduction}，最大生命值-${totalMaxHealthReduction}`);
     }
@@ -309,9 +309,9 @@ export class LowHealthTriggerService {
    * 停止所有定時器（用於服務銷毀時清理）
    */
   public stopMonitoring(): void {
-    if (this.healthCheckInterval) {
-      clearInterval(this.healthCheckInterval);
-      this.healthCheckInterval = undefined;
+    if (this.wellnessCheckInterval) {
+      clearInterval(this.wellnessCheckInterval);
+      this.wellnessCheckInterval = undefined;
     }
     if (this.diseaseEffectsInterval) {
       clearInterval(this.diseaseEffectsInterval);
@@ -320,7 +320,7 @@ export class LowHealthTriggerService {
   }
 
   /**
-   * 手動觸發健康檢查（用於調試）
+   * 手動觸發健康度檢查（用於調試）
    */
   public manualHealthCheck(): void {
     this.healthCheck();
@@ -359,41 +359,41 @@ export class LowHealthTriggerService {
   }
 
   /**
-   * 載入低生命值時間資料
+   * 載入健康度時間資料
    */
-  private loadLowHealthTimes(): void {
+  private loadWellnessTimes(): void {
     try {
-      const savedData = localStorage.getItem(LowHealthTriggerService.LOW_HEALTH_STORAGE_KEY);
+      const savedData = localStorage.getItem(WellnessCheckService.WELLNESS_STORAGE_KEY);
       if (savedData) {
-        const healthData = JSON.parse(savedData);
-        this.lastSickCheckTime = healthData.lastSickCheckTime || null;
-        this.lastLifeDamageTime = healthData.lastLifeDamageTime || null;
-        this.lastDiseaseCheckTime = healthData.lastDiseaseCheckTime || null;
-        LowHealthTriggerService.lastDiseaseEffectTime1hour = healthData.lastDiseaseEffectTime1hour || null;
+        const wellnessData = JSON.parse(savedData);
+        this.lastSickCheckTime = wellnessData.lastSickCheckTime || null;
+        this.lastLifeDamageTime = wellnessData.lastLifeDamageTime || null;
+        this.lastDiseaseCheckTime = wellnessData.lastDiseaseCheckTime || null;
+        WellnessCheckService.lastDiseaseEffectTime1hour = wellnessData.lastDiseaseEffectTime1hour || null;
       }
     } catch (error) {
-      console.error('Failed to load low health times:', error);
+      console.error('Failed to load wellness times:', error);
       this.lastSickCheckTime = null;
       this.lastLifeDamageTime = null;
       this.lastDiseaseCheckTime = null;
-      LowHealthTriggerService.lastDiseaseEffectTime1hour = null;
+      WellnessCheckService.lastDiseaseEffectTime1hour = null;
     }
   }
 
   /**
-   * 儲存低生命值時間資料
+   * 儲存健康度時間資料
    */
-  private saveLowHealthTimes(): void {
+  private saveWellnessTimes(): void {
     try {
-      const healthData = {
+      const wellnessData = {
         lastSickCheckTime: this.lastSickCheckTime,
         lastLifeDamageTime: this.lastLifeDamageTime,
         lastDiseaseCheckTime: this.lastDiseaseCheckTime,
-        lastDiseaseEffectTime1hour: LowHealthTriggerService.lastDiseaseEffectTime1hour
+        lastDiseaseEffectTime1hour: WellnessCheckService.lastDiseaseEffectTime1hour
       };
-      localStorage.setItem(LowHealthTriggerService.LOW_HEALTH_STORAGE_KEY, JSON.stringify(healthData));
+      localStorage.setItem(WellnessCheckService.WELLNESS_STORAGE_KEY, JSON.stringify(wellnessData));
     } catch (error) {
-      console.error('Failed to save low health times:', error);
+      console.error('Failed to save wellness times:', error);
     }
   }
 }

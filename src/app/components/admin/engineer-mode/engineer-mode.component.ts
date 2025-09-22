@@ -9,13 +9,14 @@ import { CustomTimeService } from '../../../services/custom-time.service';
 import { DirtyTriggerService } from '../../../services/dirty-trigger.service';
 import { HungerManagerService } from '../../../services/hunger-manager.service';
 import { HealthCheckService } from '../../../services/health-check.service';
-import { LowHealthTriggerService } from '../../../services/low-health-trigger.service';
+import { WellnessCheckService } from '../../../services/wellness-check.service';
 import { LeavingService } from '../../../services/leaving.service';
 import { LowLikabilityEventService } from '../../../services/low-likability-event.service';
 import { LightService } from '../../../services/light.service';
 import { SleepService } from '../../../services/sleep.service';
 import { TouchEventService } from '../../../services/touch-event.service';
 import { LastCheckTimeManagerService } from '../../../services/last-check-time-manager.service';
+import { ModalService } from '../../../services/modal.service';
 import { PetStats } from '../../../types/pet-stats.type';
 import { DirtyObject } from '../../../types/dirty-object.type';
 
@@ -129,7 +130,7 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                 <button class="btn btn-secondary" (click)="triggerTimer('hungerDecrease')">飢餓度減少檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('hungerPenalty')">飢餓度懲罰扣值檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('health')">生命值檢查</button>
-                <button class="btn btn-secondary" (click)="triggerTimer('lowHealth')">低生命值觸發器</button>
+                <button class="btn btn-secondary" (click)="triggerTimer('wellness')">健康度檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('leaving')">離家出走檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('lowLikability')">低好感度扣值檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('dirty')">髒汙產生</button>
@@ -679,13 +680,14 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
     private dirtyTriggerService: DirtyTriggerService,
     private hungerManagerService: HungerManagerService,
     private healthCheckService: HealthCheckService,
-    private lowHealthTriggerService: LowHealthTriggerService,
+    private wellnessCheckService: WellnessCheckService,
     private leavingService: LeavingService,
     private lowLikabilityEventService: LowLikabilityEventService,
     private lightService: LightService,
     private sleepService: SleepService,
     private touchEventService: TouchEventService,
-    private lastCheckTimeManagerService: LastCheckTimeManagerService
+    private lastCheckTimeManagerService: LastCheckTimeManagerService,
+    private modalService: ModalService
   ) {}
 
   ngOnInit() {
@@ -785,10 +787,10 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
         // 手動觸發生命值檢查
         this.healthCheckService.manualCheck();
         break;
-      case 'lowHealth':
-        // 手動觸發低生命值檢查
-        this.lowHealthTriggerService.manualHealthCheck();
-        this.lowHealthTriggerService.manualDiseaseEffects();
+      case 'wellness':
+        // 手動觸發健康度檢查
+        this.wellnessCheckService.manualHealthCheck();
+        this.wellnessCheckService.manualDiseaseEffects();
         break;
       case 'leaving':
         // 手動觸發離家出走檢查
@@ -970,7 +972,7 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
   killPet() {
     const updatedStats = {
       ...this.petStats,
-      isDead: true,
+      lifeCycle: 'DEAD' as const,
       currentHealth: 0
     };
     PetStatsService.savePetStats(updatedStats);
@@ -979,8 +981,9 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
   revivePet() {
     const updatedStats = {
       ...this.petStats,
-      isDead: false,
-      currentHealth: this.petStats.maxHealth
+      lifeCycle: 'CHILD' as const,
+      currentHealth: this.petStats.maxHealth,
+      timeStopping: false // 復活後重置時間停止狀態
     };
     PetStatsService.savePetStats(updatedStats);
   }
@@ -988,7 +991,8 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
   freezePet() {
     const updatedStats = {
       ...this.petStats,
-      timeStopping: true
+      timeStopping: true,
+      isFreezing: true
     };
     PetStatsService.savePetStats(updatedStats);
   }
@@ -996,13 +1000,14 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
   unfreezePet() {
     const updatedStats = {
       ...this.petStats,
-      timeStopping: false
+      timeStopping: false,
+      isFreezing: false
     };
     PetStatsService.savePetStats(updatedStats);
   }
 
-  resetPet() {
-    if (confirm('確定要重置電子雞嗎？這將清除所有數據！')) {
+  async resetPet() {
+    if (await this.modalService.confirm('確定要重置電子雞嗎？這將清除所有數據！', '重置確認', '確定重置', '取消')) {
       PetStatsService.resetPetStats();
       this.customTimeService.forceResetToRealTime();
       // 重置所有上次檢查時間為 null

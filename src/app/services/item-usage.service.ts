@@ -66,12 +66,14 @@ export class ItemUsageService {
     // 應用 freeze 效果
     if (productItem.freeze === 1) {
       updatedStats.timeStopping = true;
+      updatedStats.isFreezing = true;
       effects.push('電子雞已被冰凍');
     }
 
     // 應用 reborn 效果
     if (productItem.reborn === 1) {
-      updatedStats.isDead = false;
+      updatedStats.lifeCycle = 'CHILD';
+      updatedStats.timeStopping = false; // 復活後重置時間停止狀態
       effects.push('電子雞已復活');
     }
 
@@ -205,16 +207,16 @@ export class ItemUsageService {
     if (productItem) {
       // 死者甦醒只能在電子雞死亡時使用，且不能在熟成狀態下使用
       if (productItem.reborn === 1) {
-        if (!currentPetStats.isDead) {
-          return {
-            canUse: false,
-            reason: '電子雞還活著，不需要使用復活物品'
-          };
-        }
         if (currentPetStats.lifeCycle === 'COOKED') {
           return {
             canUse: false,
             reason: '已熟成的電子雞無法復活'
+          };
+        }
+        if (currentPetStats.lifeCycle !== 'DEAD') {
+          return {
+            canUse: false,
+            reason: '電子雞還活著，不需要使用復活物品'
           };
         }
       }

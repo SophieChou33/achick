@@ -5,6 +5,7 @@ import { PetStats } from '../types/pet-stats.type';
 import { UserDataService } from '../data/user-data';
 import { StateDataService } from '../data/state-data';
 import { ToastrService } from '../components/shared/toastr/toastr.component';
+import { ModalService } from './modal.service';
 import { WhiteTransitionService } from './white-transition.service';
 import { CollectionService } from '../data/collection-data';
 import { sources } from '../sources';
@@ -22,7 +23,10 @@ export class TouchEventService {
 
   private static friendshipIncreaseSubject = new Subject<number>();
 
-  constructor(private whiteTransitionService: WhiteTransitionService) {
+  constructor(
+    private whiteTransitionService: WhiteTransitionService,
+    private modalService: ModalService
+  ) {
     this.loadTouchData();
     this.startResetTimer();
   }
@@ -293,9 +297,9 @@ export class TouchEventService {
   /**
    * 觸發進化事件
    */
-  private triggerEvolution(currentPetStats: PetStats): void {
+  private async triggerEvolution(currentPetStats: PetStats): Promise<void> {
     const petName = currentPetStats.name || '電子雞';
-    const confirmed = confirm(`${petName}發光了！`);
+    const confirmed = await this.modalService.confirm(`${petName}發光了！`, '進化確認', '進化', '取消');
 
     if (confirmed) {
       this.executeEvolution(currentPetStats);
