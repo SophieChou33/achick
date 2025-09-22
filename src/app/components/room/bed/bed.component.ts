@@ -74,7 +74,7 @@ import { StateDataService } from '../../../data/state-data';
 })
 export class BedComponent implements OnInit, OnDestroy {
   bedImage = sources.bed.bedEmptyLight;
-  sleepIcon = sources.otherIcons.isSleeping;
+  sleepIcon = sources.moodStatus.isSleeping;
   isSleeping = false;
   bedPosition = { left: '19%', top: '53dvh' };
 

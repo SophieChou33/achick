@@ -11,6 +11,7 @@ import { BirthOverlayComponent } from '../birth-overlay/birth-overlay.component'
 import { NamingModalComponent } from '../naming-modal/naming-modal.component';
 import { CoinAnimationComponent } from '../coin-animation/coin-animation.component';
 import { UnfreezeModalComponent } from '../unfreeze-modal/unfreeze-modal.component';
+import { MoodStatusComponent } from '../mood-status/mood-status.component';
 import { TouchEventService } from '../../../services/touch-event.service';
 import { LifecycleService } from '../../../services/lifecycle.service';
 import { SleepService } from '../../../services/sleep.service';
@@ -19,7 +20,7 @@ import { StateDataService } from '../../../data/state-data';
 @Component({
   selector: 'app-character',
   standalone: true,
-  imports: [CommonModule, BirthOverlayComponent, NamingModalComponent, CoinAnimationComponent, UnfreezeModalComponent],
+  imports: [CommonModule, BirthOverlayComponent, NamingModalComponent, CoinAnimationComponent, UnfreezeModalComponent, MoodStatusComponent],
   template: `
     <!-- 出生按鈕區域 -->
     <div class="character-area-wrapper" *ngIf="showBirthButton">
@@ -33,17 +34,25 @@ import { StateDataService } from '../../../data/state-data';
     </div>
 
     <!-- 角色顯示區域 -->
-    <div class="character-area-wrapper" *ngIf="isCharacterVisible && !isSleeping"
-         (mousedown)="onDragStart($event)"
-         (touchstart)="onDragStart($event)">
-      <div class="character-area" [style.left]="characterPosition.left" [style.top]="characterPosition.top">
-        <div class="character-shadow"></div>
-        <div class="character-container">
-          <img [src]="characterImage" [alt]="characterName" class="character-image" />
-          <div class="character-effects" *ngIf="hasEffects">
-            <img *ngIf="isFreezing" [src]="freezingIcon" alt="Freezing" class="effect-icon" />
+    <div class="character-area-wrapper" *ngIf="isCharacterVisible && !isSleeping">
+      <!-- 不移動的定位框 -->
+      <div class="character-positioning-frame"
+           [style.left]="characterPosition.left"
+           [style.top]="characterPosition.top"
+           (mousedown)="onDragStart($event)"
+           (touchstart)="onDragStart($event)">
+        <!-- 可浮動的角色區域 -->
+        <div class="character-area">
+          <div class="character-shadow"></div>
+          <div class="character-container">
+            <img [src]="characterImage" [alt]="characterName" class="character-image" />
+            <div class="character-effects" *ngIf="hasEffects">
+              <img *ngIf="isFreezing" [src]="freezingIcon" alt="Freezing" class="effect-icon" />
+            </div>
           </div>
         </div>
+        <!-- 心情狀態組件 -->
+        <app-mood-status></app-mood-status>
       </div>
     </div>
 
@@ -72,9 +81,18 @@ import { StateDataService } from '../../../data/state-data';
       width: 100%;
       height: 100%;
     }
-    .character-area {
+
+    .character-positioning-frame {
       position: absolute;
       z-index: 700;
+      transition: none;
+    }
+
+    .character-positioning-frame.dragging {
+      cursor: grabbing;
+    }
+
+    .character-area {
       display: flex;
       justify-content: center;
       align-items: center;
@@ -87,8 +105,6 @@ import { StateDataService } from '../../../data/state-data';
 
     .character-area.dragging {
       animation: none;
-      cursor: grabbing;
-      transition: none;
     }
 
 
@@ -602,7 +618,9 @@ export class CharacterComponent implements OnInit, OnDestroy {
     if (!this.hasMoved && distance > this.dragThreshold) {
       this.hasMoved = true;
       // 添加拖曳樣式和重置動畫
+      const positioningFrame = document.querySelector('.character-positioning-frame');
       const characterArea = document.querySelector('.character-area');
+      positioningFrame?.classList.add('dragging');
       characterArea?.classList.add('dragging');
     }
 
@@ -641,7 +659,9 @@ export class CharacterComponent implements OnInit, OnDestroy {
 
     if (this.hasMoved) {
       // 這是拖動操作：移除拖曳樣式並儲存位置
+      const positioningFrame = document.querySelector('.character-positioning-frame');
       const characterArea = document.querySelector('.character-area');
+      positioningFrame?.classList.remove('dragging');
       characterArea?.classList.remove('dragging');
 
       // 儲存新位置

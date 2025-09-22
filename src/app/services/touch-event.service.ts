@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Subject, Observable } from 'rxjs';
 import { PetStatsService } from '../data/pet-stats-data';
 import { PetStats } from '../types/pet-stats.type';
 import { UserDataService } from '../data/user-data';
@@ -12,11 +13,13 @@ import { sources } from '../sources';
   providedIn: 'root'
 })
 export class TouchEventService {
-  private maxTouchTime: number = 15;
+  private maxTouchTime: number = 5;
   private isCanTouch: boolean = true;
   private lastTimeReset: string | null = null;
   private touchedTimes: number = 0;
   private resetInterval?: number;
+
+  private static friendshipIncreaseSubject = new Subject<number>();
 
   constructor(private whiteTransitionService: WhiteTransitionService) {
     this.startResetTimer();
@@ -48,19 +51,25 @@ export class TouchEventService {
       return;
     }
 
-    // 3. 判斷：若本service的isCanTouch為false，或是touchedTimes≥maxTouchTime，則跳出toastr，將isCanTouch重新賦值為false，並且不往下執行邏輯
-    if (!this.isCanTouch || this.touchedTimes >= this.maxTouchTime) {
+    // 3. 判斷：若touchedTimes≥maxTouchTime，則跳出toastr，將isCanTouch重新賦值為false，並且不往下執行邏輯
+    if (this.touchedTimes >= this.maxTouchTime) {
       ToastrService.show(`${currentPetStats.name || '電子雞'}暫時不想被摸摸喔！`, 'info');
       this.isCanTouch = false;
       return;
     }
 
-    // 4. 將本service的isCanTouch賦值為false
+    // 4. 若本service的isCanTouch為false（2秒CD中），則不往下執行邏輯且不顯示toastr
+    if (!this.isCanTouch) {
+      return;
+    }
+
+    // 5. 將本service的isCanTouch賦值為false
     this.isCanTouch = false;
 
-    // 5. 判斷若電子雞當前數值物件的當前好感度≤最大好感度-0.05，則將當前好感度+0.05後重新賦值
+    // 6. 判斷若電子雞當前數值物件的當前好感度≤最大好感度-0.05，則將當前好感度+0.05後重新賦值
     if (currentPetStats.currentFriendship <= currentPetStats.maxFriendship - 0.05) {
-      const newFriendship = Math.min(currentPetStats.currentFriendship + 0.05, currentPetStats.maxFriendship);
+      const friendshipIncrease = 0.05;
+      const newFriendship = Math.min(currentPetStats.currentFriendship + friendshipIncrease, currentPetStats.maxFriendship);
       const updatedStats = {
         ...currentPetStats,
         currentFriendship: newFriendship
@@ -68,6 +77,9 @@ export class TouchEventService {
       PetStatsService.savePetStats(updatedStats);
 
       ToastrService.show(`與${currentPetStats.name || '電子雞'}更親近了，好感度上升！`, 'success');
+
+      // 發送好感度增加事件
+      TouchEventService.friendshipIncreaseSubject.next(friendshipIncrease);
 
       // 執行 getTouchingCoin 函數
       this.getTouchingCoin(currentPetStats);
@@ -78,10 +90,10 @@ export class TouchEventService {
       this.checkEvolutionConditions(currentPetStats);
     }
 
-    // 6. touchedTimes +1 後重新賦值給 touchedTimes
+    // 7. touchedTimes +1 後重新賦值給 touchedTimes
     this.touchedTimes += 1;
 
-    // 7. 兩秒後，本service的isCanTouch賦值為true
+    // 8. 兩秒後，本service的isCanTouch賦值為true
     setTimeout(() => {
       this.isCanTouch = true;
     }, 2000);
@@ -305,5 +317,12 @@ export class TouchEventService {
     this.touchedTimes = 0;
     this.isCanTouch = true;
     this.lastTimeReset = null;
+  }
+
+  /**
+   * 獲取好感度增加事件的Observable
+   */
+  public static getFriendshipIncrease$(): Observable<number> {
+    return TouchEventService.friendshipIncreaseSubject.asObservable();
   }
 }
