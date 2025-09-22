@@ -45,7 +45,7 @@ interface StatusEffects {
     </div>
 
     <!-- 滑動狀態面板 -->
-    <div class="status-panel" [class.visible]="isPanelVisible" [class.hover]="isHovering"
+    <div class="status-panel" *ngIf="petStats.rare !== null" [class.visible]="isPanelVisible" [class.hover]="isHovering"
          (click)="togglePanel()"
          (mouseenter)="onHover(true)"
          (mouseleave)="onHover(false)">
@@ -56,7 +56,7 @@ interface StatusEffects {
           <div class="progress-bar">
             <div class="progress-fill health" [style.width.%]="getHealthPercentage()"></div>
           </div>
-          <span class="status-value">{{ getHealthPercentage() }}%</span>
+          <span class="status-value health">{{ petStats.currentHealth }}/{{ petStats.maxHealth }}</span>
         </div>
 
         <div class="status-row">
@@ -64,7 +64,7 @@ interface StatusEffects {
           <div class="progress-bar">
             <div class="progress-fill friendship" [style.width.%]="getFriendshipPercentage()"></div>
           </div>
-          <span class="status-value">{{ getFriendshipPercentage() }}%</span>
+          <span class="status-value friendship">{{ getFriendshipDisplay() }}/{{ petStats.maxFriendship }}</span>
         </div>
 
         <div class="status-row">
@@ -72,7 +72,7 @@ interface StatusEffects {
           <div class="progress-bar">
             <div class="progress-fill hunger" [style.width.%]="getHungerPercentage()"></div>
           </div>
-          <span class="status-value">{{ getHungerPercentage() }}%</span>
+          <span class="status-value hunger">{{ petStats.currentHunger }}/{{ petStats.maxHunger }}</span>
         </div>
 
         <div class="status-row">
@@ -80,7 +80,7 @@ interface StatusEffects {
           <div class="progress-bar">
             <div class="progress-fill wellness" [style.width.%]="getWellnessPercentage()"></div>
           </div>
-          <span class="status-value">{{ getWellnessPercentage() }}%</span>
+          <span class="status-value wellness">{{ petStats.currentWellness }}/{{ petStats.maxWellness }}</span>
         </div>
       </div>
     </div>
@@ -234,7 +234,7 @@ interface StatusEffects {
     .status-row {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .status-label {
@@ -276,11 +276,26 @@ interface StatusEffects {
     }
 
     .status-value {
-      min-width: 40px;
+      min-width: 50px;
       font-size: 11px;
       text-align: right;
-      color: #847170;
-      font-weight: 500;
+      font-weight: 600;
+    }
+
+    .status-value.health {
+      color: #cc6e6c;
+    }
+
+    .status-value.friendship {
+      color: #f3b09f;
+    }
+
+    .status-value.hunger {
+      color: #e0a65f;
+    }
+
+    .status-value.wellness {
+      color: #b5ca89;
     }
   `]
 })
@@ -378,5 +393,9 @@ export class StatusBarComponent implements OnInit, OnDestroy {
   getWellnessPercentage(): number {
     if (this.petStats.maxWellness === 0) return 0;
     return Math.round((this.petStats.currentWellness / this.petStats.maxWellness) * 100);
+  }
+
+  getFriendshipDisplay(): string {
+    return this.petStats.currentFriendship.toFixed(1);
   }
 }
