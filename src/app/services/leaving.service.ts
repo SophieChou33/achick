@@ -95,6 +95,14 @@ export class LeavingService {
       // 10%機率：電子雞死亡
       this.clickTimes = 0;
       ToastrService.show(`${petName}在弱肉強食的世界中不幸被淘汰了，愛要及時啊！`, 'error');
+
+      // 設定 isLeaving 為 false，因為電子雞已死亡
+      const updatedStats = {
+        ...currentPetStats,
+        isLeaving: false
+      };
+      PetStatsService.savePetStats(updatedStats);
+
       await this.lifecycleService.doKill();
 
     } else {
