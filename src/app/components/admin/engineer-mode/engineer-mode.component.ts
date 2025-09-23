@@ -88,6 +88,10 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                   <label>生命週期:</label>
                   <span>{{ petStats.lifeCycle || '未設定' }}</span>
                 </div>
+                <div class="info-item">
+                  <label>是否冷凍狀態:</label>
+                  <span>{{ petStats.isFreezing ? '是' : '否' }}</span>
+                </div>
               </div>
             </div>
 
@@ -131,6 +135,7 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                 <button class="btn btn-secondary" (click)="triggerTimer('hungerPenalty')">飽足感懲罰扣值檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('health')">生命值檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('wellness')">健康度檢查</button>
+                <button class="btn btn-secondary" (click)="triggerTimer('diseaseCheck')">疾病檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('leaving')">離家出走檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('lowLikability')">低好感度扣值檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('dirty')">髒汙產生</button>
@@ -792,6 +797,10 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
         this.wellnessCheckService.manualHealthCheck();
         this.wellnessCheckService.manualDiseaseEffects();
         break;
+      case 'diseaseCheck':
+        // 手動觸發疾病檢查（跳過時間限制）
+        await this.wellnessCheckService.manualDiseaseCheck();
+        break;
       case 'leaving':
         // 手動觸發離家出走檢查
         this.lowLikabilityEventService.manualTriggerLeavingCheck();
@@ -972,7 +981,8 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
   killPet() {
     const updatedStats = {
       ...this.petStats,
-      lifeCycle: 'DEAD' as const,
+      isDead: true,
+      timeStopping: true,
       currentHealth: 0
     };
     PetStatsService.savePetStats(updatedStats);
@@ -982,10 +992,15 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
     const updatedStats = {
       ...this.petStats,
       lifeCycle: 'CHILD' as const,
-      currentHealth: this.petStats.maxHealth,
-      timeStopping: false // 復活後重置時間停止狀態
+      isDead: false,      // 復活後不再死亡
+      timeStopping: false, // 復活後重置時間停止狀態
+      currentHealth: this.petStats.maxHealth
     };
     PetStatsService.savePetStats(updatedStats);
+
+    // 復活時重置所有檢查時間
+    this.lastCheckTimeManagerService.initializeAllLastCheckTimes();
+    console.log('工程師模式復活時已重置所有檢查時間');
   }
 
   freezePet() {

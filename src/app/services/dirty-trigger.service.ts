@@ -59,7 +59,9 @@ export class DirtyTriggerService {
     }
 
     // 2. 當電子雞當前數值物件的 timeStoping 為 true 時，或是 dirtyObjects.length ≥ maxDirtyCounts 時，不往下執行邏輯
-    if (currentPetStats.timeStopping === true || this.dirtyObjects.length >= this.maxDirtyCounts) {
+    // 且只在 lifeCycle 為 CHILD 或 EVOLUTION 時執行
+    if (currentPetStats.timeStopping === true || this.dirtyObjects.length >= this.maxDirtyCounts ||
+        (currentPetStats.lifeCycle !== 'CHILD' && currentPetStats.lifeCycle !== 'EVOLUTION')) {
       console.log('髒污產生停止：時間停止或已達最大髒污數量');
       return;
     }
@@ -146,9 +148,11 @@ export class DirtyTriggerService {
 
     // 1. 當電子雞當前數值物件的 rare 為 null 時，或是當電子雞當前數值物件的 timeStoping 為 true 時，
     // 或是 dirtyObjects.length 為 0 時，不往下執行邏輯
+    // 且只在 lifeCycle 為 CHILD 或 EVOLUTION 時執行
     if (currentPetStats.rare === null ||
         currentPetStats.timeStopping === true ||
-        this.dirtyObjects.length === 0) {
+        this.dirtyObjects.length === 0 ||
+        (currentPetStats.lifeCycle !== 'CHILD' && currentPetStats.lifeCycle !== 'EVOLUTION')) {
       return;
     }
 

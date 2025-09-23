@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, Injector } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { WelcomeComponent } from './components/welcome/welcome.component';
@@ -7,6 +7,9 @@ import { WhiteTransitionComponent } from './components/white-transition/white-tr
 import { WhiteTransitionService } from './services/white-transition.service';
 import { HungerManagerService } from './services/hunger-manager.service';
 import { AppStateService } from './services/app-state.service';
+import { ItemUsageService } from './services/item-usage.service';
+import { LeavingService } from './services/leaving.service';
+import { LowLikabilityEventService } from './services/low-likability-event.service';
 
 @Component({
   selector: 'app-root',
@@ -37,8 +40,18 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(
     private whiteTransitionService: WhiteTransitionService,
     private hungerManagerService: HungerManagerService,
-    private appStateService: AppStateService
-  ) {}
+    private appStateService: AppStateService,
+    private injector: Injector,
+    private leavingService: LeavingService,
+    private lowLikabilityEventService: LowLikabilityEventService
+  ) {
+    // 設置 ItemUsageService 的依賴注入器
+    ItemUsageService.setInjector(this.injector);
+
+    // 注入離家出走相關服務以確保它們的定時器啟動
+    // 這些服務在構造函數中會自動啟動定時器
+    console.log('離家出走服務已初始化');
+  }
 
   ngOnInit() {
     // 註冊場景準備回調函數

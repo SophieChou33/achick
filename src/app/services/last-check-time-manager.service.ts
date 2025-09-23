@@ -50,9 +50,10 @@ export class LastCheckTimeManagerService {
     // 設定低好感度事件服務的上次懲罰時間
     (this.lowLikabilityEventService as any).lastPunishTime = currentTime;
 
-    // 設定飢餓管理服務的上次飢餓時間和飢餓狀態開始時間
+    // 設定飢餓管理服務的上次飢餓時間、飢餓狀態開始時間和上次懲罰時間
     (this.hungerManagerService as any).lastHungerTime = currentTime;
     (this.hungerManagerService as any).hungerStateStartTime = currentTime;
+    (this.hungerManagerService as any).lastHungerPenaltyTime = currentTime;
 
     // 強制觸發所有服務的保存方法
     this.forceUpdateAllLastCheckTimes();
@@ -100,9 +101,10 @@ export class LastCheckTimeManagerService {
     // 設定低好感度事件服務的上次懲罰時間
     (this.lowLikabilityEventService as any).lastPunishTime = presetTime;
 
-    // 設定飢餓管理服務的上次飢餓時間和飢餓狀態開始時間
+    // 設定飢餓管理服務的上次飢餓時間、飢餓狀態開始時間和上次懲罰時間
     (this.hungerManagerService as any).lastHungerTime = presetTime;
     (this.hungerManagerService as any).hungerStateStartTime = presetTime;
+    (this.hungerManagerService as any).lastHungerPenaltyTime = presetTime;
 
     // 強制觸發所有服務的保存方法
     this.forceUpdateAllLastCheckTimes();
@@ -130,6 +132,9 @@ export class LastCheckTimeManagerService {
 
     // 重置飢餓管理服務的飢餓狀態開始時間（用於懲罰計算）
     (this.hungerManagerService as any).hungerStateStartTime = currentTime;
+
+    // 重置飢餓管理服務的上次懲罰時間
+    (this.hungerManagerService as any).lastHungerPenaltyTime = currentTime;
 
     // 強制觸發所有服務的保存方法
     this.forceUpdateAllLastCheckTimes();
@@ -161,9 +166,10 @@ export class LastCheckTimeManagerService {
     // 重置低好感度事件服務的上次懲罰時間
     (this.lowLikabilityEventService as any).lastPunishTime = null;
 
-    // 重置飢餓管理服務的上次飢餓時間和飢餓狀態開始時間
+    // 重置飢餓管理服務的上次飢餓時間、飢餓狀態開始時間和上次懲罰時間
     (this.hungerManagerService as any).lastHungerTime = null;
     (this.hungerManagerService as any).hungerStateStartTime = null;
+    (this.hungerManagerService as any).lastHungerPenaltyTime = null;
 
     // 清空所有髒污物件的上次懲罰時間
     this.dirtyTriggerService.dirtyObjects.forEach(dirty => {
@@ -236,8 +242,12 @@ export class LastCheckTimeManagerService {
         value: (this.hungerManagerService as any).lastHungerTime
       },
       'hunger_hungerStateStartTime': {
-        label: '飢餓管理 - 飢餓狀態開始時間（懲罰用）',
+        label: '飢餓管理 - 飢餓狀態開始時間',
         value: (this.hungerManagerService as any).hungerStateStartTime
+      },
+      'hunger_lastHungerPenaltyTime': {
+        label: '飢餓管理 - 上次懲罰時間',
+        value: (this.hungerManagerService as any).lastHungerPenaltyTime
       }
     });
 

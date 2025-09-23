@@ -3,6 +3,7 @@ import { PetStatsService } from '../data/pet-stats-data';
 import { StateDataService } from '../data/state-data';
 import { UserDataService } from '../data/user-data';
 import { ToastrService } from '../components/shared/toastr/toastr.component';
+import { ModalService } from './modal.service';
 import { CustomTimeService } from './custom-time.service';
 
 @Injectable({
@@ -14,7 +15,10 @@ export class LowLikabilityEventService {
 
   private static readonly LOW_LIKABILITY_STORAGE_KEY = 'achick_low_likability_times';
 
-  constructor(private customTimeService: CustomTimeService) {
+  constructor(
+    private customTimeService: CustomTimeService,
+    private modalService: ModalService
+  ) {
     this.loadLowLikabilityTimes();
     this.startTimer();
   }
@@ -41,7 +45,9 @@ export class LowLikabilityEventService {
     }
 
     // 2. 當電子雞當前數值物件的 timeStopping 為 true 時，或是當前好感度 > 30 時
-    if (currentPetStats.timeStopping === true || currentPetStats.currentFriendship > 30) {
+    // 且只在 lifeCycle 為 CHILD 或 EVOLUTION 時執行
+    if (currentPetStats.timeStopping === true || currentPetStats.currentFriendship > 30 ||
+        (currentPetStats.lifeCycle !== 'CHILD' && currentPetStats.lifeCycle !== 'EVOLUTION')) {
       const currentStateData = StateDataService.loadStateData();
       StateDataService.deactivateState('lowLikability', currentStateData);
       return;
@@ -88,13 +94,23 @@ export class LowLikabilityEventService {
       const petName = currentPetStats.name || '電子雞';
       ToastrService.show(`${petName}因長時間缺乏關愛而身心靈受創，健康度-${totalWellnessDecrease}（${punishmentCount}次懲罰）`, 'warning');
     }
+
+    // 檢查是否應該觸發離家出走
+    this.shouldLeaveHouse();
   }
 
   /**
    * 判斷是否觸發電子雞離家出走事件
    */
-  private shouldLeaveHouse(): boolean {
+  private async shouldLeaveHouse(): Promise<boolean> {
     const currentPetStats = PetStatsService.loadPetStats();
+
+    // 當電子雞當前數值物件的 timeStopping 為 true 時，不往下執行邏輯
+    // 且只在 lifeCycle 為 CHILD 或 EVOLUTION 時執行離家出走檢查
+    if (currentPetStats.timeStopping === true ||
+        (currentPetStats.lifeCycle !== 'CHILD' && currentPetStats.lifeCycle !== 'EVOLUTION')) {
+      return false;
+    }
 
     if (currentPetStats.currentFriendship >= 10) {
       // 好感度 >= 10，設置 isLeaving 為 false
@@ -105,13 +121,23 @@ export class LowLikabilityEventService {
       PetStatsService.savePetStats(updatedStats);
       return false;
     } else {
-      // 好感度 < 10，設置 isLeaving 為 true，timeStoping 為 true
+      // 好感度 < 10，觸發離家出走
+      const petName = currentPetStats.name || '電子雞';
+
+      // 先設置離家出走狀態
       const updatedStats = {
         ...currentPetStats,
         isLeaving: true,
         timeStopping: true
       };
       PetStatsService.savePetStats(updatedStats);
+
+      // 顯示離家出走確認彈窗
+      await this.modalService.info(
+        `${petName}因為缺乏關愛憤而離家，\n\n請點擊窗戶關注他有沒有回家。`,
+        '離家出走'
+      );
+
       return true;
     }
   }

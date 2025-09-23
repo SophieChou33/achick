@@ -272,10 +272,10 @@ export class CharacterComponent implements OnInit, OnDestroy {
       this.petStats = petStats;
 
       // 檢查是否狀態變為 DEAD 或 COOKED，如果是則重置角色位置
-      if (previousStats && previousStats.lifeCycle !== 'DEAD' && petStats.lifeCycle === 'DEAD') {
+      if (previousStats && !previousStats.isDead && petStats.isDead) {
         this.resetCharacterPositionToDefault();
       }
-      if (previousStats && previousStats.lifeCycle !== 'COOKED' && petStats.lifeCycle === 'COOKED') {
+      if (previousStats && !previousStats.isCooked && petStats.isCooked) {
         this.resetCharacterPositionToDefault();
       }
 
@@ -341,7 +341,7 @@ export class CharacterComponent implements OnInit, OnDestroy {
     this.isCharacterVisible = !this.petStats.isLeaving;
 
     // 處理死亡狀態 - 最高優先級
-    if (lifeCycle === 'DEAD') {
+    if (this.petStats.isDead) {
       this.characterImage = sources.character.dead.dead;
       this.characterName = 'Dead';
       return;
@@ -372,7 +372,8 @@ export class CharacterComponent implements OnInit, OnDestroy {
     }
 
     // 若breed與lifecycle有值且lifeCycle不為EGG也不為CHILD，角色圖片顯示sources.character.{{lifeCycle}}.{{breed}}
-    if (breedName && lifeCycle && (lifeCycle === 'EVOLUTION' || lifeCycle === 'COOKED')) {
+    // 對於熟成狀態，使用 EVOLUTION 作為圖片路徑
+    if (breedName && ((lifeCycle === 'EVOLUTION') || (this.petStats.isCooked && lifeCycle))) {
       const breedData = getBreedByName(breedName);
       if (breedData) {
         const breed = breedData.breed;
@@ -380,7 +381,7 @@ export class CharacterComponent implements OnInit, OnDestroy {
         if (lifeCycle === 'EVOLUTION') {
           this.characterImage = this.getEvolutionImage(breed);
           this.characterName = breedData.breedName || `Evolution - ${breed}`;
-        } else if (lifeCycle === 'COOKED') {
+        } else if (this.petStats.isCooked) {
           this.characterImage = this.getCookedImage(breed);
           this.characterName = `Cooked - ${breedData.breedName || breed}`;
         }
@@ -454,8 +455,8 @@ export class CharacterComponent implements OnInit, OnDestroy {
       // 0.5秒後切換角色狀態和圖片，然後開始fadeOut
       setTimeout(() => {
         // 在fadeOut開始前切換角色狀態和圖片
-        // 現在才真正生成完整的寵物數據
-        const tempStats = this.rareBreedService.generateNewPetBreed('');
+        // 使用彈窗顯示的稀有度生成完整的寵物數據，確保一致性
+        const tempStats = this.rareBreedService.generateNewPetBreed('', rare);
 
         // 將稀有度賦值給當前電子雞，但保持名字為 null
         const updatedStats = {
@@ -502,11 +503,13 @@ export class CharacterComponent implements OnInit, OnDestroy {
       // 0.5秒後切換角色狀態和圖片，然後開始fadeOut
       setTimeout(() => {
         // 在fadeOut開始前切換角色狀態和圖片
-        // 執行出生時數值賦值
-        const finalStats = this.rareBreedService.generateNewPetBreed(petName);
+        // 使用現有電子雞數據，只更新名字和生命週期
+        const currentStats = PetStatsService.loadPetStats();
         const completeStats = {
-          ...finalStats,
-          lifeCycle: 'CHILD' as const
+          ...currentStats,
+          name: petName,
+          lifeCycle: 'CHILD' as const,
+          timeStopping: false  // 從蛋變成幼體時開始計時
         };
 
         PetStatsService.savePetStats(completeStats);
@@ -519,7 +522,7 @@ export class CharacterComponent implements OnInit, OnDestroy {
         }
 
         // 觸發金幣浮動動畫
-        const coins = this.getHatchingCoins(finalStats.rare!);
+        const coins = this.getHatchingCoins(completeStats.rare!);
         this.showCoinAnimation(coins);
 
         // 立即開始fadeOut
@@ -634,7 +637,7 @@ export class CharacterComponent implements OnInit, OnDestroy {
     this.hasMoved = false;
 
     // 如果是熟成狀態，不允許拖曳操作，但仍要設置 isDragging 以便點擊檢測
-    if (this.petStats.lifeCycle === 'COOKED') {
+    if (this.petStats.isCooked) {
       return;
     }
     const clientX = event instanceof MouseEvent ? event.clientX : event.touches[0].clientX;
@@ -732,7 +735,7 @@ export class CharacterComponent implements OnInit, OnDestroy {
    */
   private handleCharacterClick(): void {
     // 處理死亡或熟成狀態的點擊
-    if (this.petStats.lifeCycle === 'DEAD' || this.petStats.lifeCycle === 'COOKED') {
+    if (this.petStats.isDead || this.petStats.isCooked) {
       this.lifecycleService.showDeathConfirmDialog();
       return;
     }

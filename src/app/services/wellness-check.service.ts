@@ -58,7 +58,9 @@ export class WellnessCheckService {
     }
 
     // 當電子雞當前數值物件的 timeStopping 為 true 時，不往下執行邏輯
-    if (currentPetStats.timeStopping === true) {
+    // 且只在 lifeCycle 為 CHILD 或 EVOLUTION 時執行
+    if (currentPetStats.timeStopping === true ||
+        (currentPetStats.lifeCycle !== 'CHILD' && currentPetStats.lifeCycle !== 'EVOLUTION')) {
       return;
     }
 
@@ -151,7 +153,7 @@ export class WellnessCheckService {
 
         // 顯示低健康度扣值通知
         if (totalHealthDamage > 0 || totalMaxHealthDamage > 0) {
-          let damageMsg = '💔 健康度過低造成傷害！';
+          let damageMsg = '健康度過低造成傷害！';
           if (totalHealthDamage > 0) damageMsg += ` 生命值-${totalHealthDamage}`;
           if (totalMaxHealthDamage > 0) damageMsg += ` 最大生命值-${totalMaxHealthDamage}`;
           ToastrService.error(damageMsg);
@@ -166,6 +168,13 @@ export class WellnessCheckService {
   private async checkDiseaseCheck(): Promise<void> {
     const currentTime = this.customTimeService.formatTime();
     const currentPetStats = PetStatsService.loadPetStats();
+
+    // 當電子雞當前數值物件的 timeStopping 為 true 時，不往下執行邏輯
+    // 且只在 lifeCycle 為 CHILD 或 EVOLUTION 時執行
+    if (currentPetStats.timeStopping === true ||
+        (currentPetStats.lifeCycle !== 'CHILD' && currentPetStats.lifeCycle !== 'EVOLUTION')) {
+      return;
+    }
 
     // 若 lastDiseaseCheckTime 為 null，則將實際當前時間賦值給 lastDiseaseCheckTime，並且不往下執行邏輯
     if (this.lastDiseaseCheckTime === null) {
@@ -212,37 +221,80 @@ export class WellnessCheckService {
    * 私有函數：執行疾病抽籤
    */
   private async randomGetSick(): Promise<void> {
-    const random = Math.random() * 100; // 0-100的隨機數
+    const currentPetStats = PetStatsService.loadPetStats();
+
+    // 在執行疾病抽籤前，先檢查是否應該執行
+    // 當電子雞當前數值物件的 timeStopping 為 true 時，不往下執行邏輯
+    // 且只在 lifeCycle 為 CHILD 或 EVOLUTION 時執行
+    if (currentPetStats.timeStopping === true ||
+        (currentPetStats.lifeCycle !== 'CHILD' && currentPetStats.lifeCycle !== 'EVOLUTION')) {
+      return;
+    }
+
     const currentStateData = StateDataService.loadStateData();
+
+    // 檢查當前已有的疾病
+    const diseases = ['headache', 'diarrhea', 'gastricUlcer', 'flu'];
+    const availableDiseases = diseases.filter(disease => {
+      const stateValue = currentStateData[disease as keyof typeof currentStateData];
+      return !('isActive' in stateValue && (stateValue as any).isActive === 1);
+    });
+
+    // 如果所有疾病都已經得過，則只能發生睡眠品質不佳或什麼都不發生
+    if (availableDiseases.length === 0) {
+      const random = Math.random() * 100;
+      if (random < 60) { // 60% 機率睡眠品質不佳
+        const currentPetStats = PetStatsService.loadPetStats();
+        PetStatsService.updatePetStats({
+          currentWellness: Math.max(0, currentPetStats.currentWellness - 5)
+        });
+        ToastrService.warning('電子雞睡眠品質不佳，健康度下降了！');
+      }
+      // 40% 機率什麼都不發生
+      return;
+    }
+
+    const random = Math.random() * 100; // 0-100的隨機數
     let diseaseMessage = '';
 
-    if (random < 15) {
-      // 15% 機率：頭痛
-      StateDataService.activateState('headache', currentStateData);
-      diseaseMessage = '😵 電子雞得了偏頭痛！\n\n可以購買頭痛藥來治療。';
-      await this.modalService.info(diseaseMessage, '🏥 疾病通知');
-    } else if (random < 30) {
-      // 15% 機率：拉肚子
-      StateDataService.activateState('diarrhea', currentStateData);
-      diseaseMessage = '🤢 電子雞拉肚子了！\n\n可以購買整腸藥來治療。';
-      await this.modalService.info(diseaseMessage, '🏥 疾病通知');
-    } else if (random < 45) {
-      // 15% 機率：胃潰瘍
-      StateDataService.activateState('gastricUlcer', currentStateData);
-      diseaseMessage = '😰 電子雞得了胃潰瘍！\n\n可以購買胃藥來治療。';
-      await this.modalService.info(diseaseMessage, '🏥 疾病通知');
-    } else if (random < 60) {
-      // 15% 機率：流感
-      StateDataService.activateState('flu', currentStateData);
-      diseaseMessage = '🤒 電子雞得了流感！\n\n可以購買感冒藥來治療。';
-      await this.modalService.info(diseaseMessage, '🏥 疾病通知');
-    } else if (random < 75) {
+    // 重新計算每種疾病的機率，只考慮還沒得過的疾病
+    const diseaseChance = 60 / availableDiseases.length; // 60% 總機率平均分配給可用疾病
+    let currentThreshold = 0;
+
+    for (const disease of availableDiseases) {
+      currentThreshold += diseaseChance;
+      if (random < currentThreshold) {
+        switch (disease) {
+          case 'headache':
+            StateDataService.activateState('headache', currentStateData);
+            diseaseMessage = '電子雞得了偏頭痛！\n\n可以購買頭痛藥來治療。';
+            break;
+          case 'diarrhea':
+            StateDataService.activateState('diarrhea', currentStateData);
+            diseaseMessage = '電子雞拉肚子了！\n\n可以購買整腸藥來治療。';
+            break;
+          case 'gastricUlcer':
+            StateDataService.activateState('gastricUlcer', currentStateData);
+            diseaseMessage = '電子雞得了胃潰瘍！\n\n可以購買胃藥來治療。';
+            break;
+          case 'flu':
+            StateDataService.activateState('flu', currentStateData);
+            diseaseMessage = '電子雞得了流感！\n\n可以購買感冒藥來治療。';
+            break;
+        }
+        await this.modalService.info(diseaseMessage, '疾病通知');
+        return;
+      }
+    }
+
+    // 如果沒有抽中疾病，檢查是否發生睡眠品質不佳
+    if (random < 75) {
       // 15% 機率：睡眠品質不佳
       const currentPetStats = PetStatsService.loadPetStats();
       PetStatsService.updatePetStats({
         currentWellness: Math.max(0, currentPetStats.currentWellness - 5)
       });
-      ToastrService.warning('💤 電子雞睡眠品質不佳，健康度下降了！');
+      ToastrService.warning('電子雞睡眠品質不佳，健康度下降了！');
     }
     // 25% 機率：不發生任何事（random >= 75）
   }
@@ -254,7 +306,9 @@ export class WellnessCheckService {
     const currentPetStats = PetStatsService.loadPetStats();
 
     // 當電子雞當前數值物件的 rare 為 null 時，或是當電子雞當前數值物件的 timeStopping 為 true 時，不往下執行邏輯
-    if (currentPetStats.rare === null || currentPetStats.timeStopping === true) {
+    // 且只在 lifeCycle 為 CHILD 或 EVOLUTION 時執行
+    if (currentPetStats.rare === null || currentPetStats.timeStopping === true ||
+        (currentPetStats.lifeCycle !== 'CHILD' && currentPetStats.lifeCycle !== 'EVOLUTION')) {
       return;
     }
 
@@ -325,7 +379,7 @@ export class WellnessCheckService {
 
       // 顯示疾病效果通知
       if (totalHealthReduction > 0 || totalMaxHealthReduction > 0) {
-        let diseaseMsg = `🦠 疾病持續效果：${activeDiseaseCount} 個疾病造成傷害！`;
+        let diseaseMsg = `疾病持續效果：${activeDiseaseCount} 個疾病造成傷害！`;
         if (totalHealthReduction > 0) diseaseMsg += ` 生命值-${totalHealthReduction}`;
         if (totalMaxHealthReduction > 0) diseaseMsg += ` 最大生命值-${totalMaxHealthReduction}`;
         ToastrService.error(diseaseMsg);
@@ -362,6 +416,17 @@ export class WellnessCheckService {
    */
   public manualDiseaseEffects(): void {
     this.diseaseEffects();
+  }
+
+  /**
+   * 手動觸發疾病抽籤（跳過時間限制，用於調試）
+   */
+  public async manualDiseaseCheck(): Promise<void> {
+    await this.randomGetSick();
+    // 更新疾病檢查時間
+    const currentTime = this.customTimeService.formatTime();
+    this.lastDiseaseCheckTime = currentTime;
+    this.saveWellnessTimes();
   }
 
   /**

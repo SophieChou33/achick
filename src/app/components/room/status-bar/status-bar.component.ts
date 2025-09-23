@@ -366,6 +366,11 @@ export class StatusBarComponent implements OnInit, OnDestroy {
     if (this.petStats.isLeaving) {
       this.statusEffects.activeStates.push('離家出走中');
     }
+
+    // 檢查是否處於冷凍狀態
+    if (this.petStats.timeStopping) {
+      this.statusEffects.activeStates.push('冷凍狀態');
+    }
   }
 
   togglePanel() {

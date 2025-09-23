@@ -247,12 +247,12 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // 1. 小雞改變成最終熟成型態 (lifeCycle: cooked)
+    // 1. 小雞改變成最終熟成型態
     const updatedStats = {
       ...this.petStats,
-      lifeCycle: 'COOKED' as const,
+      isCooked: true,      // 設為熟成狀態
+      isDead: true,        // 熟成狀態也算是死亡狀態
       timeStopping: true,  // 2. 將 timeStoping 賦值為 true
-      // 注意：lifeCycle 已經設為 'COOKED'，不需要額外的 isDead 屬性
     };
 
     PetStatsService.savePetStats(updatedStats);

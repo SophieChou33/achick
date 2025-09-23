@@ -83,6 +83,7 @@ export class LeavingService {
         ...currentPetStats,
         isLeaving: false,
         timeStopping: false,
+        isDead: false,
         currentFriendship: 50,
         currentHealth: Math.max(50, currentPetStats.currentHealth)
       };

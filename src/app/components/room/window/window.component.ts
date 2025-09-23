@@ -26,15 +26,15 @@ import { PetStatsService } from '../../../data/pet-stats-data';
     .window-frame {
       width: 100%;
       height: 100%;
-      border: 3px solid rgba(255, 255, 255, 0.3);
+      border: 3px solid white;
       border-radius: 10px;
-      background: rgba(135, 206, 235, 0.2);
+      background: white;
+      opacity: 0;
       transition: all 0.3s ease;
     }
 
     .window-frame:hover {
-      background: rgba(135, 206, 235, 0.4);
-      border-color: rgba(255, 255, 255, 0.6);
+      opacity: 0.1;
     }
 
   `]

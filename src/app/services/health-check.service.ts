@@ -29,7 +29,9 @@ export class HealthCheckService {
     const currentPetStats = PetStatsService.loadPetStats();
 
     // 當電子雞當前數值物件的 rare 為 null 時，或是當電子雞當前數值物件的 timeStopping 為 true 時，不往下執行邏輯
-    if (currentPetStats.rare === null || currentPetStats.timeStopping === true) {
+    // 且只在 lifeCycle 為 CHILD 或 EVOLUTION 時執行
+    if (currentPetStats.rare === null || currentPetStats.timeStopping === true ||
+        (currentPetStats.lifeCycle !== 'CHILD' && currentPetStats.lifeCycle !== 'EVOLUTION')) {
       return;
     }
 

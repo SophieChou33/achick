@@ -12,6 +12,7 @@ import { CustomTimeService } from './custom-time.service';
 export class HungerManagerService {
   private lastHungerTime: string | null = null;
   private hungerStateStartTime: string | null = null;
+  private lastHungerPenaltyTime: string | null = null; // 新增：記錄上次飢餓懲罰時間
   private hungerDecreaseInterval: any;
   private hungerCheckInterval: any;
 
@@ -28,10 +29,10 @@ export class HungerManagerService {
       this.decreaseHunger();
     }, 30000);
 
-    // 每20秒執行飢餓狀態檢查
+    // 每30秒執行飢餓狀態檢查
     this.hungerCheckInterval = setInterval(() => {
       this.checkHungerState();
-    }, 20000);
+    }, 30000);
   }
 
   private getCurrentTimeString(): string {
@@ -63,7 +64,9 @@ export class HungerManagerService {
     }
 
     // 當 timeStopping 為 true 或當前飽足感為 0 時，不執行邏輯（除非強制執行）
-    if (!forceExecute && (petStats.timeStopping || petStats.currentHunger === 0)) {
+    // 且只在 lifeCycle 為 CHILD 或 EVOLUTION 時執行
+    if (!forceExecute && (petStats.timeStopping || petStats.currentHunger === 0 ||
+        (petStats.lifeCycle !== 'CHILD' && petStats.lifeCycle !== 'EVOLUTION'))) {
       return;
     }
 
@@ -133,6 +136,7 @@ export class HungerManagerService {
     // 當電子雞當前數值物件的 rare 為 null 時，重置飢餓狀態時間並返回
     if (petStats.rare === null) {
       this.hungerStateStartTime = null;
+      this.lastHungerPenaltyTime = null;
       this.saveHungerTimes();
       return;
     }
@@ -140,11 +144,14 @@ export class HungerManagerService {
     const stateData = StateDataService.loadStateData();
 
     // 當 timeStopping 為 true 或當前飽足感大於 35 時，取消飢餓狀態（除非強制執行）
-    if (!forceExecute && (petStats.timeStopping || petStats.currentHunger > 35)) {
+    // 且只在 lifeCycle 為 CHILD 或 EVOLUTION 時執行
+    if (!forceExecute && (petStats.timeStopping || petStats.currentHunger > 35 ||
+        (petStats.lifeCycle !== 'CHILD' && petStats.lifeCycle !== 'EVOLUTION'))) {
       if (stateData.hungry.isActive === 1) {
         StateDataService.deactivateState('hungry', stateData);
       }
       this.hungerStateStartTime = null;
+      // 注意：不重置 lastHungerPenaltyTime，因為懲罰時間應該獨立記錄
       this.saveHungerTimes();
       return;
     }
@@ -156,40 +163,59 @@ export class HungerManagerService {
       StateDataService.activateState('hungry', stateData);
       this.hungerStateStartTime = currentTime;
       this.saveHungerTimes();
+    }
 
-      // 如果是強制執行且飽足感在懲罰範圍內，執行一次懲罰
-      if (forceExecute && petStats.currentHunger <= 35) {
+    // 檢查飢餓懲罰 - 使用獨立的時間記錄
+    this.checkHungerPenalty(forceExecute, petStats, currentTime);
+  }
+
+  /**
+   * 檢查並執行飢餓懲罰的獨立邏輯
+   */
+  private checkHungerPenalty(forceExecute: boolean, petStats: any, currentTime: string): void {
+    // 只有在飽足感 <= 35 時才執行懲罰
+    if (petStats.currentHunger > 35) {
+      return;
+    }
+
+    // 若上次懲罰時間為 null，則初始化
+    if (this.lastHungerPenaltyTime === null) {
+      this.lastHungerPenaltyTime = currentTime;
+      this.saveHungerTimes();
+
+      // 如果是強制執行，執行一次懲罰
+      if (forceExecute) {
         this.executeHungerPenalty(petStats, 1);
       }
       return;
     }
 
-    // 檢查是否已進入飢餓狀態 20 分鐘
-    const timeDiff = this.getTimeDifferenceInMinutes(this.hungerStateStartTime, currentTime);
+    // 檢查是否已過 60 分鐘（1小時）並計算累積懲罰
+    const timeDiff = this.getTimeDifferenceInMinutes(this.lastHungerPenaltyTime, currentTime);
 
     // 強制執行時，至少執行一次懲罰
-    let shouldExecute = forceExecute || timeDiff >= 20;
+    let shouldExecute = forceExecute || timeDiff >= 60;
 
-    if (shouldExecute && petStats.currentHunger <= 35) {
+    if (shouldExecute) {
       let punishmentCount = 1; // 強制執行時至少執行一次
 
-      if (timeDiff >= 20) {
-        // 正常情況下計算累積懲罰次數
-        punishmentCount = Math.floor(timeDiff / 20);
+      if (timeDiff >= 60) {
+        // 正常情況下計算累積懲罰次數（每小時一次）
+        punishmentCount = Math.floor(timeDiff / 60);
       }
 
       // 執行懲罰
       this.executeHungerPenalty(petStats, punishmentCount);
 
-      // 更新飢餓狀態開始時間
-      if (timeDiff >= 20) {
+      // 更新上次懲罰時間
+      if (timeDiff >= 60) {
         // 正常情況：更新為最後一次懲罰的時間點
-        const hungerStateStartTime = this.parseTimeString(this.hungerStateStartTime);
-        const newHungerStateStartTime = new Date(hungerStateStartTime.getTime() + (punishmentCount * 20 * 60 * 1000));
-        this.hungerStateStartTime = this.formatTimeFromDate(newHungerStateStartTime);
+        const lastPenaltyTime = this.parseTimeString(this.lastHungerPenaltyTime);
+        const newLastPenaltyTime = new Date(lastPenaltyTime.getTime() + (punishmentCount * 60 * 60 * 1000));
+        this.lastHungerPenaltyTime = this.formatTimeFromDate(newLastPenaltyTime);
       } else {
         // 強制執行：更新為當前時間
-        this.hungerStateStartTime = currentTime;
+        this.lastHungerPenaltyTime = currentTime;
       }
 
       // 保存時間
@@ -215,6 +241,7 @@ export class HungerManagerService {
   public resetHungerTimes(): void {
     this.lastHungerTime = null;
     this.hungerStateStartTime = null;
+    this.lastHungerPenaltyTime = null;
     this.saveHungerTimes();
   }
 
@@ -263,7 +290,41 @@ export class HungerManagerService {
    */
   public manualTriggerHungerDecrease(): void {
     console.log('手動觸發飽足感減少檢查');
-    this.decreaseHunger(true); // 強制執行
+    const petStats = PetStatsService.loadPetStats();
+    const currentTime = this.getCurrentTimeString();
+
+    // 檢查基本條件
+    if (petStats.rare === null) {
+      ToastrService.show('電子雞尚未設定稀有度，無法執行飽足感減少', 'info', 3000);
+      return;
+    }
+
+    if (petStats.timeStopping) {
+      ToastrService.show('電子雞時間已停止，無法執行飽足感減少', 'info', 3000);
+      return;
+    }
+
+    if (petStats.currentHunger === 0) {
+      ToastrService.show('飽足感已為0，無需再減少', 'info', 3000);
+      return;
+    }
+
+    if (petStats.lifeCycle !== 'CHILD' && petStats.lifeCycle !== 'EVOLUTION') {
+      ToastrService.show(`電子雞生命週期為${petStats.lifeCycle}，不會減少飽足感`, 'info', 3000);
+      return;
+    }
+
+    // 檢查時間條件
+    if (this.lastHungerTime !== null) {
+      const timeDiff = this.getTimeDifferenceInMinutes(this.lastHungerTime, currentTime);
+      if (timeDiff < 60) {
+        const remainingTime = Math.ceil(60 - timeDiff);
+        ToastrService.show(`距離上次飽足感減少僅過了${Math.floor(timeDiff)}分鐘，還需等待${remainingTime}分鐘`, 'info', 4000);
+        return;
+      }
+    }
+
+    this.decreaseHunger(false); // 遵循正常時間邏輯
   }
 
   /**
@@ -271,7 +332,46 @@ export class HungerManagerService {
    */
   public manualTriggerHungerPenalty(): void {
     console.log('手動觸發飽足感懲罰扣值檢查');
-    this.checkHungerState(true); // 強制執行
+    const petStats = PetStatsService.loadPetStats();
+    const currentTime = this.getCurrentTimeString();
+    console.log('當前飽足感:', petStats.currentHunger);
+
+    // 檢查基本條件
+    if (petStats.rare === null) {
+      ToastrService.show('電子雞尚未設定稀有度，無法執行飢餓懲罰', 'info', 3000);
+      return;
+    }
+
+    if (petStats.timeStopping) {
+      ToastrService.show('電子雞時間已停止，無法執行飢餓懲罰', 'info', 3000);
+      return;
+    }
+
+    if (petStats.lifeCycle !== 'CHILD' && petStats.lifeCycle !== 'EVOLUTION') {
+      ToastrService.show(`電子雞生命週期為${petStats.lifeCycle}，不會執行飢餓懲罰`, 'info', 3000);
+      return;
+    }
+
+    // 檢查是否滿足懲罰條件
+    if (petStats.currentHunger > 35) {
+      console.log('飽足感 > 35，不需要執行飢餓懲罰');
+      const petName = petStats.name || 'Achick';
+      ToastrService.show(`${petName}的飽足感為${petStats.currentHunger}，高於35，無需飢餓懲罰`, 'info', 3000);
+      return;
+    }
+
+    // 檢查時間條件 - 使用上次懲罰時間而非飢餓狀態開始時間
+    if (this.lastHungerPenaltyTime !== null) {
+      const timeDiff = this.getTimeDifferenceInMinutes(this.lastHungerPenaltyTime, currentTime);
+      if (timeDiff < 60) {
+        const remainingTime = Math.ceil(60 - timeDiff);
+        ToastrService.show(`距離上次飢餓懲罰僅過了${Math.floor(timeDiff)}分鐘，還需等待${remainingTime}分鐘才能再次執行懲罰`, 'info', 4000);
+        return;
+      }
+    }
+
+    console.log('飽足感 <= 35，執行飢餓懲罰檢查');
+    this.checkHungerState(false); // 遵循正常時間邏輯
   }
 
 
@@ -299,11 +399,13 @@ export class HungerManagerService {
         const hungerData = JSON.parse(savedData);
         this.lastHungerTime = hungerData.lastHungerTime || null;
         this.hungerStateStartTime = hungerData.hungerStateStartTime || null;
+        this.lastHungerPenaltyTime = hungerData.lastHungerPenaltyTime || null;
       }
     } catch (error) {
       console.error('Failed to load hunger times:', error);
       this.lastHungerTime = null;
       this.hungerStateStartTime = null;
+      this.lastHungerPenaltyTime = null;
     }
   }
 
@@ -314,7 +416,8 @@ export class HungerManagerService {
     try {
       const hungerData = {
         lastHungerTime: this.lastHungerTime,
-        hungerStateStartTime: this.hungerStateStartTime
+        hungerStateStartTime: this.hungerStateStartTime,
+        lastHungerPenaltyTime: this.lastHungerPenaltyTime
       };
       localStorage.setItem(HungerManagerService.HUNGER_STORAGE_KEY, JSON.stringify(hungerData));
     } catch (error) {

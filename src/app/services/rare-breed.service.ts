@@ -93,12 +93,24 @@ export class RareBreedService {
   }
 
   /**
+   * 設定預設稀有度（用於確保彈窗顯示與實際生成一致）
+   */
+  public setPresetRare(rare: 'BAD' | 'NORMAL' | 'SPECIAL' | 'SUPER_SPECIAL'): void {
+    this.rare = rare;
+  }
+
+  /**
    * 供外部組件取用，用於電子雞出生時取得稀有度與品種
    * 操作函數一與函數二後，將此 service 中的 rare 及 breed 變數賦值給『電子雞當前數值物件』
    */
-  public generateNewPetBreed(petName: string): PetStats {
-    // 執行函數一：隨機抽取稀有度
-    this.generateRare();
+  public generateNewPetBreed(petName: string, presetRare?: 'BAD' | 'NORMAL' | 'SPECIAL' | 'SUPER_SPECIAL'): PetStats {
+    // 如果有預設稀有度，則使用預設值，否則隨機抽取
+    if (presetRare) {
+      this.rare = presetRare;
+    } else {
+      // 執行函數一：隨機抽取稀有度
+      this.generateRare();
+    }
 
     // 執行函數二：根據稀有度選擇品種
     this.selectBreed();
@@ -141,7 +153,9 @@ export class RareBreedService {
       maxWellness: 100,
       timeStopping: false,
       isLeaving: false,
-      isFreezing: false
+      isFreezing: false,
+      isDead: false,
+      isCooked: false
     };
 
     // 確保電子雞孵化時，工程師模式的自定義時間要重置成當前實際時間

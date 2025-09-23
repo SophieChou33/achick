@@ -9,11 +9,20 @@ import { sources } from '../sources';
 import { getBreedByName } from '../data/breed-data';
 import { ToastrService } from '../components/shared/toastr/toastr.component';
 import { ModalService } from './modal.service';
+import { HungerManagerService } from './hunger-manager.service';
+import { LastCheckTimeManagerService } from './last-check-time-manager.service';
+import { Injector } from '@angular/core';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ItemUsageService {
+
+  private static injector: Injector;
+
+  static setInjector(injector: Injector) {
+    ItemUsageService.injector = injector;
+  }
 
   /**
    * 使用物品 (with confirmation check)
@@ -36,6 +45,15 @@ export class ItemUsageService {
       return {
         success: false,
         message: `找不到物品 "${itemName}" 的資訊`
+      };
+    }
+
+    // 檢查物品是否可以使用
+    const canUseResult = ItemUsageService.canUseItem(itemName);
+    if (!canUseResult.canUse) {
+      return {
+        success: false,
+        message: canUseResult.reason || '無法使用此物品'
       };
     }
 
@@ -137,8 +155,9 @@ export class ItemUsageService {
     // 應用 reborn 效果
     if (productItem.reborn === 1) {
       updatedStats.lifeCycle = 'CHILD';
+      updatedStats.isDead = false;       // 復活後不再死亡
       updatedStats.timeStopping = false; // 復活後重置時間停止狀態
-      updatedStats.currentHealth = 20; // 復活後生命值設定為 20
+      updatedStats.currentHealth = 20;   // 復活後生命值設定為 20
       effects.push('電子雞已復活');
     }
 
@@ -186,6 +205,19 @@ export class ItemUsageService {
 
     // 儲存更新後的電子雞數值
     PetStatsService.savePetStats(updatedStats);
+
+    // 如果使用了復活物品，需要重置飽足感相關時間
+    if (productItem.reborn === 1) {
+      try {
+        if (ItemUsageService.injector) {
+          const lastCheckTimeManager = ItemUsageService.injector.get(LastCheckTimeManagerService);
+          lastCheckTimeManager.initializeAllLastCheckTimes();
+          console.log('復活時已重置所有檢查時間');
+        }
+      } catch (error) {
+        console.error('復活時重置時間失敗:', error);
+      }
+    }
 
     return effects;
   }
@@ -312,18 +344,26 @@ export class ItemUsageService {
     const productItem = ShopDataService.getProductByName(itemName, shopData);
 
     if (productItem) {
-      // 死者甦醒只能在電子雞死亡時使用，且不能在熟成狀態下使用
+      // 死者甦醒只能在電子雞死亡且時間停止時使用，且不能在熟成狀態下使用
       if (productItem.reborn === 1) {
-        if (currentPetStats.lifeCycle === 'COOKED') {
+        if (currentPetStats.isCooked) {
           return {
             canUse: false,
             reason: '已熟成的電子雞無法復活'
           };
         }
-        if (currentPetStats.lifeCycle !== 'DEAD') {
+        if (!currentPetStats.isDead || !currentPetStats.timeStopping) {
           return {
             canUse: false,
             reason: '電子雞還活著，不需要使用復活物品'
+          };
+        }
+      } else {
+        // 除了死者甦醒外，所有物品都不可在時間停止時使用
+        if (currentPetStats.timeStopping) {
+          return {
+            canUse: false,
+            reason: '電子雞時間已停止，無法使用物品'
           };
         }
       }

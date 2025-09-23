@@ -27,11 +27,11 @@ export class LifecycleService {
     const petName = currentPetStats.name || '電子雞';
 
     // 1. 將電子雞當前數值物件的 timeStopping 賦值為 true
-    // 2. 將電子雞當前數值物件的 lifeCycle 賦值為 'DEAD'
+    // 2. 將電子雞設定為死亡狀態
     const updatedStats = {
       ...currentPetStats,
       timeStopping: true,
-      lifeCycle: 'DEAD' as const
+      isDead: true
     };
 
     PetStatsService.savePetStats(updatedStats);
@@ -93,7 +93,9 @@ export class LifecycleService {
       maxWellness: 100,
       timeStopping: false,
       isLeaving: false,
-      isFreezing: false
+      isFreezing: false,
+      isDead: false,
+      isCooked: false
     };
 
     PetStatsService.savePetStats(resetStats);
@@ -137,7 +139,7 @@ export class LifecycleService {
   public async showDeathConfirmDialog(): Promise<boolean> {
     const currentPetStats = PetStatsService.loadPetStats();
 
-    if (currentPetStats.lifeCycle === 'DEAD' || currentPetStats.lifeCycle === 'COOKED') {
+    if (currentPetStats.isDead || currentPetStats.isCooked) {
       const confirm = await this.modalService.confirm('是否開始飼養新的電子雞？', '確認重新開始');
       if (confirm) {
         // 設置一次性回調來處理重置邏輯

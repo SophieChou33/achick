@@ -116,11 +116,13 @@ export class SleepService {
       return;
     }
 
-    // 需避免以下情況：電子雞尚未生成（rare 為 null）、已死亡（lifeCycle 為 'DEAD'）、離家出走（isLeaving 為 true）、冷凍（timeStopping 為 true）
+    // 需避免以下情況：電子雞尚未生成（rare 為 null）、已死亡（isDead 為 true）、離家出走（isLeaving 為 true）、冷凍（timeStopping 為 true）
+    // 且只在 lifeCycle 為 CHILD 或 EVOLUTION 時執行
     if (currentPetStats.rare === null ||
-        currentPetStats.lifeCycle === 'DEAD' ||
+        currentPetStats.isDead === true ||
         currentPetStats.isLeaving === true ||
-        currentPetStats.timeStopping === true) {
+        currentPetStats.timeStopping === true ||
+        (currentPetStats.lifeCycle !== 'CHILD' && currentPetStats.lifeCycle !== 'EVOLUTION')) {
       return;
     }
 

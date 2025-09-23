@@ -17,7 +17,9 @@ export const defaultPetStats: PetStats = {
   maxWellness: 100,
   timeStopping: false,
   isLeaving: false,
-  isFreezing: false
+  isFreezing: false,
+  isDead: false,
+  isCooked: false
 };
 
 export class PetStatsService {
@@ -95,7 +97,7 @@ export class PetStatsService {
   }
 
   static isPetAlive(stats: PetStats): boolean {
-    return stats.lifeCycle !== 'DEAD' && stats.currentHealth > 0;
+    return !stats.isDead && stats.currentHealth > 0;
   }
 
   static isPetHungry(stats: PetStats): boolean {
