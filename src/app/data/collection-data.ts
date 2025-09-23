@@ -7,12 +7,67 @@ export interface CollectionItem {
   isUnlocked: 0 | 1;
 }
 
+export interface EggCollectionItem {
+  rare: 'BAD' | 'NORMAL' | 'SPECIAL' | 'SUPER_SPECIAL';
+  rareName: string;
+  imageSource: string;
+  collectedCount: number;
+  isUnlocked: 0 | 1;
+}
+
+export interface ChildCollectionItem {
+  childType: string;
+  imageSource: string;
+  collectedCount: number;
+  isUnlocked: 0 | 1;
+}
+
 export interface CollectionData {
+  EGG: EggCollectionItem[];
+  CHILD: ChildCollectionItem[];
   EVOLUTION: CollectionItem[];
   COOKED: CollectionItem[];
 }
 
 export const defaultCollectionData: CollectionData = {
+  EGG: [
+    {
+      rare: 'BAD',
+      rareName: '奇怪的蛋',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      rare: 'NORMAL',
+      rareName: '平凡的蛋',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      rare: 'SPECIAL',
+      rareName: '特別的蛋',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    },
+    {
+      rare: 'SUPER_SPECIAL',
+      rareName: '發光的蛋',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    }
+  ],
+  CHILD: [
+    {
+      childType: 'normal',
+      imageSource: sources.character.others.unlocked,
+      collectedCount: 0,
+      isUnlocked: 0
+    }
+  ],
   EVOLUTION: [
     // BAD 稀有度品種
     {
@@ -242,6 +297,59 @@ export class CollectionService {
         isUnlocked: 1,
         imageSource: imageSource || sources.character.others.unlocked,
         collectedCount: updatedData[type][itemIndex].collectedCount + 1
+      };
+      this.saveCollectionData(updatedData);
+    }
+    return updatedData;
+  }
+
+  static unlockEgg(rare: 'BAD' | 'NORMAL' | 'SPECIAL' | 'SUPER_SPECIAL', collectionData: CollectionData): CollectionData {
+    const updatedData = {
+      ...collectionData,
+      EGG: [...collectionData.EGG]
+    };
+
+    const itemIndex = updatedData.EGG.findIndex(item => item.rare === rare);
+    if (itemIndex !== -1) {
+      // 解鎖時更新圖片資源為對應的蛋圖片
+      const imageSource = (sources.character.egg as any)[rare.toLowerCase()] ||
+                         (() => {
+                           switch(rare) {
+                             case 'BAD': return sources.character.egg.bad;
+                             case 'NORMAL': return sources.character.egg.normal;
+                             case 'SPECIAL': return sources.character.egg.special;
+                             case 'SUPER_SPECIAL': return sources.character.egg.superSpecial;
+                             default: return sources.character.others.unlocked;
+                           }
+                         })();
+
+      updatedData.EGG[itemIndex] = {
+        ...updatedData.EGG[itemIndex],
+        isUnlocked: 1,
+        imageSource,
+        collectedCount: updatedData.EGG[itemIndex].collectedCount + 1
+      };
+      this.saveCollectionData(updatedData);
+    }
+    return updatedData;
+  }
+
+  static unlockChild(childType: string, collectionData: CollectionData): CollectionData {
+    const updatedData = {
+      ...collectionData,
+      CHILD: [...collectionData.CHILD]
+    };
+
+    const itemIndex = updatedData.CHILD.findIndex(item => item.childType === childType);
+    if (itemIndex !== -1) {
+      // 解鎖時更新圖片資源為對應的幼年圖片
+      const imageSource = sources.character.child.child;
+
+      updatedData.CHILD[itemIndex] = {
+        ...updatedData.CHILD[itemIndex],
+        isUnlocked: 1,
+        imageSource,
+        collectedCount: updatedData.CHILD[itemIndex].collectedCount + 1
       };
       this.saveCollectionData(updatedData);
     }

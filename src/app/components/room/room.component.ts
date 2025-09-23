@@ -11,6 +11,7 @@ import { ToastrComponent } from '../shared/toastr/toastr.component';
 import { DirtyDisplayComponent } from './dirty-display/dirty-display.component';
 import { InventoryModalComponent } from './inventory-modal/inventory-modal.component';
 import { ShopModalComponent } from './shop-modal/shop-modal.component';
+import { CollectionModalComponent } from './collection-modal/collection-modal.component';
 import { CookingButtonComponent } from './cooking-button/cooking-button.component';
 import { sources } from '../../sources';
 import { LightService } from '../../services/light.service';
@@ -30,6 +31,7 @@ import { LightService } from '../../services/light.service';
     DirtyDisplayComponent,
     InventoryModalComponent,
     ShopModalComponent,
+    CollectionModalComponent,
     CookingButtonComponent
   ],
   template: `
@@ -44,7 +46,7 @@ import { LightService } from '../../services/light.service';
         <app-dirty-display></app-dirty-display>
         <app-cooking-button></app-cooking-button>
       </div>
-      <app-header (openShopModal)="openShopModal()"></app-header>
+      <app-header (openShopModal)="openShopModal()" (openCollectionModal)="openCollectionModal()"></app-header>
       <app-sidebar (openInventory)="openInventoryModal()"></app-sidebar>
       <app-status-bar></app-status-bar>
       <app-toastr></app-toastr>
@@ -63,6 +65,12 @@ import { LightService } from '../../services/light.service';
         (close)="onShopModalClose()"
         (purchaseSuccess)="onPurchaseSuccess($event)">
       </app-shop-modal>
+
+      <!-- 圖鑑彈窗 -->
+      <app-collection-modal
+        #collectionModal
+        (close)="onCollectionModalClose()">
+      </app-collection-modal>
     </div>
   `,
   styles: [`
@@ -130,6 +138,7 @@ export class RoomComponent implements OnInit, OnDestroy {
   @ViewChild('roomWrapper', { static: true }) roomWrapper!: ElementRef<HTMLDivElement>;
   @ViewChild('inventoryModal') inventoryModal!: InventoryModalComponent;
   @ViewChild('shopModal') shopModal!: ShopModalComponent;
+  @ViewChild('collectionModal') collectionModal!: CollectionModalComponent;
 
   backgroundImageSrc = sources.scene.roomDayLightOn;
 
@@ -299,6 +308,20 @@ export class RoomComponent implements OnInit, OnDestroy {
    * 商店彈窗關閉事件
    */
   onShopModalClose() {
+    // 彈窗關閉時不做任何事
+  }
+
+  /**
+   * 打開圖鑑彈窗
+   */
+  openCollectionModal() {
+    this.collectionModal.show();
+  }
+
+  /**
+   * 圖鑑彈窗關閉事件
+   */
+  onCollectionModalClose() {
     // 彈窗關閉時不做任何事
   }
 

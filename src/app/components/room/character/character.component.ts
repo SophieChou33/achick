@@ -18,6 +18,7 @@ import { SleepService } from '../../../services/sleep.service';
 import { ModalService } from '../../../services/modal.service';
 import { WhiteTransitionService } from '../../../services/white-transition.service';
 import { StateDataService } from '../../../data/state-data';
+import { CollectionService } from '../../../data/collection-data';
 
 @Component({
   selector: 'app-character',
@@ -466,6 +467,10 @@ export class CharacterComponent implements OnInit, OnDestroy {
         };
         PetStatsService.savePetStats(updatedStats);
 
+        // 記錄蛋到圖鑑
+        const currentCollection = CollectionService.loadCollectionData();
+        CollectionService.unlockEgg(rare, currentCollection);
+
         // 添加到使用者飼養歷程
         const userData = UserDataService.loadUserData();
         const newPetRecord = {
@@ -513,6 +518,10 @@ export class CharacterComponent implements OnInit, OnDestroy {
         };
 
         PetStatsService.savePetStats(completeStats);
+
+        // 記錄幼年到圖鑑
+        const currentCollection = CollectionService.loadCollectionData();
+        CollectionService.unlockChild('normal', currentCollection);
 
         // 更新使用者飼養歷程的名字
         const userData = UserDataService.loadUserData();

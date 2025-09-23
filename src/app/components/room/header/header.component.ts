@@ -180,6 +180,7 @@ import { EngineerModeComponent } from '../../admin/engineer-mode/engineer-mode.c
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   @Output() openShopModal = new EventEmitter<void>();
+  @Output() openCollectionModal = new EventEmitter<void>();
   @ViewChild('engineerMode') engineerMode!: EngineerModeComponent;
 
   logoSrc = sources.logo.logoHorizonDark;
@@ -241,8 +242,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   openCollection() {
-    console.log('Opening collection...');
-    // TODO: Implement collection modal
+    this.openCollectionModal.emit();
   }
 
   onLogoDoubleClick() {
