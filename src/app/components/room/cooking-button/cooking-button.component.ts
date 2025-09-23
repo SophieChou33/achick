@@ -8,6 +8,7 @@ import { LifecycleService } from '../../../services/lifecycle.service';
 import { ToastrService } from '../../shared/toastr/toastr.component';
 import { ModalService } from '../../../services/modal.service';
 import { CollectionService } from '../../../data/collection-data';
+import { CustomTimeService } from '../../../services/custom-time.service';
 import { PetStats } from '../../../types/pet-stats.type';
 
 @Component({
@@ -137,7 +138,8 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
 
   constructor(
     private lifecycleService: LifecycleService,
-    private modalService: ModalService
+    private modalService: ModalService,
+    private customTimeService: CustomTimeService
   ) {}
 
   ngOnInit() {
@@ -168,13 +170,22 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
   }
 
   private shouldShowCookingButton(): boolean {
+    console.log('熟成按鈕顯示檢查開始:', {
+      lifeCycle: this.petStats.lifeCycle,
+      breedName: this.petStats.breedName,
+      isDead: this.petStats.isDead,
+      isCooked: this.petStats.isCooked
+    });
+
     // 必須是進化狀態
     if (this.petStats.lifeCycle !== 'EVOLUTION') {
+      console.log('熟成按鈕檢查失敗: lifeCycle不是EVOLUTION');
       return false;
     }
 
     // 必須有品種名稱
     if (!this.petStats.breedName) {
+      console.log('熟成按鈕檢查失敗: 沒有品種名稱');
       return false;
     }
 
@@ -182,15 +193,33 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
     const userData = UserDataService.loadUserData();
     const currentPetRecord = UserDataService.getCurrentPetRecord(userData);
 
+    console.log('用戶數據檢查:', {
+      currentPetRecord: currentPetRecord,
+      evolutionTime: currentPetRecord?.evolutionTime
+    });
+
     if (!currentPetRecord || !currentPetRecord.evolutionTime) {
+      console.log('熟成按鈕檢查失敗: 沒有寵物記錄或進化時間');
       return false;
     }
 
+    // 使用自定義時間服務來獲取當前時間，確保時間一致性
     const evolutionTime = new Date(currentPetRecord.evolutionTime);
-    const now = new Date();
+    const now = this.customTimeService.getCurrentTime();
     const hoursDiff = (now.getTime() - evolutionTime.getTime()) / (1000 * 60 * 60);
 
-    return hoursDiff >= 240; // 240小時 = 10天
+    console.log('時間檢查:', {
+      evolutionTime: currentPetRecord.evolutionTime,
+      now: now.toISOString(),
+      currentTimeString: this.customTimeService.formatTime(),
+      isCustomTimeEnabled: this.customTimeService.isCustomTimeEnabled(),
+      hoursDiff: hoursDiff,
+      required: 1, // 目前設為1小時測試
+      canShow: hoursDiff >= 1
+    });
+
+    // 臨時測試：降低時間限制為1小時
+    return hoursDiff >= 1; // 1小時（原本是240小時 = 10天）
   }
 
   private canStartCooking(): boolean {

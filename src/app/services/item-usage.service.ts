@@ -3,6 +3,7 @@ import { UserInventoryService } from '../data/user-inventory-data';
 import { ShopDataService } from '../data/shop-data';
 import { PetStatsService } from '../data/pet-stats-data';
 import { StateDataService } from '../data/state-data';
+import { UserDataService } from '../data/user-data';
 import { PetStats } from '../types/pet-stats.type';
 import { ProductItem } from '../types/product-data.type';
 import { sources } from '../sources';
@@ -154,7 +155,15 @@ export class ItemUsageService {
 
     // 應用 reborn 效果
     if (productItem.reborn === 1) {
-      updatedStats.lifeCycle = 'CHILD';
+      // 根據寵物的進化歷程判斷復活後的生命週期
+      const currentUserData = UserDataService.loadUserData();
+      const currentPetRecord = UserDataService.getCurrentPetRecord(currentUserData);
+
+      // 如果有 evolutionTime，說明寵物曾經進化，復活時保持 EVOLUTION 狀態
+      // 如果沒有 evolutionTime，說明寵物未進化，復活時保持 CHILD 狀態
+      const originalLifeCycle = (currentPetRecord?.evolutionTime) ? 'EVOLUTION' : 'CHILD';
+
+      updatedStats.lifeCycle = originalLifeCycle;
       updatedStats.isDead = false;       // 復活後不再死亡
       updatedStats.timeStopping = false; // 復活後重置時間停止狀態
       updatedStats.currentHealth = 20;   // 復活後生命值設定為 20

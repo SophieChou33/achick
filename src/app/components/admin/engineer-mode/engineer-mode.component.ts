@@ -994,9 +994,17 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
   }
 
   revivePet() {
+    // 根據寵物的進化歷程判斷復活後的生命週期
+    const currentUserData = UserDataService.loadUserData();
+    const currentPetRecord = UserDataService.getCurrentPetRecord(currentUserData);
+
+    // 如果有 evolutionTime，說明寵物曾經進化，復活時保持 EVOLUTION 狀態
+    // 如果沒有 evolutionTime，說明寵物未進化，復活時保持 CHILD 狀態
+    const originalLifeCycle: 'CHILD' | 'EVOLUTION' = (currentPetRecord?.evolutionTime) ? 'EVOLUTION' : 'CHILD';
+
     const updatedStats = {
       ...this.petStats,
-      lifeCycle: 'CHILD' as const,
+      lifeCycle: originalLifeCycle,
       isDead: false,      // 復活後不再死亡
       timeStopping: false, // 復活後重置時間停止狀態
       currentHealth: this.petStats.maxHealth
