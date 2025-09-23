@@ -10,40 +10,44 @@ import { StateDataService } from '../../../data/state-data';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bed-area"
+    <div class="bed-positioning-frame"
          [style.left]="bedPosition.left"
          [style.top]="bedPosition.top"
-         (click)="onBedClick()"
          (mousedown)="onDragStart($event)"
          (touchstart)="onDragStart($event)">
-      <img [src]="bedImage" alt="Bed" class="bed-image" />
+      <div class="bed-area" (click)="onBedClick()">
+        <img [src]="bedImage" alt="Bed" class="bed-image" />
 
-      <!-- 睡眠狀態指示器 -->
-      <div class="sleep-status-indicator" *ngIf="isSleeping">
-        <img [src]="sleepIcon" alt="Sleeping" class="sleep-icon" />
+        <!-- 睡眠狀態指示器 -->
+        <div class="sleep-status-indicator" *ngIf="isSleeping">
+          <img [src]="sleepIcon" alt="Sleeping" class="sleep-icon" />
+        </div>
       </div>
     </div>
   `,
   styles: [`
-    .bed-area {
+    .bed-positioning-frame {
       position: absolute;
-      width: auto;
-      height: 40dvh;
-      cursor: pointer;
       z-index: 600;
       transition: none;
     }
 
-    .bed-area.dragging {
+    .bed-positioning-frame.dragging {
       cursor: grabbing;
+    }
+
+    .bed-area {
+      display: flex;
+      justify-content: center;
+      align-items: center;
       transition: none;
+      cursor: pointer;
     }
 
     .bed-image {
-      width: 100%;
-      height: 100%;
+      width: auto;
+      height: 40dvh;
       object-fit: contain;
-      transition: all 0.3s ease;
     }
 
     .sleep-status-indicator {
@@ -85,6 +89,10 @@ export class BedComponent implements OnInit, OnDestroy {
   private startTop = 0;
   private stateSubscription?: Subscription;
 
+  // 綁定事件處理器到實例
+  private boundOnDragMove = this.onDragMove.bind(this);
+  private boundOnDragEnd = this.onDragEnd.bind(this);
+
   constructor(private lightService: LightService) {}
 
   ngOnInit() {
@@ -99,10 +107,10 @@ export class BedComponent implements OnInit, OnDestroy {
     this.startStateMonitoring();
 
     // 添加全域拖曳事件監聽器
-    document.addEventListener('mousemove', this.onDragMove.bind(this));
-    document.addEventListener('mouseup', this.onDragEnd.bind(this));
-    document.addEventListener('touchmove', this.onDragMove.bind(this));
-    document.addEventListener('touchend', this.onDragEnd.bind(this));
+    document.addEventListener('mousemove', this.boundOnDragMove, { passive: false });
+    document.addEventListener('mouseup', this.boundOnDragEnd);
+    document.addEventListener('touchmove', this.boundOnDragMove, { passive: false });
+    document.addEventListener('touchend', this.boundOnDragEnd);
   }
 
   ngOnDestroy() {
@@ -111,10 +119,10 @@ export class BedComponent implements OnInit, OnDestroy {
     }
 
     // 清理拖曳事件監聽器
-    document.removeEventListener('mousemove', this.onDragMove.bind(this));
-    document.removeEventListener('mouseup', this.onDragEnd.bind(this));
-    document.removeEventListener('touchmove', this.onDragMove.bind(this));
-    document.removeEventListener('touchend', this.onDragEnd.bind(this));
+    document.removeEventListener('mousemove', this.boundOnDragMove, { passive: false } as any);
+    document.removeEventListener('mouseup', this.boundOnDragEnd);
+    document.removeEventListener('touchmove', this.boundOnDragMove, { passive: false } as any);
+    document.removeEventListener('touchend', this.boundOnDragEnd);
   }
 
   private startStateMonitoring() {
@@ -195,8 +203,8 @@ export class BedComponent implements OnInit, OnDestroy {
     this.startTop = parseFloat(this.bedPosition.top) * viewportHeight / 100;
 
     // 添加拖曳樣式
-    const bedArea = document.querySelector('.bed-area');
-    bedArea?.classList.add('dragging');
+    const bedPositioningFrame = document.querySelector('.bed-positioning-frame');
+    bedPositioningFrame?.classList.add('dragging');
 
     event.preventDefault();
     event.stopPropagation();
@@ -245,8 +253,8 @@ export class BedComponent implements OnInit, OnDestroy {
     this.isDragging = false;
 
     // 移除拖曳樣式
-    const bedArea = document.querySelector('.bed-area');
-    bedArea?.classList.remove('dragging');
+    const bedPositioningFrame = document.querySelector('.bed-positioning-frame');
+    bedPositioningFrame?.classList.remove('dragging');
 
     // 儲存新位置
     StateDataService.updateBedPosition(this.bedPosition);

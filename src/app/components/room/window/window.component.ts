@@ -43,7 +43,7 @@ export class WindowComponent {
 
   constructor(private leavingService: LeavingService) {}
 
-  onWindowClick() {
+  async onWindowClick(): Promise<void> {
     console.log('Window clicked...');
 
     const currentPetStats = PetStatsService.loadPetStats();
@@ -54,6 +54,6 @@ export class WindowComponent {
     }
 
     // 若電子雞當前數值物件的 isLeaving 為 true，則執行 LeavingService 的 leavingWindowEvent 函數
-    this.leavingService.leavingWindowEvent();
+    await this.leavingService.leavingWindowEvent();
   }
 }

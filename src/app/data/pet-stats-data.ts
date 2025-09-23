@@ -130,7 +130,7 @@ export class PetStatsService {
     // 當前生命值：0-最大生命值
     validatedStats.currentHealth = Math.max(0, Math.min(stats.maxHealth, stats.currentHealth));
 
-    // 當前飢餓度：0-100
+    // 當前飽足感：0-100
     validatedStats.currentHunger = Math.max(0, Math.min(100, stats.currentHunger));
 
     // 當前健康度：0-100

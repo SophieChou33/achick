@@ -23,7 +23,7 @@ export class HungerManagerService {
   }
 
   private startHungerSystem(): void {
-    // 每30秒執行飢餓度降低檢查
+    // 每30秒執行飽足感降低檢查
     this.hungerDecreaseInterval = setInterval(() => {
       this.decreaseHunger();
     }, 30000);
@@ -62,7 +62,7 @@ export class HungerManagerService {
       return;
     }
 
-    // 當 timeStopping 為 true 或當前飢餓度為 0 時，不執行邏輯（除非強制執行）
+    // 當 timeStopping 為 true 或當前飽足感為 0 時，不執行邏輯（除非強制執行）
     if (!forceExecute && (petStats.timeStopping || petStats.currentHunger === 0)) {
       return;
     }
@@ -80,7 +80,7 @@ export class HungerManagerService {
         PetStatsService.updatePetStats({
           currentHunger: newHunger
         });
-        console.log(`強制執行飢餓度減少：扣除 ${petStats.hungerSpeed}，新飢餓度 ${newHunger}`);
+        console.log(`強制執行飽足感減少：扣除 ${petStats.hungerSpeed}，新飽足感 ${newHunger}`);
       }
       return;
     }
@@ -99,7 +99,7 @@ export class HungerManagerService {
         decreaseCount = Math.floor(timeDiff / 60);
       }
 
-      // 計算總扣除的飢餓度
+      // 計算總扣除的飽足感
       const totalHungerDecrease = decreaseCount * petStats.hungerSpeed;
       const newHunger = Math.max(0, petStats.currentHunger - totalHungerDecrease);
 
@@ -123,7 +123,7 @@ export class HungerManagerService {
       this.saveHungerTimes();
 
       const executionType = forceExecute && timeDiff < 60 ? '強制執行' : '累積減少';
-      console.log(`飢餓度${executionType}：執行 ${decreaseCount} 次扣除，每次扣除 ${petStats.hungerSpeed}，總共扣除 ${totalHungerDecrease}，新飢餓度 ${newHunger}`);
+      console.log(`飽足感${executionType}：執行 ${decreaseCount} 次扣除，每次扣除 ${petStats.hungerSpeed}，總共扣除 ${totalHungerDecrease}，新飽足感 ${newHunger}`);
     }
   }
 
@@ -139,7 +139,7 @@ export class HungerManagerService {
 
     const stateData = StateDataService.loadStateData();
 
-    // 當 timeStopping 為 true 或當前飢餓度大於 35 時，取消飢餓狀態（除非強制執行）
+    // 當 timeStopping 為 true 或當前飽足感大於 35 時，取消飢餓狀態（除非強制執行）
     if (!forceExecute && (petStats.timeStopping || petStats.currentHunger > 35)) {
       if (stateData.hungry.isActive === 1) {
         StateDataService.deactivateState('hungry', stateData);
@@ -157,7 +157,7 @@ export class HungerManagerService {
       this.hungerStateStartTime = currentTime;
       this.saveHungerTimes();
 
-      // 如果是強制執行且飢餓度在懲罰範圍內，執行一次懲罰
+      // 如果是強制執行且飽足感在懲罰範圍內，執行一次懲罰
       if (forceExecute && petStats.currentHunger <= 35) {
         this.executeHungerPenalty(petStats, 1);
       }
@@ -222,7 +222,7 @@ export class HungerManagerService {
    * 執行飢餓懲罰的核心邏輯
    */
   private executeHungerPenalty(petStats: any, punishmentCount: number): void {
-    // 根據飢餓度閾值確定每次扣除的數值
+    // 根據飽足感閾值確定每次扣除的數值
     let friendshipDecreasePerTime = 0;
     let wellnessDecreasePerTime = 0;
 
@@ -254,23 +254,23 @@ export class HungerManagerService {
       const message = `${petName}因飢餓對你不滿，健康度-${totalWellnessDecrease}，好感度-${totalFriendshipDecrease}（${punishmentCount}次懲罰）`;
       ToastrService.show(message, 'warning', 6000);
 
-      console.log(`飢餓懲罰：飢餓度 ${petStats.currentHunger}，執行 ${punishmentCount} 次懲罰，健康度-${totalWellnessDecrease}，好感度-${totalFriendshipDecrease}`);
+      console.log(`飢餓懲罰：飽足感 ${petStats.currentHunger}，執行 ${punishmentCount} 次懲罰，健康度-${totalWellnessDecrease}，好感度-${totalFriendshipDecrease}`);
     }
   }
 
   /**
-   * 手動觸發飢餓度減少檢查（工程師模式使用）
+   * 手動觸發飽足感減少檢查（工程師模式使用）
    */
   public manualTriggerHungerDecrease(): void {
-    console.log('手動觸發飢餓度減少檢查');
+    console.log('手動觸發飽足感減少檢查');
     this.decreaseHunger(true); // 強制執行
   }
 
   /**
-   * 手動觸發飢餓度懲罰扣值檢查（工程師模式使用）
+   * 手動觸發飽足感懲罰扣值檢查（工程師模式使用）
    */
   public manualTriggerHungerPenalty(): void {
-    console.log('手動觸發飢餓度懲罰扣值檢查');
+    console.log('手動觸發飽足感懲罰扣值檢查');
     this.checkHungerState(true); // 強制執行
   }
 

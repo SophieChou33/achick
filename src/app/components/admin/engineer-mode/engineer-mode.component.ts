@@ -65,7 +65,7 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                   <span>{{ petStats.currentWellness }}</span>
                 </div>
                 <div class="info-item">
-                  <label>當前飢餓度:</label>
+                  <label>當前飽足感:</label>
                   <span>{{ petStats.currentHunger }}</span>
                 </div>
                 <div class="info-item">
@@ -112,7 +112,7 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                   <input type="number" [(ngModel)]="editableStats.currentWellness" min="0" max="100">
                 </div>
                 <div class="adjust-item">
-                  <label>飢餓度:</label>
+                  <label>飽足感:</label>
                   <input type="number" [(ngModel)]="editableStats.currentHunger" min="0" max="100">
                 </div>
                 <div class="adjust-item">
@@ -127,8 +127,8 @@ import { DirtyObject } from '../../../types/dirty-object.type';
             <div class="tab-content" *ngIf="activeTab === 'timers'">
               <h4>手動觸發定時檢查器</h4>
               <div class="timer-grid">
-                <button class="btn btn-secondary" (click)="triggerTimer('hungerDecrease')">飢餓度減少檢查</button>
-                <button class="btn btn-secondary" (click)="triggerTimer('hungerPenalty')">飢餓度懲罰扣值檢查</button>
+                <button class="btn btn-secondary" (click)="triggerTimer('hungerDecrease')">飽足感減少檢查</button>
+                <button class="btn btn-secondary" (click)="triggerTimer('hungerPenalty')">飽足感懲罰扣值檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('health')">生命值檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('wellness')">健康度檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('leaving')">離家出走檢查</button>
@@ -771,21 +771,21 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
     PetStatsService.savePetStats(updatedStats);
   }
 
-  triggerTimer(type: string) {
+  async triggerTimer(type: string): Promise<void> {
     console.log(`Triggering timer: ${type}`);
 
     switch (type) {
       case 'hungerDecrease':
-        // 手動觸發飢餓度減少檢查
+        // 手動觸發飽足感減少檢查
         this.hungerManagerService.manualTriggerHungerDecrease();
         break;
       case 'hungerPenalty':
-        // 手動觸發飢餓度懲罰扣值檢查
+        // 手動觸發飽足感懲罰扣值檢查
         this.hungerManagerService.manualTriggerHungerPenalty();
         break;
       case 'health':
         // 手動觸發生命值檢查
-        this.healthCheckService.manualCheck();
+        await this.healthCheckService.manualCheck();
         break;
       case 'wellness':
         // 手動觸發健康度檢查

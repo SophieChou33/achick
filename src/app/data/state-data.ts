@@ -154,6 +154,19 @@ export class StateDataService {
     return updatedData;
   }
 
+  static resetCharacterPositionToDefault(): StateData {
+    const currentData = this.loadStateData();
+    const updatedData = {
+      ...currentData,
+      characterPosition: {
+        left: '40%',
+        top: '35dvh'
+      }
+    };
+    this.saveStateData(updatedData);
+    return updatedData;
+  }
+
   static resetPositionsToDefault(): StateData {
     const currentData = this.loadStateData();
     const updatedData = {

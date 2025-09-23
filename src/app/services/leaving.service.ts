@@ -37,7 +37,7 @@ export class LeavingService {
   /**
    * 每當點擊窗戶DOM元素時觸發此事件
    */
-  public leavingWindowEvent(): void {
+  public async leavingWindowEvent(): Promise<void> {
     const currentPetStats = PetStatsService.loadPetStats();
 
     // 1. 若電子雞當前數值物件的 isLeaving 為 false，不往下執行邏輯
@@ -56,7 +56,7 @@ export class LeavingService {
     this.isCanClick = false;
 
     // 4. 執行 observing 函數
-    this.observing();
+    await this.observing();
 
     // 5. clickTimes +1 後重新賦值給 clickTimes
     this.clickTimes += 1;
@@ -70,7 +70,7 @@ export class LeavingService {
   /**
    * 判斷是否切換 isLeaving 的值
    */
-  private observing(): void {
+  private async observing(): Promise<void> {
     const currentPetStats = PetStatsService.loadPetStats();
     const petName = currentPetStats.name || '電子雞';
     const randomValue = Math.random();
@@ -94,7 +94,7 @@ export class LeavingService {
       // 10%機率：電子雞死亡
       this.clickTimes = 0;
       ToastrService.show(`${petName}在弱肉強食的世界中不幸被淘汰了，愛要及時啊！`, 'error');
-      this.lifecycleService.doKill();
+      await this.lifecycleService.doKill();
 
     } else {
       // 80%機率：沒有找到

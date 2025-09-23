@@ -42,6 +42,20 @@ export class ModalService {
   }
 
   /**
+   * 顯示 info 型態的 modal (只有確認和X關閉按鈕)
+   */
+  async info(message: string, title?: string, confirmText?: string): Promise<void> {
+    const config: ModalConfig = {
+      type: 'info',
+      message,
+      title,
+      confirmText: confirmText || '確定'
+    };
+
+    await this.showModal(config);
+  }
+
+  /**
    * 顯示自定義配置的 modal
    */
   private async showModal(config: ModalConfig): Promise<boolean> {

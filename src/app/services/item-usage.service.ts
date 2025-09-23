@@ -2,10 +2,13 @@ import { Injectable } from '@angular/core';
 import { UserInventoryService } from '../data/user-inventory-data';
 import { ShopDataService } from '../data/shop-data';
 import { PetStatsService } from '../data/pet-stats-data';
+import { StateDataService } from '../data/state-data';
 import { PetStats } from '../types/pet-stats.type';
 import { ProductItem } from '../types/product-data.type';
 import { sources } from '../sources';
 import { getBreedByName } from '../data/breed-data';
+import { ToastrService } from '../components/shared/toastr/toastr.component';
+import { ModalService } from './modal.service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +16,68 @@ import { getBreedByName } from '../data/breed-data';
 export class ItemUsageService {
 
   /**
-   * 使用物品
+   * 使用物品 (with confirmation check)
+   */
+  static async useItemWithConfirmation(itemName: string, quantity: number = 1, modalService: ModalService): Promise<{ success: boolean; message: string; effects?: string[] }> {
+    // 檢查背包中是否有足夠的物品
+    if (!UserInventoryService.hasEnoughItems(itemName, quantity)) {
+      const currentQuantity = UserInventoryService.getItemQuantity(itemName);
+      return {
+        success: false,
+        message: `${itemName} 數量不足，目前只有 ${currentQuantity} 個`
+      };
+    }
+
+    // 從商店資料中獲取物品資訊
+    const shopData = ShopDataService.loadShopData();
+    const productItem = ShopDataService.getProductByName(itemName, shopData);
+
+    if (!productItem) {
+      return {
+        success: false,
+        message: `找不到物品 "${itemName}" 的資訊`
+      };
+    }
+
+    // 檢查是否會增加飽足感且當前飽足感已滿
+    const currentPetStats = PetStatsService.loadPetStats();
+    if (productItem.effect.currentHunger > 0 && currentPetStats.currentHunger >= 100) {
+      const confirmed = await modalService.confirm(
+        `電子雞已經不餓了，目前飽足感為 100！\n\n是否確認還是要餵食 ${itemName}？`,
+        '🍽️ 餵食確認',
+        '確認餵食',
+        '取消'
+      );
+
+      if (!confirmed) {
+        return {
+          success: false,
+          message: '已取消餵食'
+        };
+      }
+    }
+
+    // 消耗背包中的物品
+    const inventoryResult = UserInventoryService.useItem(itemName, quantity);
+    if (!inventoryResult.success) {
+      return {
+        success: false,
+        message: inventoryResult.message
+      };
+    }
+
+    // 執行物品效果
+    const effectResults = this.applyItemEffects(productItem, quantity);
+
+    return {
+      success: true,
+      message: `成功使用 ${quantity} 個 ${itemName}`,
+      effects: effectResults
+    };
+  }
+
+  /**
+   * 使用物品 (原有方法，保持向後兼容)
    */
   static useItem(itemName: string, quantity: number = 1): { success: boolean; message: string; effects?: string[] } {
     // 檢查背包中是否有足夠的物品
@@ -74,6 +138,7 @@ export class ItemUsageService {
     if (productItem.reborn === 1) {
       updatedStats.lifeCycle = 'CHILD';
       updatedStats.timeStopping = false; // 復活後重置時間停止狀態
+      updatedStats.currentHealth = 20; // 復活後生命值設定為 20
       effects.push('電子雞已復活');
     }
 
@@ -89,7 +154,7 @@ export class ItemUsageService {
     if (effect.currentHunger !== 0) {
       const hungerChange = effect.currentHunger * quantity;
       updatedStats.currentHunger = Math.max(0, Math.min(100, updatedStats.currentHunger + hungerChange));
-      effects.push(`飢餓度 ${hungerChange > 0 ? '+' : ''}${hungerChange}`);
+      effects.push(`飽足感 ${hungerChange > 0 ? '+' : ''}${hungerChange}`);
     }
 
     if (effect.currentFriendship !== 0) {
@@ -115,8 +180,50 @@ export class ItemUsageService {
       }
     }
 
+    // 處理疾病治療邏輯
+    const diseaseEffects = this.handleDiseaseHealing(productItem, quantity);
+    effects.push(...diseaseEffects);
+
     // 儲存更新後的電子雞數值
     PetStatsService.savePetStats(updatedStats);
+
+    return effects;
+  }
+
+  /**
+   * 處理疾病治療邏輯
+   */
+  private static handleDiseaseHealing(productItem: ProductItem, quantity: number): string[] {
+    const effects: string[] = [];
+    const currentStateData = StateDataService.loadStateData();
+
+    // 建立藥物名稱到疾病的對應表
+    const medicineToDisease: Record<string, { disease: string; name: string }> = {
+      '頭痛藥': { disease: 'headache', name: '偏頭痛' },
+      '整腸藥': { disease: 'diarrhea', name: '拉肚子' },
+      '胃藥': { disease: 'gastricUlcer', name: '胃潰瘍' },
+      '感冒藥': { disease: 'flu', name: '流感' }
+    };
+
+    const medicineInfo = medicineToDisease[productItem.itemName];
+
+    if (medicineInfo) {
+      const diseaseKey = medicineInfo.disease as keyof typeof currentStateData;
+      const stateValue = currentStateData[diseaseKey];
+
+      // 檢查是否有對應的疾病狀態
+      if ('isActive' in stateValue && (stateValue as any).isActive === 1) {
+        // 治療疾病
+        StateDataService.deactivateState(diseaseKey, currentStateData);
+        effects.push(`治療了 ${medicineInfo.name}`);
+
+        // 顯示治療成功的toastr通知
+        ToastrService.success(`💊 ${medicineInfo.name} 已治癒！`, 3000);
+      } else {
+        // 沒有對應的疾病
+        ToastrService.info(`💊 電子雞沒有 ${medicineInfo.name}，但藥物仍然生效`, 3000);
+      }
+    }
 
     return effects;
   }
@@ -258,7 +365,7 @@ export class ItemUsageService {
 
     if (effect.currentHunger !== 0) {
       const change = effect.currentHunger * quantity;
-      preview.push(`飢餓度 ${change > 0 ? '+' : ''}${change}`);
+      preview.push(`飽足感 ${change > 0 ? '+' : ''}${change}`);
     }
 
     if (effect.currentFriendship !== 0) {

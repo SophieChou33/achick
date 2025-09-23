@@ -4,9 +4,8 @@ import { UserDataService } from '../data/user-data';
 import { StateDataService } from '../data/state-data';
 import { DirtyTriggerService } from './dirty-trigger.service';
 import { WhiteTransitionService } from './white-transition.service';
-import { ToastrService } from '../components/shared/toastr/toastr.component';
 import { ModalService } from './modal.service';
-import { sources } from '../sources';
+import { AppStateService } from './app-state.service';
 
 @Injectable({
   providedIn: 'root'
@@ -16,13 +15,14 @@ export class LifecycleService {
   constructor(
     private dirtyTriggerService: DirtyTriggerService,
     private whiteTransitionService: WhiteTransitionService,
-    private modalService: ModalService
+    private modalService: ModalService,
+    private appStateService: AppStateService
   ) {}
 
   /**
    * 設定電子雞死亡
    */
-  public doKill(): void {
+  public async doKill(): Promise<void> {
     const currentPetStats = PetStatsService.loadPetStats();
     const petName = currentPetStats.name || '電子雞';
 
@@ -36,8 +36,8 @@ export class LifecycleService {
 
     PetStatsService.savePetStats(updatedStats);
 
-    // 4. 跳出 toastr
-    ToastrService.show(`永別了${petName}，希望你去了更美好的世界，RIP🕊️`, 'error');
+    // 4. 跳出確認彈窗
+    await this.modalService.info(`${petName}因疏於照顧而死亡...\n\n永別了${petName}，希望你去了更美好的世界，RIP🕊️`, '寵物已死亡');
 
     // 角色DOM元素會自動切換為顯示 sources.character.dead.dead
     // 這個邏輯已經在 CharacterComponent 的 setCharacterImage 方法中實現
@@ -46,7 +46,7 @@ export class LifecycleService {
   /**
    * 將當前的電子雞資料記錄到飼養紀錄中，並且將當前的電子雞資料清除
    */
-  public clearCurrentChickenState(): void {
+  public clearCurrentChickenState(skipWelcomePage: boolean = false): void {
     const currentPetStats = PetStatsService.loadPetStats();
     const currentUserData = UserDataService.loadUserData();
     const currentStateData = StateDataService.loadStateData();
@@ -114,8 +114,10 @@ export class LifecycleService {
     this.dirtyTriggerService.resetDirtyState();
 
     // 4. 執行完畢後的行為
-    // 重新顯示歡迎頁
-    this.showWelcomePage();
+    // 只有在不跳過歡迎頁時才顯示歡迎頁
+    if (!skipWelcomePage) {
+      this.showWelcomePage();
+    }
   }
 
   /**
@@ -125,9 +127,8 @@ export class LifecycleService {
     // 重置白光過渡服務
     this.whiteTransitionService.reset();
 
-    // 觸發頁面重新載入或重新顯示歡迎頁
-    // 由於我們已經重置了所有狀態，角色組件會自動顯示出生按鈕
-    window.location.reload();
+    // 顯示歡迎頁面
+    this.appStateService.showWelcomePage();
   }
 
   /**
@@ -137,13 +138,24 @@ export class LifecycleService {
     const currentPetStats = PetStatsService.loadPetStats();
 
     if (currentPetStats.lifeCycle === 'DEAD' || currentPetStats.lifeCycle === 'COOKED') {
-      const firstConfirm = await this.modalService.confirm('是否開始飼養新的電子雞？');
-      if (firstConfirm) {
-        const secondConfirm = await this.modalService.confirm('是否開始飼養新的電子雞？', '確認重新開始');
-        if (secondConfirm) {
-          this.clearCurrentChickenState();
-          return true;
-        }
+      const confirm = await this.modalService.confirm('是否開始飼養新的電子雞？', '確認重新開始');
+      if (confirm) {
+        // 設置一次性回調來處理重置邏輯
+        this.whiteTransitionService.setOneTimeCallback(() => {
+          // 重置遊戲狀態但不立即顯示歡迎頁
+          this.clearCurrentChickenState(true);
+
+          // 顯示歡迎頁面
+          this.showWelcomePage();
+
+          // 通知場景準備完成，觸發 fadeOut
+          this.whiteTransitionService.onSceneReady();
+        });
+
+        // 觸發白光過渡
+        this.whiteTransitionService.fadeIn();
+
+        return true;
       }
       return false;
     }

@@ -3,6 +3,8 @@ import { PetStatsService } from '../data/pet-stats-data';
 import { StateDataService } from '../data/state-data';
 import { UserDataService } from '../data/user-data';
 import { CustomTimeService } from './custom-time.service';
+import { ModalService } from './modal.service';
+import { ToastrService } from '../components/shared/toastr/toastr.component';
 
 @Injectable({
   providedIn: 'root'
@@ -17,7 +19,10 @@ export class WellnessCheckService {
 
   private static readonly WELLNESS_STORAGE_KEY = 'achick_wellness_times';
 
-  constructor(private customTimeService: CustomTimeService) {
+  constructor(
+    private customTimeService: CustomTimeService,
+    private modalService: ModalService
+  ) {
     this.loadWellnessTimes();
     this.startWellnessMonitoring();
   }
@@ -40,7 +45,7 @@ export class WellnessCheckService {
   /**
    * 每30秒執行一次的私有函數：檢查健康度狀態
    */
-  private healthCheck(): void {
+  private async healthCheck(): Promise<void> {
     const currentPetStats = PetStatsService.loadPetStats();
 
     // 當電子雞當前數值物件的 rare 為 null 時，重置時間並不往下執行邏輯
@@ -72,7 +77,7 @@ export class WellnessCheckService {
     this.checkLifeDamage();
 
     // 執行疾病檢查
-    this.checkDiseaseCheck();
+    await this.checkDiseaseCheck();
   }
 
   /**
@@ -143,6 +148,14 @@ export class WellnessCheckService {
         this.saveWellnessTimes();
 
         console.log(`低健康度累積傷害：健康度範圍 ${currentWellness}，執行 ${damageCount} 次傷害，生命值-${totalHealthDamage}，最大生命值-${totalMaxHealthDamage}`);
+
+        // 顯示低健康度扣值通知
+        if (totalHealthDamage > 0 || totalMaxHealthDamage > 0) {
+          let damageMsg = '💔 健康度過低造成傷害！';
+          if (totalHealthDamage > 0) damageMsg += ` 生命值-${totalHealthDamage}`;
+          if (totalMaxHealthDamage > 0) damageMsg += ` 最大生命值-${totalMaxHealthDamage}`;
+          ToastrService.error(damageMsg);
+        }
       }
     }
   }
@@ -150,7 +163,7 @@ export class WellnessCheckService {
   /**
    * 私有函數：判斷是否觸發疾病抽籤事件
    */
-  private checkDiseaseCheck(): void {
+  private async checkDiseaseCheck(): Promise<void> {
     const currentTime = this.customTimeService.formatTime();
     const currentPetStats = PetStatsService.loadPetStats();
 
@@ -188,7 +201,7 @@ export class WellnessCheckService {
 
     if (shouldCheck) {
       // 執行疾病抽籤
-      this.randomGetSick();
+      await this.randomGetSick();
       // 更新 lastDiseaseCheckTime
       this.lastDiseaseCheckTime = currentTime;
       this.saveWellnessTimes();
@@ -198,28 +211,38 @@ export class WellnessCheckService {
   /**
    * 私有函數：執行疾病抽籤
    */
-  private randomGetSick(): void {
+  private async randomGetSick(): Promise<void> {
     const random = Math.random() * 100; // 0-100的隨機數
     const currentStateData = StateDataService.loadStateData();
+    let diseaseMessage = '';
 
     if (random < 15) {
       // 15% 機率：頭痛
       StateDataService.activateState('headache', currentStateData);
+      diseaseMessage = '😵 電子雞得了偏頭痛！\n\n可以購買頭痛藥來治療。';
+      await this.modalService.info(diseaseMessage, '🏥 疾病通知');
     } else if (random < 30) {
       // 15% 機率：拉肚子
       StateDataService.activateState('diarrhea', currentStateData);
+      diseaseMessage = '🤢 電子雞拉肚子了！\n\n可以購買整腸藥來治療。';
+      await this.modalService.info(diseaseMessage, '🏥 疾病通知');
     } else if (random < 45) {
       // 15% 機率：胃潰瘍
       StateDataService.activateState('gastricUlcer', currentStateData);
+      diseaseMessage = '😰 電子雞得了胃潰瘍！\n\n可以購買胃藥來治療。';
+      await this.modalService.info(diseaseMessage, '🏥 疾病通知');
     } else if (random < 60) {
       // 15% 機率：流感
       StateDataService.activateState('flu', currentStateData);
+      diseaseMessage = '🤒 電子雞得了流感！\n\n可以購買感冒藥來治療。';
+      await this.modalService.info(diseaseMessage, '🏥 疾病通知');
     } else if (random < 75) {
       // 15% 機率：睡眠品質不佳
       const currentPetStats = PetStatsService.loadPetStats();
       PetStatsService.updatePetStats({
         currentWellness: Math.max(0, currentPetStats.currentWellness - 5)
       });
+      ToastrService.warning('💤 電子雞睡眠品質不佳，健康度下降了！');
     }
     // 25% 機率：不發生任何事（random >= 75）
   }
@@ -299,6 +322,14 @@ export class WellnessCheckService {
       this.saveWellnessTimes();
 
       console.log(`疾病累積效果：${activeDiseaseCount} 個疾病，執行 ${effectCount} 次效果，生命值-${totalHealthReduction}，最大生命值-${totalMaxHealthReduction}`);
+
+      // 顯示疾病效果通知
+      if (totalHealthReduction > 0 || totalMaxHealthReduction > 0) {
+        let diseaseMsg = `🦠 疾病持續效果：${activeDiseaseCount} 個疾病造成傷害！`;
+        if (totalHealthReduction > 0) diseaseMsg += ` 生命值-${totalHealthReduction}`;
+        if (totalMaxHealthReduction > 0) diseaseMsg += ` 最大生命值-${totalMaxHealthReduction}`;
+        ToastrService.error(diseaseMsg);
+      }
     }
   }
 

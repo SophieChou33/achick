@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 export interface ModalConfig {
   title?: string;
   message: string;
-  type: 'alert' | 'confirm';
+  type: 'alert' | 'confirm' | 'info';
   confirmText?: string;
   cancelText?: string;
 }
@@ -17,8 +17,13 @@ export interface ModalConfig {
     <div class="modal-overlay" *ngIf="isVisible" (click)="onOverlayClick($event)">
       <div class="modal-dialog" (click)="$event.stopPropagation()">
         <div class="modal-content">
-          <div class="modal-header" *ngIf="config.title">
-            <h4 class="modal-title">{{ config.title }}</h4>
+          <div class="modal-header">
+            <h4 class="modal-title" *ngIf="config.title">{{ config.title }}</h4>
+            <button
+              *ngIf="config.type === 'info'"
+              type="button"
+              class="close-btn"
+              (click)="onCancel()">×</button>
           </div>
 
           <div class="modal-body">
@@ -77,6 +82,30 @@ export interface ModalConfig {
     .modal-header {
       padding: 16px 20px 8px 20px;
       border-bottom: 1px solid #dee2e6;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #999;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .close-btn:hover {
+      color: #666;
+      background-color: #f8f9fa;
     }
 
     .modal-title {

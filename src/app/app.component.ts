@@ -6,6 +6,7 @@ import { RoomComponent } from './components/room/room.component';
 import { WhiteTransitionComponent } from './components/white-transition/white-transition.component';
 import { WhiteTransitionService } from './services/white-transition.service';
 import { HungerManagerService } from './services/hunger-manager.service';
+import { AppStateService } from './services/app-state.service';
 
 @Component({
   selector: 'app-root',
@@ -35,13 +36,23 @@ export class AppComponent implements OnInit, OnDestroy {
 
   constructor(
     private whiteTransitionService: WhiteTransitionService,
-    private hungerManagerService: HungerManagerService
+    private hungerManagerService: HungerManagerService,
+    private appStateService: AppStateService
   ) {}
 
   ngOnInit() {
     // 註冊場景準備回調函數
     this.whiteTransitionService.onWhiteReady(() => {
       this.prepareScene();
+    });
+
+    // 監聽應用狀態變化
+    this.appStateService.showWelcome$.subscribe(show => {
+      this.showWelcome = show;
+    });
+
+    this.appStateService.showRoom$.subscribe(show => {
+      this.showRoom = show;
     });
   }
 
@@ -52,8 +63,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   private prepareScene() {
     // 在白光遮蔽畫面時準備房間場景
-    this.showWelcome = false;
-    this.showRoom = true;
+    this.appStateService.showRoomPage();
 
     // 等待房間組件渲染並執行居中
     setTimeout(() => {

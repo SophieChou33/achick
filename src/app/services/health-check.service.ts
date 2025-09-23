@@ -25,7 +25,7 @@ export class HealthCheckService {
   /**
    * 每30秒執行一次的私有函數：檢查當前電子雞生命值狀態
    */
-  private checkLifeValue(): void {
+  private async checkLifeValue(): Promise<void> {
     const currentPetStats = PetStatsService.loadPetStats();
 
     // 當電子雞當前數值物件的 rare 為 null 時，或是當電子雞當前數值物件的 timeStopping 為 true 時，不往下執行邏輯
@@ -37,7 +37,7 @@ export class HealthCheckService {
     if (currentPetStats.currentHealth <= 0) {
       // 若當前生命值 ≤ 0，則觸發 LifecycleService 的 doKill 函數，將電子雞標記為死亡
       // 並將電子雞當前數值物件的 timeStopping 賦值為 true
-      this.lifecycleService.doKill();
+      await this.lifecycleService.doKill();
 
       // doKill 方法已經會設置 timeStopping: true，所以不需要額外設置
     }
@@ -58,7 +58,7 @@ export class HealthCheckService {
   /**
    * 手動觸發生命值檢查（用於調試或立即檢查）
    */
-  public manualCheck(): void {
-    this.checkLifeValue();
+  public async manualCheck(): Promise<void> {
+    await this.checkLifeValue();
   }
 }

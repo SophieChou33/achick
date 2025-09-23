@@ -491,23 +491,33 @@ export class InventoryModalComponent implements OnInit {
     }
   }
 
-  confirmUseItem() {
+  async confirmUseItem() {
     if (!this.selectedItem) return;
 
+    // 暫存選中的物品資訊
+    const selectedItemName = this.selectedItem.itemName;
+
     // 檢查是否可以使用
-    const canUseResult = ItemUsageService.canUseItem(this.selectedItem.itemName);
+    const canUseResult = ItemUsageService.canUseItem(selectedItemName);
+
+    // 先關閉確認彈窗，無論結果如何都要關閉避免阻擋後續彈窗
+    this.closeConfirmModal();
+
     if (!canUseResult.canUse) {
-      this.modalService.alert(canUseResult.reason || '無法使用此物品', '無法使用');
+      await this.modalService.alert(canUseResult.reason || '無法使用此物品', '無法使用');
+
+      // 無法使用時也關閉背包彈窗
+      this.onClose();
       return;
     }
 
-    // 使用物品
-    const useResult = ItemUsageService.useItem(this.selectedItem.itemName, 1);
+    // 使用物品 (with confirmation for full hunger)
+    const useResult = await ItemUsageService.useItemWithConfirmation(selectedItemName, 1, this.modalService);
 
     if (useResult.success) {
       // 發送使用成功事件
       this.itemUsed.emit({
-        itemName: this.selectedItem.itemName,
+        itemName: selectedItemName,
         effects: useResult.effects || []
       });
 
@@ -515,13 +525,22 @@ export class InventoryModalComponent implements OnInit {
       this.inventory = UserInventoryService.loadUserInventory();
       this.updateCurrentTabItems();
 
-      // 關閉確認彈窗
-      this.closeConfirmModal();
-
       // 顯示成功訊息
-      this.modalService.alert(`${useResult.message}${useResult.effects ? '\n效果：' + useResult.effects.join(', ') : ''}`, '使用成功');
+      await this.modalService.alert(`${useResult.message}${useResult.effects ? '\n效果：' + useResult.effects.join(', ') : ''}`, '使用成功');
+
+      // 使用成功後關閉背包彈窗
+      this.onClose();
     } else {
-      this.modalService.alert(useResult.message, '使用失敗');
+      // 如果是取消餵食，不顯示錯誤彈窗，但也要關閉背包彈窗
+      if (useResult.message !== '已取消餵食') {
+        await this.modalService.alert(useResult.message, '使用失敗');
+
+        // 使用失敗後關閉背包彈窗
+        this.onClose();
+      } else {
+        // 取消餵食時也關閉背包彈窗
+        this.onClose();
+      }
     }
   }
 

@@ -15,6 +15,8 @@ import { MoodStatusComponent } from '../mood-status/mood-status.component';
 import { TouchEventService } from '../../../services/touch-event.service';
 import { LifecycleService } from '../../../services/lifecycle.service';
 import { SleepService } from '../../../services/sleep.service';
+import { ModalService } from '../../../services/modal.service';
+import { WhiteTransitionService } from '../../../services/white-transition.service';
 import { StateDataService } from '../../../data/state-data';
 
 @Component({
@@ -249,7 +251,9 @@ export class CharacterComponent implements OnInit, OnDestroy {
     private rareBreedService: RareBreedService,
     private touchEventService: TouchEventService,
     private lifecycleService: LifecycleService,
-    private sleepService: SleepService
+    private sleepService: SleepService,
+    private modalService: ModalService,
+    private whiteTransitionService: WhiteTransitionService
   ) {
     this.petStats = PetStatsService.loadPetStats();
   }
@@ -267,12 +271,12 @@ export class CharacterComponent implements OnInit, OnDestroy {
       const previousStats = this.petStats;
       this.petStats = petStats;
 
-      // 檢查是否狀態變為 DEAD 或 COOKED，如果是則重置位置
+      // 檢查是否狀態變為 DEAD 或 COOKED，如果是則重置角色位置
       if (previousStats && previousStats.lifeCycle !== 'DEAD' && petStats.lifeCycle === 'DEAD') {
-        this.resetPositionsToDefault();
+        this.resetCharacterPositionToDefault();
       }
       if (previousStats && previousStats.lifeCycle !== 'COOKED' && petStats.lifeCycle === 'COOKED') {
-        this.resetPositionsToDefault();
+        this.resetCharacterPositionToDefault();
       }
 
       this.setCharacterImage();
@@ -285,9 +289,9 @@ export class CharacterComponent implements OnInit, OnDestroy {
     }, 1000);
 
     // 添加全域拖曳事件監聽器
-    document.addEventListener('mousemove', this.onDragMove.bind(this));
+    document.addEventListener('mousemove', this.onDragMove.bind(this), { passive: false });
     document.addEventListener('mouseup', this.onDragEnd.bind(this));
-    document.addEventListener('touchmove', this.onDragMove.bind(this));
+    document.addEventListener('touchmove', this.onDragMove.bind(this), { passive: false });
     document.addEventListener('touchend', this.onDragEnd.bind(this));
   }
 
@@ -301,9 +305,9 @@ export class CharacterComponent implements OnInit, OnDestroy {
     this.touchEventService.stopResetTimer();
 
     // 清理拖曳事件監聽器
-    document.removeEventListener('mousemove', this.onDragMove.bind(this));
+    document.removeEventListener('mousemove', this.onDragMove.bind(this), { passive: false } as any);
     document.removeEventListener('mouseup', this.onDragEnd.bind(this));
-    document.removeEventListener('touchmove', this.onDragMove.bind(this));
+    document.removeEventListener('touchmove', this.onDragMove.bind(this), { passive: false } as any);
     document.removeEventListener('touchend', this.onDragEnd.bind(this));
   }
 
@@ -313,6 +317,9 @@ export class CharacterComponent implements OnInit, OnDestroy {
 
   private setCharacterImage() {
     const { lifeCycle, rare, breedName } = this.petStats;
+
+    // 調試信息：檢查稀有度和生命週期
+    console.log('setCharacterImage - rare:', rare, 'lifeCycle:', lifeCycle);
 
     // 任務需求：當 rare 為 null 時，顯示出生按鈕
     if (rare === null) {
@@ -350,8 +357,10 @@ export class CharacterComponent implements OnInit, OnDestroy {
     // 根據任務四的邏輯：
     // 若rare有值且lifecycle為EGG，角色圖片顯示sources.character.egg.{{rare}}
     if (rare && lifeCycle === 'EGG') {
+      console.log('Setting egg image for rare:', rare);
       this.characterImage = this.getEggImage(rare);
       this.characterName = 'Egg';
+      console.log('Egg image set to:', this.characterImage);
       return;
     }
 
@@ -386,15 +395,20 @@ export class CharacterComponent implements OnInit, OnDestroy {
   }
 
   private getEggImage(rare: PetStats['rare']): string {
+    console.log('getEggImage called with rare:', rare);
     switch (rare) {
       case 'BAD':
+        console.log('Returning bad egg image');
         return sources.character.egg.bad;
       case 'SPECIAL':
+        console.log('Returning special egg image');
         return sources.character.egg.special;
       case 'SUPER_SPECIAL':
+        console.log('Returning super special egg image');
         return sources.character.egg.superSpecial;
       case 'NORMAL':
       default:
+        console.log('Returning normal egg image (default)');
         return sources.character.egg.normal;
     }
   }
@@ -414,35 +428,59 @@ export class CharacterComponent implements OnInit, OnDestroy {
    */
   async onBirthClick(): Promise<void> {
     try {
-      // 顯示出生覆蓋層
-      await this.birthOverlay.showBirthOverlay('出生中…', 5000);
-
-      // 在覆蓋層遮蔽時執行稀有度 service 的函數
-      // 先生成稀有度但不完成整個流程（不設定名字）
+      // 先重置 rare breed service，但不立即生成數據
       this.rareBreedService.reset();
-      const tempStats = this.rareBreedService.generateNewPetBreed('');
 
-      // 將稀有度賦值給當前電子雞，但保持名字為 null
-      const updatedStats = {
-        ...tempStats,
-        name: null,
-        lifeCycle: 'EGG' as const
-      };
-      PetStatsService.savePetStats(updatedStats);
+      // 僅計算稀有度用於顯示蛋名稱，不保存任何數據
+      const randomValue = Math.random() * 100;
+      let rare: 'BAD' | 'NORMAL' | 'SPECIAL' | 'SUPER_SPECIAL';
+      if (randomValue < 15) {
+        rare = 'BAD';
+      } else if (randomValue < 85) {
+        rare = 'NORMAL';
+      } else if (randomValue < 95) {
+        rare = 'SPECIAL';
+      } else {
+        rare = 'SUPER_SPECIAL';
+      }
 
-      // 添加到使用者飼養歷程
-      const userData = UserDataService.loadUserData();
-      const newPetRecord = {
-        petName: null,
-        birthTime: UserDataService.formatDateTime(new Date()),
-        evolutionTime: null,
-        deathTime: null
-      };
-      UserDataService.addPetRecord(newPetRecord, userData);
+      // 顯示成功出生確認modal
+      const eggName = this.getEggName(rare);
+      await this.modalService.info(`你獲得了 ${eggName}`, '成功出生');
 
-      // 隱藏出生按鈕，顯示角色圖片
-      this.showBirthButton = false;
-      this.setCharacterImage();
+      // 觸發白光過渡
+      this.whiteTransitionService.fadeIn();
+
+      // 0.5秒後切換角色狀態和圖片，然後開始fadeOut
+      setTimeout(() => {
+        // 在fadeOut開始前切換角色狀態和圖片
+        // 現在才真正生成完整的寵物數據
+        const tempStats = this.rareBreedService.generateNewPetBreed('');
+
+        // 將稀有度賦值給當前電子雞，但保持名字為 null
+        const updatedStats = {
+          ...tempStats,
+          name: null,
+          lifeCycle: 'EGG' as const
+        };
+        PetStatsService.savePetStats(updatedStats);
+
+        // 添加到使用者飼養歷程
+        const userData = UserDataService.loadUserData();
+        const newPetRecord = {
+          petName: null,
+          birthTime: UserDataService.formatDateTime(new Date()),
+          evolutionTime: null,
+          deathTime: null
+        };
+        UserDataService.addPetRecord(newPetRecord, userData);
+
+        // 隱藏出生按鈕（圖片會通過訂閱自動更新）
+        this.showBirthButton = false;
+
+        // 立即開始fadeOut
+        this.whiteTransitionService.fadeOut();
+      }, 500);
 
     } catch (error) {
       console.error('Birth process failed:', error);
@@ -455,39 +493,38 @@ export class CharacterComponent implements OnInit, OnDestroy {
    */
   async onNameConfirmed(petName: string): Promise<void> {
     try {
-      // 顯示孵化覆蓋層
-      await this.birthOverlay.showBirthOverlay('孵化中…', 5000);
+      // 顯示成功孵化確認modal
+      await this.modalService.info(`啾啾～${petName}出生了！`, '成功孵化');
 
-      // 更新電子雞名字和生命週期
-      const currentStats = PetStatsService.loadPetStats();
-      const updatedStats = {
-        ...currentStats,
-        name: petName,
-        lifeCycle: 'CHILD' as const
-      };
+      // 觸發白光過渡
+      this.whiteTransitionService.fadeIn();
 
-      // 執行出生時數值賦值
-      const finalStats = this.rareBreedService.generateNewPetBreed(petName);
-      const completeStats = {
-        ...finalStats,
-        lifeCycle: 'CHILD' as const
-      };
+      // 0.5秒後切換角色狀態和圖片，然後開始fadeOut
+      setTimeout(() => {
+        // 在fadeOut開始前切換角色狀態和圖片
+        // 執行出生時數值賦值
+        const finalStats = this.rareBreedService.generateNewPetBreed(petName);
+        const completeStats = {
+          ...finalStats,
+          lifeCycle: 'CHILD' as const
+        };
 
-      PetStatsService.savePetStats(completeStats);
+        PetStatsService.savePetStats(completeStats);
 
-      // 更新使用者飼養歷程的名字
-      const userData = UserDataService.loadUserData();
-      const lastRecordIndex = userData.petHistory.length - 1;
-      if (lastRecordIndex >= 0) {
-        UserDataService.updatePetRecord(lastRecordIndex, { petName }, userData);
-      }
+        // 更新使用者飼養歷程的名字
+        const userData = UserDataService.loadUserData();
+        const lastRecordIndex = userData.petHistory.length - 1;
+        if (lastRecordIndex >= 0) {
+          UserDataService.updatePetRecord(lastRecordIndex, { petName }, userData);
+        }
 
-      // 觸發金幣浮動動畫
-      const coins = this.getHatchingCoins(finalStats.rare!);
-      this.showCoinAnimation(coins);
+        // 觸發金幣浮動動畫
+        const coins = this.getHatchingCoins(finalStats.rare!);
+        this.showCoinAnimation(coins);
 
-      // 更新角色圖片
-      this.setCharacterImage();
+        // 立即開始fadeOut
+        this.whiteTransitionService.fadeOut();
+      }, 500);
 
     } catch (error) {
       console.error('Hatching process failed:', error);
@@ -521,6 +558,19 @@ export class CharacterComponent implements OnInit, OnDestroy {
       case 'SPECIAL': return 30;
       case 'SUPER_SPECIAL': return 80;
       default: return 0;
+    }
+  }
+
+  /**
+   * 獲取稀有度對應的蛋名稱
+   */
+  private getEggName(rare: 'BAD' | 'NORMAL' | 'SPECIAL' | 'SUPER_SPECIAL'): string {
+    switch (rare) {
+      case 'BAD': return '奇怪的蛋';
+      case 'NORMAL': return '平凡的蛋';
+      case 'SPECIAL': return '特別的蛋';
+      case 'SUPER_SPECIAL': return '發光的蛋';
+      default: return '未知的蛋';
     }
   }
 
@@ -568,9 +618,9 @@ export class CharacterComponent implements OnInit, OnDestroy {
   /**
    * 重置位置到預設值
    */
-  private resetPositionsToDefault(): void {
-    // 重置資料中的位置
-    StateDataService.resetPositionsToDefault();
+  private resetCharacterPositionToDefault(): void {
+    // 重置資料中的角色位置
+    StateDataService.resetCharacterPositionToDefault();
 
     // 重新載入位置到組件
     this.loadCharacterPosition();
@@ -583,8 +633,8 @@ export class CharacterComponent implements OnInit, OnDestroy {
     this.isDragging = true;
     this.hasMoved = false;
 
-    // 如果是死亡或熟成狀態，不允許拖曳操作，但仍要設置 isDragging 以便點擊檢測
-    if (this.petStats.lifeCycle === 'DEAD' || this.petStats.lifeCycle === 'COOKED') {
+    // 如果是熟成狀態，不允許拖曳操作，但仍要設置 isDragging 以便點擊檢測
+    if (this.petStats.lifeCycle === 'COOKED') {
       return;
     }
     const clientX = event instanceof MouseEvent ? event.clientX : event.touches[0].clientX;
