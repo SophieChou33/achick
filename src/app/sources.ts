@@ -21,7 +21,7 @@ export const sources = {
     },
     evolution: {
       mud: 'assets/images/character/evolution-mud.png',
-      poinson: 'assets/images/character/evolution-poinson.png',
+      poison: 'assets/images/character/evolution-poison.png',
       burned: 'assets/images/character/evolution-burned.png',
       limbs: 'assets/images/character/evolution-limbs.png',
       strong: 'assets/images/character/evolution-strong.png',

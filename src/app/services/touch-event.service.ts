@@ -15,7 +15,7 @@ import { sources } from '../sources';
   providedIn: 'root'
 })
 export class TouchEventService {
-  private maxTouchTime: number = 5;
+  private maxTouchTime: number = 20;
   private isCanTouch: boolean = true;
   private lastTimeReset: string | null = null;
   private touchedTimes: number = 0;
@@ -155,10 +155,13 @@ export class TouchEventService {
       // 執行 getTouchingCoin 函數
       this.getTouchingCoin(currentPetStats);
     } else {
-      ToastrService.show(`${currentPetStats.name || '電子雞'}對你的愛意達到了頂點`, 'info');
+      // 好感度已達上限，顯示提示訊息
+      ToastrService.show(`${currentPetStats.name || '電子雞'}的好感度已達上限！`, 'info');
 
-      // 檢查進化條件
-      this.checkEvolutionConditions(currentPetStats);
+      // 檢查進化條件 - 只在 CHILD 狀態下才檢查進化
+      if (currentPetStats.lifeCycle === 'CHILD') {
+        this.checkEvolutionConditions(currentPetStats);
+      }
     }
 
     // 7. touchedTimes +1 後重新賦值給 touchedTimes
@@ -305,10 +308,11 @@ export class TouchEventService {
    * 檢查進化條件
    */
   private checkEvolutionConditions(currentPetStats: PetStats): void {
-    // 檢查進化條件：好感度100，健康度100，並且飼養滿120小時
-    if (currentPetStats.currentFriendship === 100 &&
-        currentPetStats.currentWellness === 100 &&
-        this.hasRaisedFor120Hours(currentPetStats)) {
+    // 檢查進化條件：必須是CHILD狀態、好感度>70、健康度>60、並且飼養滿120小時
+    if (currentPetStats.lifeCycle === 'CHILD' &&
+      currentPetStats.currentFriendship > 70 &&
+      currentPetStats.currentWellness > 60 &&
+      this.hasRaisedFor120Hours(currentPetStats)) {
 
       this.triggerSpecialTouchEvent(currentPetStats);
     }
@@ -340,12 +344,12 @@ export class TouchEventService {
   private triggerSpecialTouchEvent(currentPetStats: PetStats): void {
     const random = Math.random() * 100;
 
-    if (random < 40) {
+    if (random < 10) {
       // 40% 機率額外觸發文字toastr
-      ToastrService.show(`${currentPetStats.name || '電子雞'}蹭蹭你的手`, 'info');
-    } else if (random < 90) {
+      ToastrService.show(`${currentPetStats.name || '電子雞'}似乎出現了些變化...`, 'info');
+    } else if (random < 88) {
       // 50% 機率額外觸發文字toastr
-      ToastrService.show(`${currentPetStats.name || '電子雞'}充滿活力`, 'success');
+      ToastrService.show(`${currentPetStats.name || '電子雞'}看起來長大不少`, 'success');
     } else {
       // 10% 機率觸發進化
       this.triggerEvolution(currentPetStats);

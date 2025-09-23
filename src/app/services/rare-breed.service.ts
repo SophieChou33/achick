@@ -119,12 +119,10 @@ export class RareBreedService {
       throw new Error('Failed to generate rare');
     }
 
-    // 獲取品種名稱用於顯示
+    // 獲取品種鍵用於數據存儲
     let breedName: string | null = null;
     if (this.breed && this.rare) {
-      const availableBreeds = getBreedsByRare(this.rare);
-      const selectedBreedData = availableBreeds.find(breed => breed.breed === this.breed);
-      breedName = selectedBreedData?.breedName || null;
+      breedName = this.breed; // 存儲英文品種鍵而不是中文顯示名稱
     }
 
     // 計算稀有度對應的數值
