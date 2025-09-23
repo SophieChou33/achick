@@ -8,6 +8,7 @@ import { ToastrService } from '../components/shared/toastr/toastr.component';
 import { ModalService } from './modal.service';
 import { WhiteTransitionService } from './white-transition.service';
 import { CollectionService } from '../data/collection-data';
+import { CustomTimeService } from './custom-time.service';
 import { sources } from '../sources';
 
 @Injectable({
@@ -25,10 +26,19 @@ export class TouchEventService {
 
   constructor(
     private whiteTransitionService: WhiteTransitionService,
-    private modalService: ModalService
+    private modalService: ModalService,
+    private customTimeService: CustomTimeService
   ) {
     this.loadTouchData();
     this.startResetTimer();
+
+    // 訂閱自定義時間變更，當時間跳躍時立即檢查重置條件
+    this.customTimeService.getCustomTime$().subscribe(() => {
+      // 延遲100ms確保時間已更新
+      setTimeout(() => {
+        this.resetTouchTimes();
+      }, 100);
+    });
   }
 
   /**
@@ -80,17 +90,34 @@ export class TouchEventService {
     const currentPetStats = PetStatsService.loadPetStats();
     const currentStateData = StateDataService.loadStateData();
 
+    console.log('撫摸事件開始檢查:', {
+      rare: currentPetStats.rare,
+      timeStopping: currentPetStats.timeStopping,
+      isSleeping: currentStateData.isSleeping.isActive,
+      lifeCycle: currentPetStats.lifeCycle,
+      isLeaving: currentPetStats.isLeaving
+    });
+
     // 1. 若電子雞當前數值物件的 rare 為 null 時，或是當電子雞當前數值物件的 timeStoping 為 true 時，不往下執行邏輯
     if (currentPetStats.rare === null || currentPetStats.timeStopping === true) {
+      console.log('撫摸事件被阻止: rare為null或時間停止');
       return;
     }
 
     // 2. 當狀態 isSleeping 等於 1 時，不往下執行邏輯
     if (currentStateData.isSleeping.isActive === 1) {
+      console.log('撫摸事件被阻止: 電子雞正在睡覺');
       return;
     }
 
     // 3. 判斷：若touchedTimes≥maxTouchTime，則跳出toastr，將isCanTouch重新賦值為false，並且不往下執行邏輯
+    console.log('撫摸事件檢查:', {
+      touchedTimes: this.touchedTimes,
+      maxTouchTime: this.maxTouchTime,
+      lastTimeReset: this.lastTimeReset,
+      currentTime: this.getCurrentTimeString()
+    });
+
     if (this.touchedTimes >= this.maxTouchTime) {
       ToastrService.show(`${currentPetStats.name || '電子雞'}暫時不想被摸摸喔！`, 'info');
       this.isCanTouch = false;
@@ -99,11 +126,14 @@ export class TouchEventService {
 
     // 4. 若本service的isCanTouch為false（2秒CD中），則不往下執行邏輯且不顯示toastr
     if (!this.isCanTouch) {
+      console.log('撫摸事件被阻止: 冷卻時間中');
       return;
     }
 
     // 5. 將本service的isCanTouch賦值為false
     this.isCanTouch = false;
+
+    console.log('撫摸事件執行中，當前好感度:', currentPetStats.currentFriendship);
 
     // 6. 判斷若電子雞當前數值物件的當前好感度≤最大好感度-0.05，則將當前好感度+0.05後重新賦值
     if (currentPetStats.currentFriendship <= currentPetStats.maxFriendship - 0.05) {
@@ -145,15 +175,27 @@ export class TouchEventService {
   private resetTouchTimes(): void {
     const currentPetStats = PetStatsService.loadPetStats();
 
+    console.log('resetTouchTimes 檢查開始:', {
+      touchedTimes: this.touchedTimes,
+      maxTouchTime: this.maxTouchTime,
+      lastTimeReset: this.lastTimeReset,
+      currentTime: this.getCurrentTimeString(),
+      rare: currentPetStats.rare,
+      timeStopping: currentPetStats.timeStopping
+    });
+
     // 1. 當電子雞當前數值物件的 rare 為 null 時，將 lastTimeReset 重置為 null，並且不往下執行邏輯
     if (currentPetStats.rare === null) {
+      console.log('resetTouchTimes: rare為null，重置lastTimeReset');
       this.lastTimeReset = null;
       return;
     }
 
     // 2. 當電子雞當前數值物件的 timeStoping 為 true 時，若 touchedTimes 大於 0，則將 touchedTimes 賦值為 0
     if (currentPetStats.timeStopping === true) {
+      console.log('resetTouchTimes: 時間停止中');
       if (this.touchedTimes > 0) {
+        console.log('resetTouchTimes: 重置touchedTimes為0 (時間停止)');
         this.touchedTimes = 0;
         this.saveTouchData();
       }
@@ -162,23 +204,35 @@ export class TouchEventService {
 
     // 3. touchedTimes < maxTouchTime 時，不往下執行邏輯
     if (this.touchedTimes < this.maxTouchTime) {
+      console.log('resetTouchTimes: touchedTimes < maxTouchTime，無需重置');
       return;
     }
 
     // 4. 若 lastTimeReset 為 null，則將實際當前時間賦值給 lastTimeReset，並且不往下執行邏輯
     if (this.lastTimeReset === null) {
+      console.log('resetTouchTimes: 首次設定lastTimeReset');
       this.lastTimeReset = this.getCurrentTimeString();
       this.saveTouchData();
       return;
     }
 
     // 5. 取得實際當前時間，若當前時間距離 lastTimeReset 已經過1個小時，則將 touchedTimes 重新賦值為 0
-    const currentTime = new Date();
+    const currentTimeString = this.getCurrentTimeString();
+    const currentTime = this.parseTimeString(currentTimeString);
     const resetTime = this.parseTimeString(this.lastTimeReset);
     const timeDiff = currentTime.getTime() - resetTime.getTime();
     const oneHourInMs = 60 * 60 * 1000; // 1小時 = 3600000毫秒
 
+    console.log('撫摸重置檢查:', {
+      currentTime: currentTimeString,
+      resetTime: this.lastTimeReset,
+      timeDiffHours: timeDiff / (1000 * 60 * 60),
+      touchedTimes: this.touchedTimes,
+      shouldReset: timeDiff >= oneHourInMs
+    });
+
     if (timeDiff >= oneHourInMs) {
+      console.log('撫摸次數重置: 超過1小時，重置為0');
       this.touchedTimes = 0;
       this.lastTimeReset = null;
       this.saveTouchData();
@@ -219,7 +273,7 @@ export class TouchEventService {
    * 獲取當前時間字串 (yyyy/mm/dd HH:mm:ss)
    */
   private getCurrentTimeString(): string {
-    return UserDataService.formatDateTime(new Date());
+    return this.customTimeService.formatTime();
   }
 
   /**
@@ -269,7 +323,8 @@ export class TouchEventService {
     }
 
     const birthTime = this.parseTimeString(currentPetRecord.birthTime);
-    const currentTime = new Date();
+    const currentTimeString = this.getCurrentTimeString();
+    const currentTime = this.parseTimeString(currentTimeString);
     const timeDiff = currentTime.getTime() - birthTime.getTime();
     const hoursRaised = timeDiff / (1000 * 60 * 60); // 轉換為小時
 
@@ -337,7 +392,7 @@ export class TouchEventService {
 
     // 記錄進化時間到使用者飼養歷程
     const currentUserData = UserDataService.loadUserData();
-    const currentTime = UserDataService.formatDateTime(new Date());
+    const currentTime = this.getCurrentTimeString();
 
     const lastRecordIndex = currentUserData.petHistory.length - 1;
     if (lastRecordIndex >= 0) {
