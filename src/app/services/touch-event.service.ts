@@ -95,7 +95,9 @@ export class TouchEventService {
       timeStopping: currentPetStats.timeStopping,
       isSleeping: currentStateData.isSleeping.isActive,
       lifeCycle: currentPetStats.lifeCycle,
-      isLeaving: currentPetStats.isLeaving
+      isLeaving: currentPetStats.isLeaving,
+      isCanTouch: this.isCanTouch,
+      touchedTimes: this.touchedTimes
     });
 
     // 1. 若電子雞當前數值物件的 rare 為 null 時，或是當電子雞當前數值物件的 timeStoping 為 true 時，不往下執行邏輯
@@ -234,7 +236,8 @@ export class TouchEventService {
     if (timeDiff >= oneHourInMs) {
       console.log('撫摸次數重置: 超過1小時，重置為0');
       this.touchedTimes = 0;
-      this.lastTimeReset = null;
+      this.lastTimeReset = currentTimeString; // 記錄重置時間作為下一輪的基準
+      this.isCanTouch = true; // 重置時也要重置可觸摸狀態
       this.saveTouchData();
     }
   }
@@ -422,9 +425,29 @@ export class TouchEventService {
    * 重置撫摸次數限制（工程師模式用）
    */
   public resetTouchLimit(): void {
+    console.log('工程師模式重置撫摸限制: 重置前狀態', {
+      touchedTimes: this.touchedTimes,
+      isCanTouch: this.isCanTouch,
+      lastTimeReset: this.lastTimeReset
+    });
+
     this.touchedTimes = 0;
     this.isCanTouch = true;
+    this.lastTimeReset = null; // 重置時間記錄，讓系統重新開始計時
     this.saveTouchData();
+
+    console.log('工程師模式重置撫摸限制: 重置後狀態', {
+      touchedTimes: this.touchedTimes,
+      isCanTouch: this.isCanTouch,
+      lastTimeReset: this.lastTimeReset
+    });
+  }
+
+  /**
+   * 手動觸發撫摸次數重置檢查（工程師模式用）
+   */
+  public manualTriggerTouchReset(): void {
+    this.resetTouchTimes();
   }
 
   /**

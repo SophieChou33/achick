@@ -138,10 +138,11 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                 <button class="btn btn-secondary" (click)="triggerTimer('diseaseCheck')">疾病檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('leaving')">離家出走檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('lowLikability')">低好感度扣值檢查</button>
-                <button class="btn btn-secondary" (click)="triggerTimer('dirty')">髒汙產生</button>
+                <button class="btn btn-secondary" (click)="triggerTimer('dirty')">髒汙產生檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('dirtyPunish')">髒汙懲罰</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('light')">燈光檢查</button>
                 <button class="btn btn-secondary" (click)="triggerTimer('sleep')">睡眠檢查</button>
+                <button class="btn btn-secondary" (click)="triggerTimer('touchReset')">撫摸次數重置檢查</button>
               </div>
             </div>
 
@@ -827,6 +828,10 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
       case 'sleep':
         // 手動觸發睡眠檢查
         this.sleepService.manualSleepCheck();
+        break;
+      case 'touchReset':
+        // 手動觸發撫摸次數重置檢查
+        this.touchEventService.manualTriggerTouchReset();
         break;
       default:
         console.warn(`Unknown timer type: ${type}`);

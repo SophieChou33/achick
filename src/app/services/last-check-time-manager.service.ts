@@ -39,8 +39,10 @@ export class LastCheckTimeManagerService {
     // 設定離家出走服務的上次重置時間
     (this.leavingService as any).lastTimeReset = currentTime;
 
-    // 設定觸摸事件服務的上次重置時間
-    (this.touchEventService as any).lastTimeReset = currentTime;
+    // 設定觸摸事件服務：初始化為全新狀態
+    (this.touchEventService as any).lastTimeReset = null;  // 新電子雞沒有重置記錄
+    (this.touchEventService as any).touchedTimes = 0;      // 重置撫摸次數
+    (this.touchEventService as any).isCanTouch = true;     // 允許撫摸
 
     // 設定健康度檢查服務的相關時間
     (this.wellnessCheckService as any).lastSickCheckTime = currentTime;
@@ -90,7 +92,7 @@ export class LastCheckTimeManagerService {
     // 設定離家出走服務的上次重置時間
     (this.leavingService as any).lastTimeReset = presetTime;
 
-    // 設定觸摸事件服務的上次重置時間
+    // 設定觸摸事件服務的上次重置時間（工程師模式預設）
     (this.touchEventService as any).lastTimeReset = presetTime;
 
     // 設定健康度檢查服務的相關時間
@@ -155,8 +157,10 @@ export class LastCheckTimeManagerService {
     // 重置離家出走服務的上次重置時間
     (this.leavingService as any).lastTimeReset = null;
 
-    // 重置觸摸事件服務的上次重置時間
+    // 重置觸摸事件服務：完全清空狀態
     (this.touchEventService as any).lastTimeReset = null;
+    (this.touchEventService as any).touchedTimes = 0;
+    (this.touchEventService as any).isCanTouch = true;
 
     // 重置健康度檢查服務的相關時間
     (this.wellnessCheckService as any).lastSickCheckTime = null;
