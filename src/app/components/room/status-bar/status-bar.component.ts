@@ -361,6 +361,11 @@ export class StatusBarComponent implements OnInit, OnDestroy {
     // 獲取所有 isActive 為 1 的狀態的 stateText
     const activeStates = StateDataService.getActiveStates(this.stateData);
     this.statusEffects.activeStates = activeStates.map(state => state.stateText);
+
+    // 檢查是否處於離家出走狀態
+    if (this.petStats.isLeaving) {
+      this.statusEffects.activeStates.push('離家出走中');
+    }
   }
 
   togglePanel() {
@@ -396,6 +401,6 @@ export class StatusBarComponent implements OnInit, OnDestroy {
   }
 
   getFriendshipDisplay(): string {
-    return this.petStats.currentFriendship.toFixed(1);
+    return this.petStats.currentFriendship.toFixed(2);
   }
 }

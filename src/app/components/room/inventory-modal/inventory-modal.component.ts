@@ -497,7 +497,7 @@ export class InventoryModalComponent implements OnInit {
     // 檢查是否可以使用
     const canUseResult = ItemUsageService.canUseItem(this.selectedItem.itemName);
     if (!canUseResult.canUse) {
-      this.modalService.alert(canUseResult.reason, '無法使用');
+      this.modalService.alert(canUseResult.reason || '無法使用此物品', '無法使用');
       return;
     }
 

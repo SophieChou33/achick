@@ -58,7 +58,7 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                 </div>
                 <div class="info-item">
                   <label>當前好感度:</label>
-                  <span>{{ petStats.currentFriendship }}</span>
+                  <span>{{ petStats.currentFriendship.toFixed(2) }}</span>
                 </div>
                 <div class="info-item">
                   <label>當前健康度:</label>
@@ -105,7 +105,7 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                 </div>
                 <div class="adjust-item">
                   <label>好感度:</label>
-                  <input type="number" [(ngModel)]="editableStats.currentFriendship" min="0" max="100">
+                  <input type="number" [(ngModel)]="editableStats.currentFriendship" min="0" max="100" step="0.01">
                 </div>
                 <div class="adjust-item">
                   <label>健康度:</label>
@@ -745,7 +745,7 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
     this.editableStats = {
       currentHealth: this.petStats.currentHealth,
       maxHealth: this.petStats.maxHealth,
-      currentFriendship: this.petStats.currentFriendship,
+      currentFriendship: parseFloat(this.petStats.currentFriendship.toFixed(2)),
       currentWellness: this.petStats.currentWellness,
       currentHunger: this.petStats.currentHunger,
       hungerSpeed: this.petStats.hungerSpeed
