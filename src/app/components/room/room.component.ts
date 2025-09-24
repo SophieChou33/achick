@@ -17,6 +17,8 @@ import { LogPanelComponent } from '../shared/log-panel/log-panel.component';
 import { LogService } from '../../services/log.service';
 import { sources } from '../../sources';
 import { LightService } from '../../services/light.service';
+import { PetStatsService } from '../../data/pet-stats-data';
+import { PetStats } from '../../types/pet-stats.type';
 
 @Component({
   selector: 'app-room',
@@ -51,9 +53,9 @@ import { LightService } from '../../services/light.service';
       </div>
       <app-header (openShopModal)="openShopModal()" (openCollectionModal)="openCollectionModal()"></app-header>
       <app-sidebar (openInventory)="openInventoryModal()"></app-sidebar>
-      <app-status-bar></app-status-bar>
+      <app-status-bar *ngIf="!shouldHideUIComponents()"></app-status-bar>
       <app-toastr></app-toastr>
-      <app-log-panel></app-log-panel>
+      <app-log-panel *ngIf="!shouldHideUIComponents()"></app-log-panel>
 
       <!-- 背包彈窗 -->
       <app-inventory-modal
@@ -150,6 +152,9 @@ export class RoomComponent implements OnInit, OnDestroy {
   private startX = 0;
   private scrollLeft = 0;
   private stateSubscription?: Subscription;
+  private petStatsSubscription?: Subscription;
+
+  petStats: PetStats = PetStatsService.loadPetStats();
 
   constructor(
     private lightService: LightService,
@@ -172,11 +177,19 @@ export class RoomComponent implements OnInit, OnDestroy {
 
     // 開始監控狀態變化
     this.startStateMonitoring();
+
+    // 訂閱寵物狀態變化
+    this.petStatsSubscription = PetStatsService.getPetStats$().subscribe(petStats => {
+      this.petStats = petStats;
+    });
   }
 
   ngOnDestroy() {
     if (this.stateSubscription) {
       this.stateSubscription.unsubscribe();
+    }
+    if (this.petStatsSubscription) {
+      this.petStatsSubscription.unsubscribe();
     }
   }
 
@@ -344,5 +357,15 @@ export class RoomComponent implements OnInit, OnDestroy {
    */
   onItemUsed(event: { itemName: string; effects: string[] }) {
     // 物品使用後，可能需要更新角色顯示等
+  }
+
+  /**
+   * 判斷是否應該隱藏UI組件（狀態欄和日誌）
+   */
+  shouldHideUIComponents(): boolean {
+    return this.petStats.isDead ||
+           this.petStats.isFreezing ||
+           this.petStats.isLeaving ||
+           this.petStats.isCooked;
   }
 }

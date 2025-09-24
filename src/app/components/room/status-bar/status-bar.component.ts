@@ -42,7 +42,7 @@ interface StatusEffects {
         <div class="status-effects">
           <div class="pet-name">{{ petInfo.name }}</div>
           <div class="mood" *ngIf="statusEffects.mood">情緒: {{ statusEffects.mood }}</div>
-          <div class="active-states" *ngIf="statusEffects.activeStates.length > 0">
+          <div class="active-states" *ngIf="statusEffects.activeStates.length > 0 && !shouldHideActiveStates()">
             <span *ngFor="let state of statusEffects.activeStates" class="state">{{ state }}</span>
           </div>
         </div>
@@ -542,5 +542,15 @@ export class StatusBarComponent implements OnInit, OnDestroy {
     const second = parseInt(timeParts[2]);
 
     return new Date(year, month, day, hour, minute, second);
+  }
+
+  /**
+   * 判斷是否應該隱藏活動狀態區塊
+   */
+  shouldHideActiveStates(): boolean {
+    return this.petStats.isDead ||
+           this.petStats.isFreezing ||
+           this.petStats.isLeaving ||
+           this.petStats.isCooked;
   }
 }
