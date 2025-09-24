@@ -92,6 +92,14 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                   <label>是否冷凍狀態:</label>
                   <span>{{ petStats.isFreezing ? '是' : '否' }}</span>
                 </div>
+                <div class="info-item">
+                  <label>是否熟成:</label>
+                  <span>{{ petStats.isCooked ? '是' : '否' }}</span>
+                </div>
+                <div class="info-item">
+                  <label>是否死亡:</label>
+                  <span>{{ petStats.isDead ? '是' : '否' }}</span>
+                </div>
               </div>
             </div>
 
@@ -189,7 +197,6 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                   <h5>髒汙控制</h5>
                   <div class="dirty-control">
                     <button class="btn btn-secondary" (click)="addDirtyObject()">產生髒汙</button>
-                    <button class="btn btn-info" (click)="forceDirtyGeneration()">強制產生髒汙（跳過時間限制）</button>
                     <button class="btn btn-secondary" (click)="clearAllDirty()">清除所有髒汙</button>
                     <p>當前髒汙數量: {{ dirtyObjects.length }}</p>
                   </div>
@@ -198,29 +205,8 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                 <div class="control-section">
                   <h5>次數限制重置</h5>
                   <div class="limit-control">
-                    <button class="btn btn-secondary" (click)="resetAllLimits()">重置所有次數限制</button>
                     <button class="btn btn-secondary" (click)="resetTouchLimit()">重置撫摸次數</button>
                     <button class="btn btn-secondary" (click)="resetClickLimit()">重置窗戶點擊次數</button>
-                  </div>
-                </div>
-
-                <div class="control-section">
-                  <h5>上次檢查時間管理</h5>
-                  <div class="time-control">
-                    <button class="btn btn-info" (click)="presetAllLastCheckTimes()">手動預設上次檢查時間</button>
-                    <button class="btn btn-warning" (click)="resetAllLastPunishmentTimes()">手動預設上次懲罰時間</button>
-                    <button class="btn btn-secondary" (click)="showLastCheckTimesStatus()">顯示上次檢查時間狀態</button>
-                  </div>
-                </div>
-
-                <div class="control-section">
-                  <h5>電子雞狀態控制</h5>
-                  <div class="pet-control">
-                    <button class="btn btn-warning" (click)="killPet()">使電子雞死亡</button>
-                    <button class="btn btn-success" (click)="revivePet()">復活電子雞</button>
-                    <button class="btn btn-info" (click)="freezePet()">冷凍電子雞</button>
-                    <button class="btn btn-info" (click)="unfreezePet()">解凍電子雞</button>
-                    <button class="btn btn-danger" (click)="resetPet()">重置電子雞</button>
                   </div>
                 </div>
               </div>
@@ -230,21 +216,6 @@ import { DirtyObject } from '../../../types/dirty-object.type';
       </div>
     </div>
 
-    <!-- 檢查時間狀態彈窗 -->
-    <div class="status-modal" [class.show]="showStatusModal" (click)="closeStatusModal()">
-      <div class="status-dialog" (click)="$event.stopPropagation()">
-        <div class="status-header">
-          <h4>上次檢查時間狀態</h4>
-          <button type="button" class="close-btn" (click)="closeStatusModal()">×</button>
-        </div>
-        <div class="status-body">
-          <div class="status-item" *ngFor="let item of statusItems">
-            <div class="status-label">{{ item.label }}:</div>
-            <div class="status-value">{{ item.value || 'null' }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
   `,
   styles: [`
     .engineer-modal {
@@ -675,8 +646,6 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
   coinsToAdd = 0;
   dirtyObjects: DirtyObject[] = [];
 
-  showStatusModal = false;
-  statusItems: Array<{ label: string; value: string | null }> = [];
 
   private subscriptions: Subscription[] = [];
 
@@ -927,135 +896,12 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
     this.updateDirtyDisplay();
   }
 
-  forceDirtyGeneration() {
-    const currentPetStats = PetStatsService.loadPetStats();
 
-    // 檢查基本條件
-    if (currentPetStats.rare === null) {
-      console.log('無法產生髒污：電子雞稀有度為 null');
-      return;
-    }
 
-    if (currentPetStats.timeStopping === true) {
-      console.log('無法產生髒污：電子雞時間已停止');
-      return;
-    }
 
-    if (this.dirtyTriggerService.dirtyObjects.length >= 3) {
-      console.log('無法產生髒污：已達到最大髒污數量限制(3個)');
-      return;
-    }
 
-    // 強制產生髒污，跳過時間限制
-    const getNextDirtyNo = (): number => {
-      const maxDirtyCounts = 3;
-      const allDirtyNoArray: number[] = [];
-      for (let i = 1; i <= maxDirtyCounts; i++) {
-        allDirtyNoArray.push(i);
-      }
 
-      for (const num of allDirtyNoArray) {
-        const isUsed = this.dirtyTriggerService.dirtyObjects.some(dirty => dirty.dirtyNo === num);
-        if (!isUsed) {
-          return num;
-        }
-      }
-      return 1;
-    };
 
-    const currentTime = this.customTimeService.formatTime();
-    const newDirty: DirtyObject = {
-      dirtyNo: getNextDirtyNo(),
-      dirtyTime: currentTime,
-      lastPunishTime: currentTime
-    };
-
-    this.dirtyTriggerService.dirtyObjects.push(newDirty);
-
-    // 設定 lastAddDirtyTime 為當前時間
-    (this.dirtyTriggerService as any).lastAddDirtyTime = currentTime;
-
-    // 觸發儲存髒污資料
-    this.dirtyTriggerService.saveDirtyData();
-
-    // 更新顯示
-    this.updateDirtyDisplay();
-    console.log(`強制產生髒污 ${newDirty.dirtyNo}，目前總數: ${this.dirtyObjects.length}`);
-  }
-
-  killPet() {
-    const updatedStats = {
-      ...this.petStats,
-      isDead: true,
-      timeStopping: true,
-      currentHealth: 0
-    };
-    PetStatsService.savePetStats(updatedStats);
-  }
-
-  revivePet() {
-    // 根據寵物的進化歷程判斷復活後的生命週期
-    const currentUserData = UserDataService.loadUserData();
-    const currentPetRecord = UserDataService.getCurrentPetRecord(currentUserData);
-
-    // 如果有 evolutionTime，說明寵物曾經進化，復活時保持 EVOLUTION 狀態
-    // 如果沒有 evolutionTime，說明寵物未進化，復活時保持 CHILD 狀態
-    const originalLifeCycle: 'CHILD' | 'EVOLUTION' = (currentPetRecord?.evolutionTime) ? 'EVOLUTION' : 'CHILD';
-
-    const updatedStats = {
-      ...this.petStats,
-      lifeCycle: originalLifeCycle,
-      isDead: false,      // 復活後不再死亡
-      timeStopping: false, // 復活後重置時間停止狀態
-      currentHealth: this.petStats.maxHealth
-    };
-    PetStatsService.savePetStats(updatedStats);
-
-    // 復活時重置所有檢查時間
-    this.lastCheckTimeManagerService.initializeAllLastCheckTimes();
-    console.log('工程師模式復活時已重置所有檢查時間');
-  }
-
-  freezePet() {
-    const updatedStats = {
-      ...this.petStats,
-      timeStopping: true,
-      isFreezing: true
-    };
-    PetStatsService.savePetStats(updatedStats);
-  }
-
-  unfreezePet() {
-    const updatedStats = {
-      ...this.petStats,
-      timeStopping: false,
-      isFreezing: false
-    };
-    PetStatsService.savePetStats(updatedStats);
-  }
-
-  async resetPet() {
-    if (await this.modalService.confirm('確定要重置電子雞嗎？這將清除所有數據！', '重置確認', '確定重置', '取消')) {
-      PetStatsService.resetPetStats();
-      this.customTimeService.forceResetToRealTime();
-      // 重置所有上次檢查時間為 null
-      this.lastCheckTimeManagerService.resetAllLastCheckTimesToNull();
-      // 清除所有髒污物件
-      this.dirtyTriggerService.clearAllDirtyObjects();
-      // 更新顯示
-      this.updateDirtyDisplay();
-      console.log('電子雞已完全重置，包括所有上次執行時間');
-    }
-  }
-
-  /**
-   * 重置所有次數限制
-   */
-  resetAllLimits() {
-    this.resetTouchLimit();
-    this.resetClickLimit();
-    console.log('已重置所有次數限制');
-  }
 
   /**
    * 重置撫摸次數限制
@@ -1073,47 +919,8 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
     console.log('已重置點擊次數限制');
   }
 
-  /**
-   * 手動預設上次檢查時間
-   */
-  presetAllLastCheckTimes() {
-    this.lastCheckTimeManagerService.presetAllLastCheckTimes();
-    console.log('已手動預設所有服務的上次檢查時間');
-  }
 
-  /**
-   * 手動重置上次懲罰時間
-   */
-  resetAllLastPunishmentTimes() {
-    this.lastCheckTimeManagerService.resetAllLastPunishmentTimes();
-    console.log('已手動重置所有上次懲罰時間');
-  }
 
-  /**
-   * 顯示上次檢查時間狀態
-   */
-  showLastCheckTimesStatus() {
-    const status = this.lastCheckTimeManagerService.getAllLastCheckTimesStatus();
 
-    // 轉換為陣列格式供模板使用
-    this.statusItems = Object.keys(status).map(key => ({
-      label: status[key].label,
-      value: status[key].value
-    }));
-
-    // 顯示彈窗
-    this.showStatusModal = true;
-
-    // 同時在console中顯示，方便開發除錯
-    console.log('所有服務的上次檢查時間狀態：', status);
-  }
-
-  /**
-   * 關閉狀態彈窗
-   */
-  closeStatusModal() {
-    this.showStatusModal = false;
-    this.statusItems = [];
-  }
 
 }
