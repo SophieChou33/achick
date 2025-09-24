@@ -13,6 +13,8 @@ export class WellnessCheckService {
   private lastSickCheckTime: string | null = null;
   private lastLifeDamageTime: string | null = null;
   private lastDiseaseCheckTime: string | null = null;
+  private lastWellnessBoostTime: string | null = null;
+  private lastHealthBoostTime: string | null = null;
 
   private wellnessCheckInterval?: number;
   private diseaseEffectsInterval?: number;
@@ -53,6 +55,8 @@ export class WellnessCheckService {
       this.lastSickCheckTime = null;
       this.lastLifeDamageTime = null;
       this.lastDiseaseCheckTime = null;
+      this.lastWellnessBoostTime = null;
+      this.lastHealthBoostTime = null;
       this.saveWellnessTimes();
       return;
     }
@@ -78,8 +82,114 @@ export class WellnessCheckService {
     // 執行生命值損害檢查
     this.checkLifeDamage();
 
+    // 執行健康度上升檢查
+    this.checkWellnessBoost();
+
+    // 執行生命值上升檢查
+    this.checkHealthBoost();
+
     // 執行疾病檢查
     await this.checkDiseaseCheck();
+  }
+
+  /**
+   * 私有函數：判斷是否執行健康度回復（好感度>60且飽足感>60時每40分鐘+1）
+   */
+  private checkWellnessBoost(): void {
+    const currentTime = this.customTimeService.formatTime();
+    const currentPetStats = PetStatsService.loadPetStats();
+
+    // 檢查條件：好感度>60且飽足感>60
+    if (currentPetStats.currentFriendship <= 60 || currentPetStats.currentHunger <= 60) {
+      return;
+    }
+
+    // 若 lastWellnessBoostTime 為 null，則將實際當前時間賦值給 lastWellnessBoostTime，並且不往下執行邏輯
+    if (this.lastWellnessBoostTime === null) {
+      this.lastWellnessBoostTime = currentTime;
+      this.saveWellnessTimes();
+      return;
+    }
+
+    const lastBoostTime = this.parseTimeString(this.lastWellnessBoostTime);
+    const now = this.parseTimeString(currentTime);
+    const timeDiffMs = now.getTime() - lastBoostTime.getTime();
+    const fortyMinutesInMs = 40 * 60 * 1000;
+
+    // 若實際當前時間距離 lastWellnessBoostTime 已經過 40 分鐘
+    if (timeDiffMs >= fortyMinutesInMs) {
+      // 計算應該執行的回復次數
+      const boostCount = Math.floor(timeDiffMs / fortyMinutesInMs);
+
+      // 計算新的健康度（不超過最大值）
+      const newWellness = Math.min(currentPetStats.maxWellness, currentPetStats.currentWellness + boostCount);
+
+      if (newWellness > currentPetStats.currentWellness) {
+        // 更新健康度
+        PetStatsService.updatePetStats({
+          currentWellness: newWellness
+        });
+
+        // 更新 lastWellnessBoostTime 為最後一次回復的時間點
+        const newLastBoostTime = new Date(lastBoostTime.getTime() + (boostCount * fortyMinutesInMs));
+        this.lastWellnessBoostTime = this.formatTimeFromDate(newLastBoostTime);
+        this.saveWellnessTimes();
+
+        // 顯示健康度回復通知
+        const actualBoost = newWellness - currentPetStats.currentWellness;
+        ToastrService.success(`健康度回復！+${actualBoost}`);
+      }
+    }
+  }
+
+  /**
+   * 私有函數：判斷是否執行生命值回復（健康度>70時每1小時+1）
+   */
+  private checkHealthBoost(): void {
+    const currentTime = this.customTimeService.formatTime();
+    const currentPetStats = PetStatsService.loadPetStats();
+
+    // 檢查條件：健康度>70
+    if (currentPetStats.currentWellness <= 70) {
+      return;
+    }
+
+    // 若 lastHealthBoostTime 為 null，則將實際當前時間賦值給 lastHealthBoostTime，並且不往下執行邏輯
+    if (this.lastHealthBoostTime === null) {
+      this.lastHealthBoostTime = currentTime;
+      this.saveWellnessTimes();
+      return;
+    }
+
+    const lastBoostTime = this.parseTimeString(this.lastHealthBoostTime);
+    const now = this.parseTimeString(currentTime);
+    const timeDiffMs = now.getTime() - lastBoostTime.getTime();
+    const oneHourInMs = 60 * 60 * 1000;
+
+    // 若實際當前時間距離 lastHealthBoostTime 已經過 1 小時
+    if (timeDiffMs >= oneHourInMs) {
+      // 計算應該執行的回復次數
+      const boostCount = Math.floor(timeDiffMs / oneHourInMs);
+
+      // 計算新的生命值（不超過最大值）
+      const newHealth = Math.min(currentPetStats.maxHealth, currentPetStats.currentHealth + boostCount);
+
+      if (newHealth > currentPetStats.currentHealth) {
+        // 更新生命值
+        PetStatsService.updatePetStats({
+          currentHealth: newHealth
+        });
+
+        // 更新 lastHealthBoostTime 為最後一次回復的時間點
+        const newLastBoostTime = new Date(lastBoostTime.getTime() + (boostCount * oneHourInMs));
+        this.lastHealthBoostTime = this.formatTimeFromDate(newLastBoostTime);
+        this.saveWellnessTimes();
+
+        // 顯示生命值回復通知
+        const actualBoost = newHealth - currentPetStats.currentHealth;
+        ToastrService.success(`生命值回復！+${actualBoost}`);
+      }
+    }
   }
 
   /**
@@ -463,6 +573,8 @@ export class WellnessCheckService {
         this.lastSickCheckTime = wellnessData.lastSickCheckTime || null;
         this.lastLifeDamageTime = wellnessData.lastLifeDamageTime || null;
         this.lastDiseaseCheckTime = wellnessData.lastDiseaseCheckTime || null;
+        this.lastWellnessBoostTime = wellnessData.lastWellnessBoostTime || null;
+        this.lastHealthBoostTime = wellnessData.lastHealthBoostTime || null;
         WellnessCheckService.lastDiseaseEffectTime1hour = wellnessData.lastDiseaseEffectTime1hour || null;
       }
     } catch (error) {
@@ -470,6 +582,8 @@ export class WellnessCheckService {
       this.lastSickCheckTime = null;
       this.lastLifeDamageTime = null;
       this.lastDiseaseCheckTime = null;
+      this.lastWellnessBoostTime = null;
+      this.lastHealthBoostTime = null;
       WellnessCheckService.lastDiseaseEffectTime1hour = null;
     }
   }
@@ -483,6 +597,8 @@ export class WellnessCheckService {
         lastSickCheckTime: this.lastSickCheckTime,
         lastLifeDamageTime: this.lastLifeDamageTime,
         lastDiseaseCheckTime: this.lastDiseaseCheckTime,
+        lastWellnessBoostTime: this.lastWellnessBoostTime,
+        lastHealthBoostTime: this.lastHealthBoostTime,
         lastDiseaseEffectTime1hour: WellnessCheckService.lastDiseaseEffectTime1hour
       };
       localStorage.setItem(WellnessCheckService.WELLNESS_STORAGE_KEY, JSON.stringify(wellnessData));
