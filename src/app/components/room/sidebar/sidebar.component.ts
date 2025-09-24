@@ -14,7 +14,7 @@ import { SleepService } from '../../../services/sleep.service';
         <button class="sidebar-btn" (click)="toggleLight()" [title]="'電燈開關'">
           <img [src]="lampIcon" alt="電燈" class="sidebar-icon" />
         </button>
-        <button class="sidebar-btn" (click)="sleep()" [title]="'睡眠'">
+        <button class="sidebar-btn" (click)="sleep()" (mousedown)="onSleepMouseDown()" [title]="'睡眠'">
           <img [src]="sleepIcon" alt="睡眠" class="sidebar-icon" />
         </button>
         <button class="sidebar-btn" (click)="feed()" [title]="'餵食'">
@@ -81,7 +81,12 @@ export class SidebarComponent {
     this.lightService.lampToggle();
   }
 
+  onSleepMouseDown() {
+    console.log('睡眠按鈕 mousedown 事件');
+  }
+
   sleep() {
+    console.log('Sidebar sleep() 按鈕被點擊');
     this.sleepService.startSleep();
   }
 

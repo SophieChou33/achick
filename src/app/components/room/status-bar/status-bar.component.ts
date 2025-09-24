@@ -362,13 +362,18 @@ export class StatusBarComponent implements OnInit, OnDestroy {
     const activeStates = StateDataService.getActiveStates(this.stateData);
     this.statusEffects.activeStates = activeStates.map(state => state.stateText);
 
+    // 調試日誌
+    if (this.stateData.needLight?.isActive === 1) {
+      console.log('檢測到 needLight 狀態為激活，活躍狀態列表:', this.statusEffects.activeStates);
+    }
+
     // 檢查是否處於離家出走狀態
     if (this.petStats.isLeaving) {
       this.statusEffects.activeStates.push('離家出走中');
     }
 
     // 檢查是否處於冷凍狀態
-    if (this.petStats.timeStopping) {
+    if (this.petStats.isFreezing) {
       this.statusEffects.activeStates.push('冷凍狀態');
     }
   }

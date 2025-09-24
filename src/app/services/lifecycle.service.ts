@@ -36,6 +36,13 @@ export class LifecycleService {
 
     PetStatsService.savePetStats(updatedStats);
 
+    // 3. 立即清除睡眠狀態（如果電子雞在睡眠中死亡）
+    const currentStateData = StateDataService.loadStateData();
+    if (currentStateData.isSleeping.isActive === 1) {
+      StateDataService.deactivateState('isSleeping', currentStateData);
+      console.log('電子雞死亡，已清除睡眠狀態');
+    }
+
     // 4. 跳出確認彈窗 - 使用自定義死亡原因或預設原因
     const deathMessage = customDeathReason || `${petName}因疏於照顧而死亡...`;
     await this.modalService.info(`${deathMessage}\n\n永別了${petName}，希望你去了更美好的世界，RIP🕊️`, '寵物已死亡');

@@ -758,8 +758,7 @@ export class CharacterComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // 嘗試喚醒（如果在睡眠中，此函數會處理喚醒邏輯）
-    this.sleepService.wakeUp();
+    // 移除喚醒功能 - 現在只能透過床進行喚醒
 
     // 只有在蛋狀態且沒有名字時才能命名
     if (this.petStats.lifeCycle === 'EGG' && this.petStats.name === null) {

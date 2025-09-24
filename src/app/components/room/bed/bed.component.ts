@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { sources } from '../../../sources';
 import { LightService } from '../../../services/light.service';
+import { SleepService } from '../../../services/sleep.service';
 import { StateDataService } from '../../../data/state-data';
 
 @Component({
@@ -15,7 +16,7 @@ import { StateDataService } from '../../../data/state-data';
          [style.top]="bedPosition.top"
          (mousedown)="onDragStart($event)"
          (touchstart)="onDragStart($event)">
-      <div class="bed-area" (click)="onBedClick()">
+      <div class="bed-area">
         <img [src]="bedImage" alt="Bed" class="bed-image" />
 
         <!-- 睡眠狀態指示器 -->
@@ -52,15 +53,15 @@ import { StateDataService } from '../../../data/state-data';
 
     .sleep-status-indicator {
       position: absolute;
-      right: -40px;
-      top: -40px;
+      right: 30px;
+      top: 10px;
       z-index: 650;
       animation: sleepFloat 2s ease-in-out infinite;
     }
 
     .sleep-icon {
-      width: 30px;
-      height: 30px;
+      width: 60px;
+      height: 60px;
       object-fit: contain;
     }
 
@@ -70,7 +71,7 @@ import { StateDataService } from '../../../data/state-data';
         opacity: 1;
       }
       50% {
-        transform: translateY(-10px);
+        transform: translateY(-20px);
         opacity: 0.6;
       }
     }
@@ -83,17 +84,22 @@ export class BedComponent implements OnInit, OnDestroy {
   bedPosition = { left: '19%', top: '53dvh' };
 
   private isDragging = false;
+  private hasMoved = false;
   private dragStartX = 0;
   private dragStartY = 0;
   private startLeft = 0;
   private startTop = 0;
+  private readonly DRAG_THRESHOLD = 5; // 像素閾值，超過此距離才認定為拖曳
   private stateSubscription?: Subscription;
 
   // 綁定事件處理器到實例
   private boundOnDragMove = this.onDragMove.bind(this);
   private boundOnDragEnd = this.onDragEnd.bind(this);
 
-  constructor(private lightService: LightService) {}
+  constructor(
+    private lightService: LightService,
+    private sleepService: SleepService
+  ) {}
 
   ngOnInit() {
     // 載入床位置
@@ -119,9 +125,9 @@ export class BedComponent implements OnInit, OnDestroy {
     }
 
     // 清理拖曳事件監聽器
-    document.removeEventListener('mousemove', this.boundOnDragMove, { passive: false } as any);
+    document.removeEventListener('mousemove', this.boundOnDragMove);
     document.removeEventListener('mouseup', this.boundOnDragEnd);
-    document.removeEventListener('touchmove', this.boundOnDragMove, { passive: false } as any);
+    document.removeEventListener('touchmove', this.boundOnDragMove);
     document.removeEventListener('touchend', this.boundOnDragEnd);
   }
 
@@ -172,10 +178,6 @@ export class BedComponent implements OnInit, OnDestroy {
     }
   }
 
-  onBedClick() {
-    console.log('Bed clicked...');
-    // TODO: Implement bed interaction functionality
-  }
 
   /**
    * 載入床位置
@@ -189,10 +191,11 @@ export class BedComponent implements OnInit, OnDestroy {
    * 拖曳開始事件
    */
   onDragStart(event: MouseEvent | TouchEvent): void {
-    this.isDragging = true;
     const clientX = event instanceof MouseEvent ? event.clientX : event.touches[0].clientX;
     const clientY = event instanceof MouseEvent ? event.clientY : event.touches[0].clientY;
 
+    this.isDragging = true;
+    this.hasMoved = false;
     this.dragStartX = clientX;
     this.dragStartY = clientY;
 
@@ -201,10 +204,6 @@ export class BedComponent implements OnInit, OnDestroy {
     const viewportHeight = window.innerHeight;
     this.startLeft = parseFloat(this.bedPosition.left) * viewportWidth / 100;
     this.startTop = parseFloat(this.bedPosition.top) * viewportHeight / 100;
-
-    // 添加拖曳樣式
-    const bedPositioningFrame = document.querySelector('.bed-positioning-frame');
-    bedPositioningFrame?.classList.add('dragging');
 
     event.preventDefault();
     event.stopPropagation();
@@ -222,23 +221,35 @@ export class BedComponent implements OnInit, OnDestroy {
     const deltaX = clientX - this.dragStartX;
     const deltaY = clientY - this.dragStartY;
 
-    const newLeft = this.startLeft + deltaX;
-    const newTop = this.startTop + deltaY;
+    // 檢查是否超過拖曳閾值
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    if (!this.hasMoved && distance > this.DRAG_THRESHOLD) {
+      this.hasMoved = true;
+      // 添加拖曳樣式
+      const bedPositioningFrame = document.querySelector('.bed-positioning-frame');
+      bedPositioningFrame?.classList.add('dragging');
+    }
 
-    // 限制在螢幕範圍內
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const boundedLeft = Math.max(0, Math.min(newLeft, viewportWidth - 100)); // 預留100px邊距
-    const boundedTop = Math.max(0, Math.min(newTop, viewportHeight - 100));
+    // 只有確認為拖曳時才更新位置
+    if (this.hasMoved) {
+      const newLeft = this.startLeft + deltaX;
+      const newTop = this.startTop + deltaY;
 
-    // 轉換回百分比
-    const leftPercent = (boundedLeft / viewportWidth) * 100;
-    const topPercent = (boundedTop / viewportHeight) * 100;
+      // 限制在螢幕範圍內
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const boundedLeft = Math.max(0, Math.min(newLeft, viewportWidth - 100)); // 預留100px邊距
+      const boundedTop = Math.max(0, Math.min(newTop, viewportHeight - 100));
 
-    this.bedPosition = {
-      left: `${leftPercent}%`,
-      top: `${topPercent}%`
-    };
+      // 轉換回百分比
+      const leftPercent = (boundedLeft / viewportWidth) * 100;
+      const topPercent = (boundedTop / viewportHeight) * 100;
+
+      this.bedPosition = {
+        left: `${leftPercent}%`,
+        top: `${topPercent}%`
+      };
+    }
 
     event.preventDefault();
     event.stopPropagation();
@@ -252,11 +263,30 @@ export class BedComponent implements OnInit, OnDestroy {
 
     this.isDragging = false;
 
-    // 移除拖曳樣式
-    const bedPositioningFrame = document.querySelector('.bed-positioning-frame');
-    bedPositioningFrame?.classList.remove('dragging');
+    if (this.hasMoved) {
+      // 這是拖曳操作：移除拖曳樣式並儲存位置
+      const bedPositioningFrame = document.querySelector('.bed-positioning-frame');
+      bedPositioningFrame?.classList.remove('dragging');
 
-    // 儲存新位置
-    StateDataService.updateBedPosition(this.bedPosition);
+      // 儲存新位置
+      StateDataService.updateBedPosition(this.bedPosition);
+      console.log('Bed position saved after dragging');
+    } else {
+      // 這是點擊操作：觸發喚醒事件
+      this.handleBedClick();
+    }
+
+    // 重置狀態
+    this.hasMoved = false;
+  }
+
+  /**
+   * 處理床點擊事件（強制喚醒）
+   */
+  private async handleBedClick(): Promise<void> {
+    console.log('Bed clicked for wake up...');
+
+    // 調用強制喚醒功能（含確認對話框）
+    await this.sleepService.forceWakeUpWithConfirmation();
   }
 }

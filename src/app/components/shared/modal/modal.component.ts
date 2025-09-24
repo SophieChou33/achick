@@ -14,9 +14,9 @@ export interface ModalConfig {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="modal-overlay" *ngIf="isVisible" (click)="onOverlayClick($event)">
-      <div class="modal-dialog" (click)="$event.stopPropagation()">
-        <div class="modal-content">
+    <div class="modal-overlay" *ngIf="isVisible" [class.show]="isShowing && !isClosing" (click)="onOverlayClick($event)">
+      <div class="modal-dialog" [class.show]="isShowing && !isClosing" [class.closing]="isClosing" (click)="$event.stopPropagation()">
+        <div class="modal-content" [class.content-show]="isContentVisible" [class.content-closing]="isContentClosing">
           <div class="modal-header">
             <h4 class="modal-title" *ngIf="config.title">{{ config.title }}</h4>
             <button
@@ -57,31 +57,67 @@ export interface ModalConfig {
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
+      background-color: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(8px);
       display: flex;
       justify-content: center;
       align-items: center;
       z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.2s ease-out;
+    }
+
+    .modal-overlay.show {
+      opacity: 1;
     }
 
     .modal-dialog {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
       max-width: 400px;
       width: 90%;
-      max-height: 90vh;
+      min-width: 30dvw;
+      min-height: 100px;
+      transform: scaleY(0);
+      transform-origin: center center;
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       overflow: hidden;
+    }
+
+    .modal-dialog.show {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+
+    .modal-dialog.closing {
+      transform: scaleY(0);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.55, 0.085, 0.68, 0.53);
     }
 
     .modal-content {
       display: flex;
       flex-direction: column;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .modal-content.content-show {
+      opacity: 1;
+    }
+
+    .modal-content.content-closing {
+      opacity: 0;
+      transition: opacity 0.15s ease;
     }
 
     .modal-header {
       padding: 16px 20px 8px 20px;
-      border-bottom: 1px solid #dee2e6;
+      border-bottom: 1px solid rgba(125, 113, 102, 0.5);
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -145,26 +181,72 @@ export interface ModalConfig {
     }
 
     .btn-primary {
-      background-color: #007bff;
+      background-color: #7d7166;
       color: white;
     }
 
     .btn-primary:hover {
-      background-color: #0056b3;
+      background-color: #6a5f54;
     }
 
     .btn-secondary {
-      background-color: #6c757d;
-      color: white;
+      background-color: rgba(125, 113, 102, 0.3);
+      color: #7d7166;
+      border: 1px solid rgba(125, 113, 102, 0.5);
     }
 
     .btn-secondary:hover {
-      background-color: #545b62;
+      background-color: rgba(125, 113, 102, 0.5);
+      color: white;
     }
 
     .btn:focus {
-      outline: 2px solid #007bff;
+      outline: 2px solid #7d7166;
       outline-offset: 2px;
+    }
+
+    /* 垂直展開動畫效果 */
+    @keyframes modalFadeIn {
+      from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+      }
+      to {
+        opacity: 1;
+        backdrop-filter: blur(8px);
+      }
+    }
+
+    @keyframes modalExpandVertical {
+      from {
+        max-height: 0;
+        transform: scaleY(0);
+        opacity: 0;
+      }
+      50% {
+        opacity: 0.8;
+      }
+      to {
+        max-height: 90vh;
+        transform: scaleY(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes modalCollapseVertical {
+      from {
+        max-height: 90vh;
+        transform: scaleY(1);
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.8;
+      }
+      to {
+        max-height: 0;
+        transform: scaleY(0);
+        opacity: 0;
+      }
     }
   `]
 })
@@ -172,6 +254,10 @@ export class ModalComponent {
   @ViewChild('confirmButton') confirmButton!: ElementRef;
 
   isVisible = false;
+  isShowing = false;
+  isClosing = false;
+  isContentVisible = false;
+  isContentClosing = false;
   config: ModalConfig = {
     message: '',
     type: 'alert'
@@ -184,17 +270,44 @@ export class ModalComponent {
   show(config: ModalConfig): Promise<boolean> {
     this.config = config;
     this.isVisible = true;
+    this.isContentVisible = false;
+    this.isContentClosing = false;
 
-    // 自動聚焦到確認按鈕
+    // 延遲觸發展開動畫，確保 DOM 渲染完成
+    setTimeout(() => {
+      this.isShowing = true;
+    }, 10);
+
+    // 等待彈窗展開動畫完成後再顯示內容
+    setTimeout(() => {
+      this.isContentVisible = true;
+    }, 420);
+
+    // 自動聚焦到確認按鈕（等待內容顯示完成後）
     setTimeout(() => {
       this.confirmButton?.nativeElement?.focus();
-    }, 100);
+    }, 570);
 
     return new Promise((resolve) => {
       const handleResult = (result: boolean) => {
-        this.isVisible = false;
-        this.closed.emit();
-        resolve(result);
+        // 先隱藏內容
+        this.isContentVisible = false;
+        this.isContentClosing = true;
+
+        // 等待內容隱藏完成後開始關閉彈窗
+        setTimeout(() => {
+          this.isShowing = false;
+          this.isClosing = true;
+          this.isContentClosing = false;
+
+          // 等待彈窗關閉動畫完成後隱藏模態框
+          setTimeout(() => {
+            this.isVisible = false;
+            this.isClosing = false;
+            this.closed.emit();
+            resolve(result);
+          }, 300);
+        }, 150);
       };
 
       const confirmSub = this.confirmed.subscribe(() => {
@@ -227,7 +340,22 @@ export class ModalComponent {
   }
 
   hide(): void {
-    this.isVisible = false;
-    this.closed.emit();
+    // 先隱藏內容
+    this.isContentVisible = false;
+    this.isContentClosing = true;
+
+    // 等待內容隱藏完成後開始關閉彈窗
+    setTimeout(() => {
+      this.isShowing = false;
+      this.isClosing = true;
+      this.isContentClosing = false;
+
+      // 等待彈窗關閉動畫完成後隱藏模態框
+      setTimeout(() => {
+        this.isVisible = false;
+        this.isClosing = false;
+        this.closed.emit();
+      }, 300);
+    }, 150);
   }
 }

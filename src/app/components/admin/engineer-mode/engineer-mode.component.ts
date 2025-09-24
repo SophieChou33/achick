@@ -19,6 +19,8 @@ import { LastCheckTimeManagerService } from '../../../services/last-check-time-m
 import { ModalService } from '../../../services/modal.service';
 import { PetStats } from '../../../types/pet-stats.type';
 import { DirtyObject } from '../../../types/dirty-object.type';
+import { breedData, getBreedByName } from '../../../data/breed-data';
+import { Breed } from '../../../types/breed.type';
 
 @Component({
   selector: 'app-engineer-mode',
@@ -132,7 +134,21 @@ import { DirtyObject } from '../../../types/dirty-object.type';
                   <input type="number" [(ngModel)]="editableStats.hungerSpeed" min="0" step="0.1">
                 </div>
               </div>
-              <button class="btn btn-primary" (click)="applyStatsChanges()">套用變更</button>
+
+              <h4 style="margin-top: 30px;">品種設定</h4>
+              <div class="breed-control">
+                <select [(ngModel)]="selectedBreedName" class="breed-select">
+                  <option value="">選擇品種</option>
+                  <optgroup *ngFor="let rareType of rareTypes" [label]="getRareTypeName(rareType)">
+                    <option *ngFor="let breed of getBreedsByRare(rareType)" [value]="breed.breed">
+                      {{ breed.breedName }} ({{ breed.breed }})
+                    </option>
+                  </optgroup>
+                </select>
+                <button class="btn btn-secondary" (click)="setBreed()" [disabled]="!selectedBreedName">指定品種</button>
+              </div>
+
+              <button class="btn btn-primary" (click)="applyStatsChanges()" style="margin-top: 20px;">套用變更</button>
             </div>
 
             <!-- 定時檢查器 -->
@@ -522,18 +538,22 @@ import { DirtyObject } from '../../../types/dirty-object.type';
       color: #495057;
     }
 
-    .coin-control, .dirty-control, .pet-control, .limit-control, .time-control {
+    .coin-control, .dirty-control, .pet-control, .limit-control, .time-control, .breed-control {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       align-items: center;
     }
 
-    .coin-control input {
+    .coin-control input, .breed-select {
       padding: 8px;
       border: 1px solid #ddd;
       border-radius: 4px;
       width: 120px;
+    }
+
+    .breed-select {
+      width: 200px;
     }
 
     /* 狀態彈窗樣式 */
@@ -645,6 +665,8 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
   customTimeString = '';
   coinsToAdd = 0;
   dirtyObjects: DirtyObject[] = [];
+  selectedBreedName = '';
+  rareTypes: ('BAD' | 'NORMAL' | 'SPECIAL' | 'SUPER_SPECIAL')[] = ['BAD', 'NORMAL', 'SPECIAL', 'SUPER_SPECIAL'];
 
 
   private subscriptions: Subscription[] = [];
@@ -917,6 +939,60 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
   resetClickLimit() {
     this.leavingService.resetClickLimit();
     console.log('已重置點擊次數限制');
+  }
+
+  /**
+   * 獲取稀有度類型的中文名稱
+   */
+  getRareTypeName(rareType: 'BAD' | 'NORMAL' | 'SPECIAL' | 'SUPER_SPECIAL'): string {
+    const names = {
+      'BAD': '劣質品種',
+      'NORMAL': '一般品種',
+      'SPECIAL': '特殊品種',
+      'SUPER_SPECIAL': '超稀有品種'
+    };
+    return names[rareType];
+  }
+
+  /**
+   * 根據稀有度獲取品種列表
+   */
+  getBreedsByRare(rareType: 'BAD' | 'NORMAL' | 'SPECIAL' | 'SUPER_SPECIAL'): Breed[] {
+    return breedData.filter(breed => breed.rare === rareType);
+  }
+
+  /**
+   * 設定電子雞品種
+   */
+  async setBreed(): Promise<void> {
+    if (!this.selectedBreedName) {
+      await this.modalService.alert('請選擇要指定的品種', '錯誤');
+      return;
+    }
+
+    const breedInfo = getBreedByName(this.selectedBreedName);
+    if (!breedInfo) {
+      await this.modalService.alert('找不到指定的品種資料', '錯誤');
+      return;
+    }
+
+    // 更新電子雞品種和稀有度
+    const updatedStats = {
+      ...this.petStats,
+      breedName: breedInfo.breed,
+      rare: breedInfo.rare,
+      lifeCycle: 'EVOLUTION' as const // 指定品種通常是進化期
+    };
+
+    PetStatsService.savePetStats(updatedStats);
+
+    await this.modalService.info(
+      `已將電子雞品種設定為：${breedInfo.breedName}\n稀有度：${breedInfo.rare}`,
+      '品種設定完成'
+    );
+
+    // 重新載入資料
+    this.loadData();
   }
 
 

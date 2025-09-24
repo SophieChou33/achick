@@ -25,7 +25,7 @@ import { TouchEventService } from '../../../services/touch-event.service';
     .mood-status-container {
       position: absolute;
       top: 0px;
-      right: 10px;
+      right: 0px;
       opacity: 0;
       transform: translateY(60px);
       pointer-events: none;
@@ -86,16 +86,16 @@ import { TouchEventService } from '../../../services/touch-event.service';
     }
 
     @keyframes blink1 {
-      0% { transform: scale(0.4); }
-      100% { transform: scale(0.7); }
+      0% { transform: scale(0.5); }
+      100% { transform: scale(0.6); }
     }
     @keyframes blink2 {
-      0% { transform: scale(0.8); }
-      100% { transform: scale(1.1); }
+      0% { transform: scale(0.9); }
+      100% { transform: scale(1.2); }
     }
     @keyframes blink3 {
-      0% { transform: scale(0.6); }
-      100% { transform: scale(0.9); }
+      0% { transform: scale(0.7); }
+      100% { transform: scale(1); }
     }
   `]
 })

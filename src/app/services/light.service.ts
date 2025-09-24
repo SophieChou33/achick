@@ -67,11 +67,28 @@ export class LightService {
     // 將 isLightOn 在 0 和 1 之間切換
     this.isLightOn = this.isLightOn === 1 ? 0 : 1;
 
-    // 若 isDay + isLightOn 大於 1，將狀態資料物件的 needLight 狀態賦值為 0
-    if (this.isDay + this.isLightOn > 1) {
+    console.log(`電燈已切換為: ${this.isLightOn === 1 ? '開啟' : '關閉'}`);
+
+    // 儲存電燈狀態到 localStorage
+    this.saveLightTimes();
+
+    // 檢查是否需要關閉 needLight 狀態
+    const now = this.customTimeService.getCurrentTime();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const isSleepTime = this.isSleepTime(currentHour, currentMinute);
+
+    // 若在睡眠時間或燈光已打開，關閉 needLight 狀態
+    if (isSleepTime || this.isLightOn === 1) {
       const currentStateData = StateDataService.loadStateData();
-      StateDataService.deactivateState('needLight', currentStateData);
+      if (currentStateData.needLight?.isActive === 1) {
+        StateDataService.deactivateState('needLight', currentStateData);
+        console.log(`電燈切換後關閉 needLight 狀態 (睡眠時間: ${isSleepTime}, 燈光狀態: ${this.isLightOn === 1 ? '開啟' : '關閉'})`);
+      }
     }
+
+    // 手動觸發一次光線檢查，確保狀態立即更新
+    this.manualLightCheck();
   }
 
   /**
@@ -129,13 +146,26 @@ export class LightService {
   private executeLightLogic(currentPetStats: any, penaltyCount: number): void {
     const now = this.customTimeService.getCurrentTime();
     const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
 
-    // 若在 7:00～22:59 時間區間內且 isDay + isLightOn 小於 1 時
-    if (currentHour >= 7 && currentHour <= 22 && (this.isDay + this.isLightOn < 1)) {
-      const currentStateData = StateDataService.loadStateData();
+    // 檢查是否為睡眠時間（22:59~7:00）
+    const isSleepTime = this.isSleepTime(currentHour, currentMinute);
+
+    const currentStateData = StateDataService.loadStateData();
+
+    if (isSleepTime) {
+      // 睡眠時間內，關閉 needLight 狀態
+      if (currentStateData.needLight?.isActive === 1) {
+        StateDataService.deactivateState('needLight', currentStateData);
+        console.log('睡眠時間內，已關閉 needLight 狀態');
+      }
+    } else if (this.isLightOn === 0) {
+      // 若在非睡眠時間且燈光未打開時
+      console.log(`觸發需要光線狀態 - 燈光狀態: ${this.isLightOn}, 是否睡眠時間: ${isSleepTime}`);
 
       // 狀態資料物件的 needLight 狀態賦值為 1
       StateDataService.activateState('needLight', currentStateData);
+      console.log('已激活 needLight 狀態');
 
       // 計算累積懲罰
       const totalFriendshipDecrease = penaltyCount * 2;
@@ -153,6 +183,12 @@ export class LightService {
       this.saveLightTimes();
 
       console.log(`燈光不足累積懲罰：執行 ${penaltyCount} 次懲罰，好感度-${totalFriendshipDecrease}，健康度-${totalWellnessDecrease}`);
+    } else {
+      // 其他情況下關閉 needLight 狀態
+      if (currentStateData.needLight?.isActive === 1) {
+        StateDataService.deactivateState('needLight', currentStateData);
+        console.log('光線條件滿足，已關閉 needLight 狀態');
+      }
     }
   }
 
@@ -201,6 +237,22 @@ export class LightService {
   }
 
   /**
+   * 檢查是否為睡眠時間（22:59~7:00）
+   * 這個方法與 SleepService 中的邏輯保持一致
+   */
+  private isSleepTime(hour: number, minute: number): boolean {
+    // 22:59 到 23:59
+    if (hour === 22 && minute >= 59) return true;
+    if (hour === 23) return true;
+
+    // 00:00 到 06:59
+    if (hour >= 0 && hour < 7) return true;
+
+    // 07:00 整點不算睡眠時間
+    return false;
+  }
+
+  /**
    * 獲取當前光線狀態（用於UI顯示）
    */
   public getLightStatus(): {
@@ -233,7 +285,26 @@ export class LightService {
    * 手動觸發光線檢查（用於調試）
    */
   public manualLightCheck(): void {
-    this.checkLight();
+    console.log('=== 手動觸發光線檢查 ===');
+    console.log(`當前燈光狀態: ${this.isLightOn}, 當前日夜狀態: ${this.isDay}`);
+
+    const currentPetStats = PetStatsService.loadPetStats();
+
+    // 當電子雞當前數值物件的 rare 為 null 時，不往下執行邏輯
+    if (currentPetStats.rare === null) {
+      console.log('電子雞尚未生成，跳過光線檢查');
+      return;
+    }
+
+    // 當電子雞當前數值物件的 timeStopping 為 true 時，不往下執行邏輯
+    if (currentPetStats.timeStopping === true) {
+      console.log('電子雞已冷凍，跳過光線檢查');
+      return;
+    }
+
+    // 強制執行光線邏輯，不受30分鐘限制
+    this.executeLightLogic(currentPetStats, 0);
+    console.log('=== 光線檢查完成 ===');
   }
 
   /**
@@ -252,10 +323,14 @@ export class LightService {
       if (savedData) {
         const lightData = JSON.parse(savedData);
         this.lastLightCheckTime = lightData.lastLightCheckTime || null;
+        // 載入電燈狀態，預設為開啟 (1)
+        this.isLightOn = typeof lightData.isLightOn === 'number' ? lightData.isLightOn : 1;
+        console.log(`電燈狀態已從 localStorage 載入: ${this.isLightOn === 1 ? '開啟' : '關閉'}`);
       }
     } catch (error) {
       console.error('Failed to load light times:', error);
       this.lastLightCheckTime = null;
+      this.isLightOn = 1; // 預設為開啟
     }
   }
 
@@ -265,9 +340,11 @@ export class LightService {
   private saveLightTimes(): void {
     try {
       const lightData = {
-        lastLightCheckTime: this.lastLightCheckTime
+        lastLightCheckTime: this.lastLightCheckTime,
+        isLightOn: this.isLightOn
       };
       localStorage.setItem(LightService.LIGHT_STORAGE_KEY, JSON.stringify(lightData));
+      console.log(`電燈狀態已儲存到 localStorage: ${this.isLightOn === 1 ? '開啟' : '關閉'}`);
     } catch (error) {
       console.error('Failed to save light times:', error);
     }

@@ -75,10 +75,13 @@ export class StateDataService {
   }
 
   static saveStateData(data: StateData): void {
+    console.log('StateDataService.saveStateData() 開始執行');
+    console.log('要儲存的資料:', data.isSleeping, data.needSleep);
     try {
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+      console.log('✅ 狀態資料已成功儲存到 localStorage');
     } catch (error) {
-      console.error('Failed to save state data:', error);
+      console.error('❌ 儲存狀態資料失敗:', error);
     }
   }
 
@@ -89,6 +92,9 @@ export class StateDataService {
   }
 
   static activateState(stateName: keyof StateData, stateData: StateData): StateData {
+    console.log(`StateDataService.activateState(${stateName}) 開始執行`);
+    console.log('原始狀態資料:', stateData[stateName]);
+
     const updatedData = {
       ...stateData,
       [stateName]: {
@@ -96,11 +102,19 @@ export class StateDataService {
         isActive: 1 as const
       }
     };
+
+    console.log('更新後狀態資料:', updatedData[stateName]);
+
     this.saveStateData(updatedData);
+    console.log(`StateDataService.activateState(${stateName}) 執行完成`);
+
     return updatedData;
   }
 
   static deactivateState(stateName: keyof StateData, stateData: StateData): StateData {
+    console.log(`StateDataService.deactivateState(${stateName}) 開始執行`);
+    console.log('原始狀態資料:', stateData[stateName]);
+
     const updatedData = {
       ...stateData,
       [stateName]: {
@@ -108,17 +122,24 @@ export class StateDataService {
         isActive: 0 as const
       }
     };
+
+    console.log('更新後狀態資料:', updatedData[stateName]);
+
     this.saveStateData(updatedData);
+    console.log(`StateDataService.deactivateState(${stateName}) 執行完成`);
+
     return updatedData;
   }
 
   static getActiveStates(stateData: StateData): StateDataType[] {
-    return Object.values(stateData).filter(state => state.isActive === 1);
+    return Object.entries(stateData)
+      .filter(([key, state]) => key !== 'characterPosition' && key !== 'bedPosition' && 'isActive' in state && state.isActive === 1)
+      .map(([_, state]) => state as StateDataType);
   }
 
   static getActiveStateNames(stateData: StateData): string[] {
     return Object.entries(stateData)
-      .filter(([_, state]) => state.isActive === 1)
+      .filter(([key, state]) => key !== 'characterPosition' && key !== 'bedPosition' && 'isActive' in state && state.isActive === 1)
       .map(([name, _]) => name);
   }
 
