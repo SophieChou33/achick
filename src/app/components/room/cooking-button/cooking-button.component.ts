@@ -10,120 +10,161 @@ import { ModalService } from '../../../services/modal.service';
 import { CollectionService } from '../../../data/collection-data';
 import { CustomTimeService } from '../../../services/custom-time.service';
 import { PetStats } from '../../../types/pet-stats.type';
+import { sources } from '../../../sources';
 
 @Component({
   selector: 'app-cooking-button',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="cooking-button-wrapper" *ngIf="shouldShowButton">
-      <button
-        class="cooking-btn"
+    <div class="cooking-icon-wrapper" *ngIf="shouldShowButton">
+      <div
+        class="cooking-icon"
         [class.enabled]="canCook"
         [class.disabled]="!canCook"
-        [disabled]="!canCook"
-        (click)="onCookingClick()"
-        [title]="buttonTooltip">
-        <span class="cooking-text">可熟成</span>
-        <div class="cooking-requirements" *ngIf="!canCook">
-          <small>需要好感度及健康度 ≥ 90</small>
+        (click)="onCookingClick()">
+        <img [src]="cookedIcon" alt="可熟成" class="cooked-image" />
+      </div>
+
+      <!-- Hover 提示框 -->
+      <div class="tooltip">
+        <div class="tooltip-content">
+          <h4>熟成條件</h4>
+          <ul>
+            <li>好感度 ≥ 90 (當前: {{ petStats.currentFriendship }})</li>
+            <li>健康度 ≥ 90 (當前: {{ petStats.currentWellness }})</li>
+            <li>進化後經過 240 小時 ({{ getTimeProgress() }})</li>
+          </ul>
+          <div class="tooltip-status" [class.ready]="canCook" [class.not-ready]="!canCook">
+            {{ canCook ? '可以熟成！' : '條件未滿足' }}
+          </div>
         </div>
-      </button>
+      </div>
     </div>
   `,
   styles: [`
-    .cooking-button-wrapper {
-      position: absolute;
-      right: 20px;
-      top: 50%;
-      transform: translateY(-50%);
+    .cooking-icon-wrapper {
+      position: fixed;
+      left: 20px;
+      top: 120px;
       z-index: 800;
     }
 
-    .cooking-btn {
-      background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-radius: 12px;
-      padding: 12px 20px;
-      color: white;
-      font-weight: 600;
-      font-size: 14px;
+    .cooking-icon {
+      display: inline-block;
       cursor: pointer;
       transition: all 0.3s ease;
-      box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
-      backdrop-filter: blur(5px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-width: 80px;
     }
 
-    .cooking-btn.enabled {
-      background: linear-gradient(135deg, #28a745, #48c662);
-      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-      border-color: rgba(255, 255, 255, 0.4);
-    }
-
-    .cooking-btn.enabled:hover {
-      background: linear-gradient(135deg, #218838, #3bb555);
+    .cooking-icon:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
     }
 
-    .cooking-btn.disabled {
-      background: linear-gradient(135deg, #6c757d, #8a919a);
-      box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+    .cooking-icon.disabled {
       cursor: not-allowed;
-      opacity: 0.8;
+      opacity: 0.7;
     }
 
-    .cooking-btn:disabled {
-      cursor: not-allowed;
+    .cooked-image {
+      height: 10dvh;
+      width: auto;
+      object-fit: contain;
     }
 
-    .cooking-text {
+    /* Tooltip 樣式 */
+    .tooltip {
+      position: absolute;
+      left: calc(10dvh + 10px);
+      top: 0;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      white-space: normal;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(-10px);
+      transition: all 0.3s ease;
+      z-index: 1000;
+      min-width: 280px;
+    }
+
+    .cooking-icon:hover + .tooltip,
+    .tooltip:hover {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0);
+    }
+
+    .tooltip-content h4 {
+      margin: 0 0 8px 0;
       font-size: 14px;
-      margin-bottom: 2px;
+      color: #ffd700;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+      padding-bottom: 4px;
     }
 
-    .cooking-requirements {
-      font-size: 10px;
-      opacity: 0.9;
+    .tooltip-content ul {
+      margin: 8px 0;
+      padding: 0 0 0 16px;
+      list-style: none;
+    }
+
+    .tooltip-content li {
+      margin: 4px 0;
+      position: relative;
+      padding-left: 8px;
+    }
+
+    .tooltip-content li:before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: #ffd700;
+    }
+
+    .tooltip-status {
+      margin-top: 8px;
+      padding: 4px 8px;
+      border-radius: 4px;
       text-align: center;
-      line-height: 1.2;
-      margin-top: 2px;
+      font-weight: bold;
+    }
+
+    .tooltip-status.ready {
+      color: #90ee90;
+    }
+
+    .tooltip-status.not-ready {
+      background: rgba(220, 53, 69, 0.3);
+      color: #ffb6c1;
     }
 
     /* 響應式設計 */
     @media (max-width: 768px) {
-      .cooking-button-wrapper {
-        right: 15px;
+      .cooking-icon-wrapper {
+        left: 15px;
+        top: 100px;
       }
 
-      .cooking-btn {
-        padding: 10px 16px;
-        font-size: 12px;
-        min-width: 70px;
-      }
-
-      .cooking-text {
-        font-size: 12px;
-      }
-
-      .cooking-requirements {
-        font-size: 9px;
+      .tooltip {
+        left: calc(10dvh + 10px);
+        min-width: 250px;
+        font-size: 11px;
       }
     }
 
     @media (max-width: 576px) {
-      .cooking-button-wrapper {
-        right: 10px;
-        top: 45%;
+      .cooking-icon-wrapper {
+        left: 10px;
+        top: 90px;
       }
 
-      .cooking-btn {
-        padding: 8px 12px;
-        min-width: 60px;
+      .tooltip {
+        left: calc(10dvh + 10px);
+        min-width: 220px;
+        font-size: 10px;
       }
     }
   `]
@@ -131,9 +172,9 @@ import { PetStats } from '../../../types/pet-stats.type';
 export class CookingButtonComponent implements OnInit, OnDestroy {
   shouldShowButton = false;
   canCook = false;
-  buttonTooltip = '';
+  cookedIcon = sources.otherIcons.cooked;
 
-  private petStats: PetStats = PetStatsService.loadPetStats();
+  petStats: PetStats = PetStatsService.loadPetStats();
   private petStatsSubscription?: Subscription;
 
   constructor(
@@ -165,7 +206,6 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
     if (this.shouldShowButton) {
       // 檢查是否可以熟成
       this.canCook = this.canStartCooking();
-      this.updateTooltip();
     }
   }
 
@@ -176,6 +216,12 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
       isDead: this.petStats.isDead,
       isCooked: this.petStats.isCooked
     });
+
+    // 如果已經熟成或死亡，隱藏按鈕
+    if (this.petStats.isCooked || this.petStats.isDead) {
+      console.log('熟成按鈕檢查失敗: 已經是熟成狀態或死亡狀態');
+      return false;
+    }
 
     // 必須是進化狀態
     if (this.petStats.lifeCycle !== 'EVOLUTION') {
@@ -214,12 +260,12 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
       currentTimeString: this.customTimeService.formatTime(),
       isCustomTimeEnabled: this.customTimeService.isCustomTimeEnabled(),
       hoursDiff: hoursDiff,
-      required: 1, // 目前設為1小時測試
-      canShow: hoursDiff >= 1
+      required: 240, // 240小時 = 10天
+      canShow: hoursDiff >= 240
     });
 
-    // 臨時測試：降低時間限制為1小時
-    return hoursDiff >= 1; // 1小時（原本是240小時 = 10天）
+    // 需要240小時（10天）才能熟成
+    return hoursDiff >= 240;
   }
 
   private canStartCooking(): boolean {
@@ -231,22 +277,25 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
     return this.petStats.currentFriendship >= 90 && this.petStats.currentWellness >= 90;
   }
 
-  private updateTooltip() {
-    if (this.canCook) {
-      this.buttonTooltip = '可以進行熟成！';
+
+  getTimeProgress(): string {
+    const userData = UserDataService.loadUserData();
+    const currentPetRecord = UserDataService.getCurrentPetRecord(userData);
+
+    if (!currentPetRecord || !currentPetRecord.evolutionTime) {
+      return '無進化記錄';
+    }
+
+    const evolutionTime = new Date(currentPetRecord.evolutionTime);
+    const now = this.customTimeService.getCurrentTime();
+    const hoursPassed = (now.getTime() - evolutionTime.getTime()) / (1000 * 60 * 60);
+    const hoursNeeded = 240;
+
+    if (hoursPassed >= hoursNeeded) {
+      return '已滿足時間條件';
     } else {
-      const friendshipNeed = Math.max(0, 90 - this.petStats.currentFriendship);
-      const wellnessNeed = Math.max(0, 90 - this.petStats.currentWellness);
-
-      let tooltip = '熟成條件不足：';
-      if (friendshipNeed > 0) {
-        tooltip += `好感度還需+${friendshipNeed}`;
-      }
-      if (wellnessNeed > 0) {
-        tooltip += friendshipNeed > 0 ? `，健康度還需+${wellnessNeed}` : `健康度還需+${wellnessNeed}`;
-      }
-
-      this.buttonTooltip = tooltip;
+      const remaining = Math.ceil(hoursNeeded - hoursPassed);
+      return `還需 ${remaining} 小時`;
     }
   }
 
@@ -293,7 +342,7 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
 
     // 4. 寫入圖鑑
     const collectionData = CollectionService.loadCollectionData();
-    const updatedCollectionData = CollectionService.unlockBreed(this.petStats.breedName!, 'COOKED', collectionData);
+    CollectionService.unlockBreed(this.petStats.breedName!, 'COOKED', collectionData);
 
     // 5. 跳出 toastr
     ToastrService.show(

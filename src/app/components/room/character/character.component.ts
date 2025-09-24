@@ -174,7 +174,7 @@ import { CollectionService } from '../../../data/collection-data';
       height: 3dvh;
       background: radial-gradient(ellipse, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.5) 50%, transparent 100%);
       border-radius: 50%;
-      z-index: 600;
+      z-index: 1;
       filter: blur(0.8dvh);
     }
 
@@ -207,6 +207,8 @@ import { CollectionService } from '../../../data/collection-data';
       height: 50dvh;
       object-fit: contain;
       cursor: pointer;
+      z-index: 2;
+      position: relative;
     }
 
     .character-effects {
@@ -341,7 +343,17 @@ export class CharacterComponent implements OnInit, OnDestroy {
     // 有lifeCycle時才顯示角色，但如果isLeaving為true則隱藏
     this.isCharacterVisible = !this.petStats.isLeaving;
 
-    // 處理死亡狀態 - 最高優先級
+    // 處理熟成狀態 - 最高優先級
+    if (this.petStats.isCooked && this.petStats.breedName) {
+      const breedData = getBreedByName(this.petStats.breedName);
+      if (breedData) {
+        this.characterImage = this.getCookedImage(breedData.breed);
+        this.characterName = `Cooked - ${breedData.breedName}`;
+        return;
+      }
+    }
+
+    // 處理死亡狀態 - 高優先級，但低於熟成狀態
     if (this.petStats.isDead) {
       this.characterImage = sources.character.dead.dead;
       this.characterName = 'Dead';
@@ -372,20 +384,12 @@ export class CharacterComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // 若breed與lifecycle有值且lifeCycle不為EGG也不為CHILD，角色圖片顯示sources.character.{{lifeCycle}}.{{breed}}
-    // 對於熟成狀態，使用 EVOLUTION 作為圖片路徑
-    if (breedName && ((lifeCycle === 'EVOLUTION') || (this.petStats.isCooked && lifeCycle))) {
+    // 若breed與lifecycle有值且lifeCycle為EVOLUTION，角色圖片顯示sources.character.evolution.{{breed}}
+    if (breedName && lifeCycle === 'EVOLUTION') {
       const breedData = getBreedByName(breedName);
       if (breedData) {
-        const breed = breedData.breed;
-
-        if (lifeCycle === 'EVOLUTION') {
-          this.characterImage = this.getEvolutionImage(breed);
-          this.characterName = breedData.breedName || `Evolution - ${breed}`;
-        } else if (this.petStats.isCooked) {
-          this.characterImage = this.getCookedImage(breed);
-          this.characterName = `Cooked - ${breedData.breedName || breed}`;
-        }
+        this.characterImage = this.getEvolutionImage(breedData.breed);
+        this.characterName = breedData.breedName || `Evolution - ${breedData.breed}`;
         return;
       }
     }
@@ -642,18 +646,15 @@ export class CharacterComponent implements OnInit, OnDestroy {
    * 拖曳開始事件
    */
   onDragStart(event: MouseEvent | TouchEvent): void {
-    this.isDragging = true;
-    this.hasMoved = false;
-
-    // 如果是熟成狀態，不允許拖曳操作，但仍要設置 isDragging 以便點擊檢測
-    if (this.petStats.isCooked) {
-      return;
-    }
     const clientX = event instanceof MouseEvent ? event.clientX : event.touches[0].clientX;
     const clientY = event instanceof MouseEvent ? event.clientY : event.touches[0].clientY;
 
+    this.isDragging = true;
+    this.hasMoved = false;
     this.dragStartX = clientX;
     this.dragStartY = clientY;
+
+    // 熟成狀態也允許拖曳，不需要特殊處理
 
     // 將百分比轉換為像素進行計算
     const viewportWidth = window.innerWidth;
@@ -670,6 +671,8 @@ export class CharacterComponent implements OnInit, OnDestroy {
    */
   onDragMove(event: MouseEvent | TouchEvent): void {
     if (!this.isDragging) return;
+
+    // 熟成狀態也允許拖曳移動，不需要特殊處理
 
     const clientX = event instanceof MouseEvent ? event.clientX : event.touches[0].clientX;
     const clientY = event instanceof MouseEvent ? event.clientY : event.touches[0].clientY;

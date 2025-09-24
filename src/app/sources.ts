@@ -110,6 +110,7 @@ export const sources = {
     collection: 'assets/images/other-icons/collection.png',
     feed: 'assets/images/other-icons/feed.png',
     sleep: 'assets/images/other-icons/sleep.png',
+    cooked: 'assets/images/other-icons/cooked.png',
   },
   moodStatus: {
     isSleeping: 'assets/images/mood-status/is-sleeping.png',

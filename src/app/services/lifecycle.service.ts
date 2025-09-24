@@ -22,7 +22,7 @@ export class LifecycleService {
   /**
    * 設定電子雞死亡
    */
-  public async doKill(): Promise<void> {
+  public async doKill(customDeathReason?: string): Promise<void> {
     const currentPetStats = PetStatsService.loadPetStats();
     const petName = currentPetStats.name || '電子雞';
 
@@ -36,8 +36,9 @@ export class LifecycleService {
 
     PetStatsService.savePetStats(updatedStats);
 
-    // 4. 跳出確認彈窗
-    await this.modalService.info(`${petName}因疏於照顧而死亡...\n\n永別了${petName}，希望你去了更美好的世界，RIP🕊️`, '寵物已死亡');
+    // 4. 跳出確認彈窗 - 使用自定義死亡原因或預設原因
+    const deathMessage = customDeathReason || `${petName}因疏於照顧而死亡...`;
+    await this.modalService.info(`${deathMessage}\n\n永別了${petName}，希望你去了更美好的世界，RIP🕊️`, '寵物已死亡');
 
     // 角色DOM元素會自動切換為顯示 sources.character.dead.dead
     // 這個邏輯已經在 CharacterComponent 的 setCharacterImage 方法中實現

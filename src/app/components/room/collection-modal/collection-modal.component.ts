@@ -50,7 +50,7 @@ interface TabItem {
                   </div>
                 </div>
                 <div class="item-info">
-                  <div class="item-name">{{ item.rareName }}</div>
+                  <div class="item-name">{{ item.isUnlocked === 1 ? item.rareName : '???' }}</div>
                   <div class="item-count" *ngIf="item.isUnlocked === 1">收集次數: {{ item.collectedCount }}</div>
                   <div class="item-locked" *ngIf="item.isUnlocked === 0">未解鎖</div>
                 </div>
@@ -67,7 +67,7 @@ interface TabItem {
                   </div>
                 </div>
                 <div class="item-info">
-                  <div class="item-name">幼年小雞</div>
+                  <div class="item-name">{{ item.isUnlocked === 1 ? '幼年小雞' : '???' }}</div>
                   <div class="item-count" *ngIf="item.isUnlocked === 1">收集次數: {{ item.collectedCount }}</div>
                   <div class="item-locked" *ngIf="item.isUnlocked === 0">未解鎖</div>
                 </div>
@@ -84,7 +84,7 @@ interface TabItem {
                   </div>
                 </div>
                 <div class="item-info">
-                  <div class="item-name">{{ getBreedDisplayName(item.breedName) }}</div>
+                  <div class="item-name">{{ item.isUnlocked === 1 ? getBreedDisplayName(item.breedName) : '???' }}</div>
                   <div class="item-count" *ngIf="item.isUnlocked === 1">收集次數: {{ item.collectedCount }}</div>
                   <div class="item-locked" *ngIf="item.isUnlocked === 0">未解鎖</div>
                 </div>
@@ -101,7 +101,7 @@ interface TabItem {
                   </div>
                 </div>
                 <div class="item-info">
-                  <div class="item-name">{{ getBreedDisplayName(item.breedName) }}</div>
+                  <div class="item-name">{{ item.isUnlocked === 1 ? getBreedDisplayName(item.breedName) : '???' }}</div>
                   <div class="item-count" *ngIf="item.isUnlocked === 1">收集次數: {{ item.collectedCount }}</div>
                   <div class="item-locked" *ngIf="item.isUnlocked === 0">未解鎖</div>
                 </div>
