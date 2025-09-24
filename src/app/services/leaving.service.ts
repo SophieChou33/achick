@@ -276,6 +276,10 @@ export class LeavingService {
     // 重置各服務的時間
     if (dirtyTriggerService) {
       (dirtyTriggerService as any).lastAddDirtyTime = currentTime;
+      // 重置所有髒污物件的上次懲罰時間
+      (dirtyTriggerService as any).dirtyObjects?.forEach?.((dirty: any) => {
+        dirty.lastPunishTime = currentTime;
+      });
       (dirtyTriggerService as any).saveDirtyData?.();
     }
 
@@ -286,6 +290,8 @@ export class LeavingService {
 
     if (touchEventService) {
       (touchEventService as any).lastTimeReset = currentTime;
+      (touchEventService as any).touchedTimes = 0;  // 重置撫摸次數
+      (touchEventService as any).isCanTouch = true; // 允許撫摸
       (touchEventService as any).saveTouchData?.();
     }
 

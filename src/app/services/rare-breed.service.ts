@@ -6,6 +6,8 @@ import { UserDataService } from '../data/user-data';
 import { CustomTimeService } from './custom-time.service';
 import { LastCheckTimeManagerService } from './last-check-time-manager.service';
 import { UnifiedStatsCheckerService } from './unified-stats-checker.service';
+import { LogService } from './log.service';
+import { CoinsService } from './coins.service';
 
 @Injectable({
   providedIn: 'root'
@@ -17,7 +19,9 @@ export class RareBreedService {
   constructor(
     private customTimeService: CustomTimeService,
     private lastCheckTimeManagerService: LastCheckTimeManagerService,
-    private unifiedStatsCheckerService: UnifiedStatsCheckerService
+    private unifiedStatsCheckerService: UnifiedStatsCheckerService,
+    private logService: LogService,
+    private coinsService: CoinsService
   ) {}
 
   /**
@@ -133,8 +137,9 @@ export class RareBreedService {
     const hungerSpeed = this.getHungerSpeed(this.rare);
 
     // 孵化獎勵金幣：更新使用者持有金幣
-    const currentUserData = UserDataService.loadUserData();
-    UserDataService.addCoins(hatchingCoins, currentUserData);
+    if (hatchingCoins > 0) {
+      this.coinsService.addCoins(hatchingCoins, true, '孵化獎勵');
+    }
 
     // 創建電子雞當前數值物件，使用自定義數值
     const newPetStats: PetStats = {
@@ -163,6 +168,9 @@ export class RareBreedService {
 
     // 初始化所有服務的上次檢查時間為孵化時間
     this.lastCheckTimeManagerService.initializeAllLastCheckTimes();
+
+    // 清除舊的日誌記錄（新電子雞開始新的日誌）
+    this.logService.clearLogs();
 
     // 儲存到localStorage
     PetStatsService.savePetStats(newPetStats);

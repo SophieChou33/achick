@@ -6,6 +6,7 @@ import { DirtyTriggerService } from './dirty-trigger.service';
 import { WhiteTransitionService } from './white-transition.service';
 import { ModalService } from './modal.service';
 import { AppStateService } from './app-state.service';
+import { LogService } from './log.service';
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +17,8 @@ export class LifecycleService {
     private dirtyTriggerService: DirtyTriggerService,
     private whiteTransitionService: WhiteTransitionService,
     private modalService: ModalService,
-    private appStateService: AppStateService
+    private appStateService: AppStateService,
+    private logService: LogService
   ) {}
 
   /**
@@ -151,6 +153,9 @@ export class LifecycleService {
       if (confirm) {
         // 設置一次性回調來處理重置邏輯
         this.whiteTransitionService.setOneTimeCallback(() => {
+          // 清除日誌記錄（新電子雞開始新的日誌）
+          this.logService.clearLogs();
+
           // 重置遊戲狀態但不立即顯示歡迎頁
           this.clearCurrentChickenState(true);
 

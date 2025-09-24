@@ -3,6 +3,7 @@ import { Subject, Observable } from 'rxjs';
 import { PetStatsService } from '../data/pet-stats-data';
 import { PetStats } from '../types/pet-stats.type';
 import { UserDataService } from '../data/user-data';
+import { CoinsService } from './coins.service';
 import { StateDataService } from '../data/state-data';
 import { ToastrService } from '../components/shared/toastr/toastr.component';
 import { ModalService } from './modal.service';
@@ -27,7 +28,8 @@ export class TouchEventService {
   constructor(
     private whiteTransitionService: WhiteTransitionService,
     private modalService: ModalService,
-    private customTimeService: CustomTimeService
+    private customTimeService: CustomTimeService,
+    private coinsService: CoinsService
   ) {
     this.loadTouchData();
     this.startResetTimer();
@@ -225,8 +227,7 @@ export class TouchEventService {
 
     // 4. 判斷若 shouldGetCoins 為 true，則將使用者資料的使用者持有金幣增加 getCoinsCount
     if (shouldGetCoins && getCoinsCount > 0) {
-      const currentUserData = UserDataService.loadUserData();
-      UserDataService.addCoins(getCoinsCount, currentUserData);
+      this.coinsService.addCoins(getCoinsCount, true, '撫摸獎勵');
     }
   }
 

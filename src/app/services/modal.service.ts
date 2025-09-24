@@ -7,10 +7,20 @@ import { ModalComponent, ModalConfig } from '../components/shared/modal/modal.co
 export class ModalService {
   private modalRef: ComponentRef<ModalComponent> | null = null;
 
+  // 用於依賴注入的 LogService 實例
+  private static logService?: any;
+
   constructor(
     private appRef: ApplicationRef,
     private injector: EnvironmentInjector
   ) {}
+
+  /**
+   * 設置 LogService 實例（在 AppComponent 中調用）
+   */
+  static setLogService(logService: any) {
+    this.logService = logService;
+  }
 
   /**
    * 顯示 alert 型態的 modal
@@ -22,6 +32,11 @@ export class ModalService {
       title,
       confirmText: '確定'
     };
+
+    // 記錄到日誌
+    if (ModalService.logService) {
+      ModalService.logService.addModalLog(message, title, 'warning');
+    }
 
     await this.showModal(config);
   }
@@ -38,6 +53,11 @@ export class ModalService {
       cancelText: cancelText || '取消'
     };
 
+    // 記錄到日誌
+    if (ModalService.logService) {
+      ModalService.logService.addModalLog(message, title, 'info');
+    }
+
     return await this.showModal(config);
   }
 
@@ -51,6 +71,11 @@ export class ModalService {
       title,
       confirmText: confirmText || '確定'
     };
+
+    // 記錄到日誌
+    if (ModalService.logService) {
+      ModalService.logService.addModalLog(message, title, 'info');
+    }
 
     await this.showModal(config);
   }

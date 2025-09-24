@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { DirtyTriggerService } from './dirty-trigger.service';
 import { PetStatsService } from '../data/pet-stats-data';
 import { UserDataService } from '../data/user-data';
+import { CoinsService } from './coins.service';
 import { ToastrService } from '../components/shared/toastr/toastr.component';
 
 @Injectable({
@@ -10,7 +11,8 @@ import { ToastrService } from '../components/shared/toastr/toastr.component';
 export class CleaningEventService {
 
   constructor(
-    private dirtyTriggerService: DirtyTriggerService
+    private dirtyTriggerService: DirtyTriggerService,
+    private coinsService: CoinsService
   ) {}
 
   /**
@@ -29,8 +31,7 @@ export class CleaningEventService {
     }
 
     if (shouldGetCoins && getCoinsCount > 0) {
-      const currentUserData = UserDataService.loadUserData();
-      UserDataService.addCoins(getCoinsCount, currentUserData);
+      this.coinsService.addCoins(getCoinsCount, true, '清潔獎勵');
     }
   }
 

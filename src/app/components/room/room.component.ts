@@ -13,6 +13,8 @@ import { InventoryModalComponent } from './inventory-modal/inventory-modal.compo
 import { ShopModalComponent } from './shop-modal/shop-modal.component';
 import { CollectionModalComponent } from './collection-modal/collection-modal.component';
 import { CookingButtonComponent } from './cooking-button/cooking-button.component';
+import { LogPanelComponent } from '../shared/log-panel/log-panel.component';
+import { LogService } from '../../services/log.service';
 import { sources } from '../../sources';
 import { LightService } from '../../services/light.service';
 
@@ -32,7 +34,8 @@ import { LightService } from '../../services/light.service';
     InventoryModalComponent,
     ShopModalComponent,
     CollectionModalComponent,
-    CookingButtonComponent
+    CookingButtonComponent,
+    LogPanelComponent
   ],
   template: `
     <div class="room-wrapper" #roomWrapper>
@@ -50,6 +53,7 @@ import { LightService } from '../../services/light.service';
       <app-sidebar (openInventory)="openInventoryModal()"></app-sidebar>
       <app-status-bar></app-status-bar>
       <app-toastr></app-toastr>
+      <app-log-panel></app-log-panel>
 
       <!-- 背包彈窗 -->
       <app-inventory-modal
@@ -147,7 +151,10 @@ export class RoomComponent implements OnInit, OnDestroy {
   private scrollLeft = 0;
   private stateSubscription?: Subscription;
 
-  constructor(private lightService: LightService) {}
+  constructor(
+    private lightService: LightService,
+    private logService: LogService
+  ) {}
 
   ngOnInit() {
     // Initialize room state

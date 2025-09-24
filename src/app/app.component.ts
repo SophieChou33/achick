@@ -10,6 +10,9 @@ import { ItemUsageService } from './services/item-usage.service';
 import { UnifiedStatsCheckerService } from './services/unified-stats-checker.service';
 import { PetStatsService } from './data/pet-stats-data';
 import { RealTimeStateMonitorService } from './services/real-time-state-monitor.service';
+import { LogService } from './services/log.service';
+import { ToastrService } from './components/shared/toastr/toastr.component';
+import { ModalService } from './services/modal.service';
 
 @Component({
   selector: 'app-root',
@@ -43,10 +46,15 @@ export class AppComponent implements OnInit, OnDestroy {
     private appStateService: AppStateService,
     private injector: Injector,
     private unifiedStatsCheckerService: UnifiedStatsCheckerService,
-    private realTimeStateMonitorService: RealTimeStateMonitorService
+    private realTimeStateMonitorService: RealTimeStateMonitorService,
+    private logService: LogService
   ) {
     // 設置 ItemUsageService 的依賴注入器
     ItemUsageService.setInjector(this.injector);
+
+    // 設置日誌服務給 ToastrService 和 ModalService
+    ToastrService.setLogService(this.logService);
+    ModalService.setLogService(this.logService);
 
     // 注入離家出走相關服務以確保它們的定時器啟動
     // 這些服務在構造函數中會自動啟動定時器

@@ -125,6 +125,9 @@ export class ToastrService {
   private static statusExpandedSubject = new BehaviorSubject<boolean>(false);
   private static messageCounter = 0;
 
+  // 用於依賴注入的 LogService 實例
+  private static logService?: any;
+
   static getMessages$() {
     return this.messagesSubject.asObservable();
   }
@@ -137,6 +140,13 @@ export class ToastrService {
     this.statusExpandedSubject.next(expanded);
   }
 
+  /**
+   * 設置 LogService 實例（在 AppComponent 中調用）
+   */
+  static setLogService(logService: any) {
+    this.logService = logService;
+  }
+
   static show(message: string, type: 'info' | 'success' | 'warning' | 'error' = 'info', duration: number = 5000) {
     const toast: ToastrMessage = {
       id: `toast-${++this.messageCounter}`,
@@ -147,6 +157,11 @@ export class ToastrService {
 
     const currentMessages = this.messagesSubject.value;
     this.messagesSubject.next([...currentMessages, toast]);
+
+    // 記錄到日誌
+    if (this.logService) {
+      this.logService.addToastrLog(message, type);
+    }
 
     // 自動移除
     setTimeout(() => {

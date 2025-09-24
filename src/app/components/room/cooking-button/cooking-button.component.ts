@@ -6,6 +6,7 @@ import { UserDataService } from '../../../data/user-data';
 import { getBreedByName } from '../../../data/breed-data';
 import { LifecycleService } from '../../../services/lifecycle.service';
 import { ToastrService } from '../../shared/toastr/toastr.component';
+import { CoinsService } from '../../../services/coins.service';
 import { ModalService } from '../../../services/modal.service';
 import { CollectionService } from '../../../data/collection-data';
 import { CustomTimeService } from '../../../services/custom-time.service';
@@ -31,8 +32,8 @@ import { sources } from '../../../sources';
         <div class="tooltip-content">
           <h4>熟成條件</h4>
           <ul>
-            <li>好感度 ≥ 90 (當前: {{ petStats.currentFriendship }})</li>
-            <li>健康度 ≥ 90 (當前: {{ petStats.currentWellness }})</li>
+            <li>好感度 ≥ 90 (當前: {{ petStats.currentFriendship.toFixed(1) }})</li>
+            <li>健康度 ≥ 90 (當前: {{ petStats.currentWellness | number:'1.0-0' }})</li>
             <li>進化後經過 240 小時 ({{ getTimeProgress() }})</li>
           </ul>
           <div class="tooltip-status" [class.ready]="canCook" [class.not-ready]="!canCook">
@@ -180,7 +181,8 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
   constructor(
     private lifecycleService: LifecycleService,
     private modalService: ModalService,
-    private customTimeService: CustomTimeService
+    private customTimeService: CustomTimeService,
+    private coinsService: CoinsService
   ) {}
 
   ngOnInit() {
@@ -311,9 +313,10 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
     PetStatsService.savePetStats(updatedStats);
 
     // 給予使用者對應的金幣
-    const userData = UserDataService.loadUserData();
     const earnedCoins = breedData.cookedEarned || 0;
-    UserDataService.addCoins(earnedCoins, userData);
+    if (earnedCoins > 0) {
+      this.coinsService.addCoins(earnedCoins, true, '熟成獎勵');
+    }
 
     // 4. 寫入圖鑑
     const collectionData = CollectionService.loadCollectionData();
