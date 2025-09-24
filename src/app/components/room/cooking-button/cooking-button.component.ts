@@ -210,28 +210,19 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
   }
 
   private shouldShowCookingButton(): boolean {
-    console.log('熟成按鈕顯示檢查開始:', {
-      lifeCycle: this.petStats.lifeCycle,
-      breedName: this.petStats.breedName,
-      isDead: this.petStats.isDead,
-      isCooked: this.petStats.isCooked
-    });
 
     // 如果已經熟成或死亡，隱藏按鈕
     if (this.petStats.isCooked || this.petStats.isDead) {
-      console.log('熟成按鈕檢查失敗: 已經是熟成狀態或死亡狀態');
       return false;
     }
 
     // 必須是進化狀態
     if (this.petStats.lifeCycle !== 'EVOLUTION') {
-      console.log('熟成按鈕檢查失敗: lifeCycle不是EVOLUTION');
       return false;
     }
 
     // 必須有品種名稱
     if (!this.petStats.breedName) {
-      console.log('熟成按鈕檢查失敗: 沒有品種名稱');
       return false;
     }
 
@@ -239,13 +230,7 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
     const userData = UserDataService.loadUserData();
     const currentPetRecord = UserDataService.getCurrentPetRecord(userData);
 
-    console.log('用戶數據檢查:', {
-      currentPetRecord: currentPetRecord,
-      evolutionTime: currentPetRecord?.evolutionTime
-    });
-
     if (!currentPetRecord || !currentPetRecord.evolutionTime) {
-      console.log('熟成按鈕檢查失敗: 沒有寵物記錄或進化時間');
       return false;
     }
 
@@ -253,16 +238,6 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
     const evolutionTime = new Date(currentPetRecord.evolutionTime);
     const now = this.customTimeService.getCurrentTime();
     const hoursDiff = (now.getTime() - evolutionTime.getTime()) / (1000 * 60 * 60);
-
-    console.log('時間檢查:', {
-      evolutionTime: currentPetRecord.evolutionTime,
-      now: now.toISOString(),
-      currentTimeString: this.customTimeService.formatTime(),
-      isCustomTimeEnabled: this.customTimeService.isCustomTimeEnabled(),
-      hoursDiff: hoursDiff,
-      required: 240, // 240小時 = 10天
-      canShow: hoursDiff >= 240
-    });
 
     // 需要240小時（10天）才能熟成
     return hoursDiff >= 240;
@@ -349,7 +324,5 @@ export class CookingButtonComponent implements OnInit, OnDestroy {
       `${petName}，成為了最美味的樣子，看起來很快樂也很可口`,
       'success'
     );
-
-    console.log(`${petName} 已完成熟成，獲得 ${earnedCoins} 金幣`);
   }
 }

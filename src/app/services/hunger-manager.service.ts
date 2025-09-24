@@ -83,7 +83,6 @@ export class HungerManagerService {
         PetStatsService.updatePetStats({
           currentHunger: newHunger
         });
-        console.log(`強制執行飽足感減少：扣除 ${petStats.hungerSpeed}，新飽足感 ${newHunger}`);
       }
       return;
     }
@@ -126,7 +125,6 @@ export class HungerManagerService {
       this.saveHungerTimes();
 
       const executionType = forceExecute && timeDiff < 60 ? '強制執行' : '累積減少';
-      console.log(`飽足感${executionType}：執行 ${decreaseCount} 次扣除，每次扣除 ${petStats.hungerSpeed}，總共扣除 ${totalHungerDecrease}，新飽足感 ${newHunger}`);
     }
   }
 
@@ -280,8 +278,6 @@ export class HungerManagerService {
       const petName = petStats.name || 'Achick';
       const message = `${petName}因飢餓對你不滿，健康度-${totalWellnessDecrease}，好感度-${totalFriendshipDecrease}（${punishmentCount}次懲罰）`;
       ToastrService.show(message, 'warning', 6000);
-
-      console.log(`飢餓懲罰：飽足感 ${petStats.currentHunger}，執行 ${punishmentCount} 次懲罰，健康度-${totalWellnessDecrease}，好感度-${totalFriendshipDecrease}`);
     }
   }
 
@@ -289,7 +285,6 @@ export class HungerManagerService {
    * 手動觸發飽足感減少檢查（工程師模式使用）
    */
   public manualTriggerHungerDecrease(): void {
-    console.log('手動觸發飽足感減少檢查');
     const petStats = PetStatsService.loadPetStats();
     const currentTime = this.getCurrentTimeString();
 
@@ -331,10 +326,8 @@ export class HungerManagerService {
    * 手動觸發飽足感懲罰扣值檢查（工程師模式使用）
    */
   public manualTriggerHungerPenalty(): void {
-    console.log('手動觸發飽足感懲罰扣值檢查');
     const petStats = PetStatsService.loadPetStats();
     const currentTime = this.getCurrentTimeString();
-    console.log('當前飽足感:', petStats.currentHunger);
 
     // 檢查基本條件
     if (petStats.rare === null) {
@@ -354,7 +347,6 @@ export class HungerManagerService {
 
     // 檢查是否滿足懲罰條件
     if (petStats.currentHunger > 35) {
-      console.log('飽足感 > 35，不需要執行飢餓懲罰');
       const petName = petStats.name || 'Achick';
       ToastrService.show(`${petName}的飽足感為${petStats.currentHunger}，高於35，無需飢餓懲罰`, 'info', 3000);
       return;
@@ -370,7 +362,6 @@ export class HungerManagerService {
       }
     }
 
-    console.log('飽足感 <= 35，執行飢餓懲罰檢查');
     this.checkHungerState(false); // 遵循正常時間邏輯
   }
 

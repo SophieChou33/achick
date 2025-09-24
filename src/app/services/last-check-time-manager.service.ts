@@ -59,8 +59,6 @@ export class LastCheckTimeManagerService {
 
     // 強制觸發所有服務的保存方法
     this.forceUpdateAllLastCheckTimes();
-
-    console.log('已初始化所有服務的上次檢查時間為:', currentTime);
   }
 
   /**
@@ -110,8 +108,6 @@ export class LastCheckTimeManagerService {
 
     // 強制觸發所有服務的保存方法
     this.forceUpdateAllLastCheckTimes();
-
-    console.log('已手動設定所有服務的上次檢查時間為:', presetTime);
   }
 
   /**
@@ -140,8 +136,6 @@ export class LastCheckTimeManagerService {
 
     // 強制觸發所有服務的保存方法
     this.forceUpdateAllLastCheckTimes();
-
-    console.log('已重置所有上次懲罰時間為:', currentTime);
   }
 
   /**
@@ -182,8 +176,6 @@ export class LastCheckTimeManagerService {
 
     // 強制觸發所有服務的保存方法
     this.forceUpdateAllLastCheckTimes();
-
-    console.log('已重置所有服務的上次檢查時間為 null');
   }
 
   /**
@@ -197,10 +189,6 @@ export class LastCheckTimeManagerService {
       },
     };
 
-    // 添加每個髒污物件的上次懲罰時間
-    console.log('當前髒污物件數量:', this.dirtyTriggerService.dirtyObjects.length);
-    console.log('髒污物件詳情:', this.dirtyTriggerService.dirtyObjects);
-
     this.dirtyTriggerService.dirtyObjects.forEach((dirty, index) => {
       const key = `dirtyObject_${dirty.dirtyNo}_lastPunishTime`;
       const statusItem = {
@@ -208,7 +196,6 @@ export class LastCheckTimeManagerService {
         value: dirty.lastPunishTime || null
       };
       status[key] = statusItem;
-      console.log(`添加髒污物件狀態 ${key}:`, statusItem);
     });
 
     // 繼續添加其他服務的時間

@@ -6,10 +6,14 @@ import { PetStats } from '../../../types/pet-stats.type';
 import { ToastrService } from '../../shared/toastr/toastr.component';
 import { StateDataService } from '../../../data/state-data';
 import { StateData } from '../../../types/state-data.type';
+import { UserDataService } from '../../../data/user-data';
+import { UserData } from '../../../types/user-data.type';
+import { CustomTimeService } from '../../../services/custom-time.service';
 
 interface PetInfo {
   name: string;
   birthday: string;
+  evolutionTime?: string;
   hoursAlive: number;
 }
 
@@ -26,9 +30,9 @@ interface StatusEffects {
     <div class="status-bar">
       <div class="status-left">
         <div class="pet-info">
-          <div class="pet-name">{{ petInfo.name }}</div>
           <div class="pet-details">
             <span>生日: {{ petInfo.birthday }}</span>
+            <span *ngIf="petInfo.evolutionTime">進化: {{ petInfo.evolutionTime }}</span>
             <span>飼養: {{ petInfo.hoursAlive }}小時</span>
           </div>
         </div>
@@ -36,7 +40,8 @@ interface StatusEffects {
 
       <div class="status-right">
         <div class="status-effects">
-          <div class="mood">情緒: {{ statusEffects.mood }}</div>
+          <div class="pet-name">{{ petInfo.name }}</div>
+          <div class="mood" *ngIf="statusEffects.mood">情緒: {{ statusEffects.mood }}</div>
           <div class="active-states" *ngIf="statusEffects.activeStates.length > 0">
             <span *ngFor="let state of statusEffects.activeStates" class="state">{{ state }}</span>
           </div>
@@ -53,34 +58,42 @@ interface StatusEffects {
         <div class="status-title">STATUS</div>
         <div class="status-row">
           <span class="status-label">當前生命值</span>
-          <div class="progress-bar">
-            <div class="progress-fill health" [style.width.%]="getHealthPercentage()"></div>
+          <div class="status-bar-row">
+            <div class="progress-bar">
+              <div class="progress-fill health" [style.width.%]="getHealthPercentage()"></div>
+            </div>
+            <span class="status-value health">{{ petStats.currentHealth }}/{{ petStats.maxHealth }}</span>
           </div>
-          <span class="status-value health">{{ petStats.currentHealth }}/{{ petStats.maxHealth }}</span>
         </div>
 
         <div class="status-row">
           <span class="status-label">當前好感度</span>
-          <div class="progress-bar">
-            <div class="progress-fill friendship" [style.width.%]="getFriendshipPercentage()"></div>
+          <div class="status-bar-row">
+            <div class="progress-bar">
+              <div class="progress-fill friendship" [style.width.%]="getFriendshipPercentage()"></div>
+            </div>
+            <span class="status-value friendship">{{ getFriendshipDisplay() }}/{{ petStats.maxFriendship }}</span>
           </div>
-          <span class="status-value friendship">{{ getFriendshipDisplay() }}/{{ petStats.maxFriendship }}</span>
         </div>
 
         <div class="status-row">
           <span class="status-label">當前飽足感</span>
-          <div class="progress-bar">
-            <div class="progress-fill hunger" [style.width.%]="getHungerPercentage()"></div>
+          <div class="status-bar-row">
+            <div class="progress-bar">
+              <div class="progress-fill hunger" [style.width.%]="getHungerPercentage()"></div>
+            </div>
+            <span class="status-value hunger">{{ petStats.currentHunger }}/{{ petStats.maxHunger }}</span>
           </div>
-          <span class="status-value hunger">{{ petStats.currentHunger }}/{{ petStats.maxHunger }}</span>
         </div>
 
         <div class="status-row">
           <span class="status-label">當前健康度</span>
-          <div class="progress-bar">
-            <div class="progress-fill wellness" [style.width.%]="getWellnessPercentage()"></div>
+          <div class="status-bar-row">
+            <div class="progress-bar">
+              <div class="progress-fill wellness" [style.width.%]="getWellnessPercentage()"></div>
+            </div>
+            <span class="status-value wellness">{{ petStats.currentWellness }}/{{ petStats.maxWellness }}</span>
           </div>
-          <span class="status-value wellness">{{ petStats.currentWellness }}/{{ petStats.maxWellness }}</span>
         </div>
       </div>
     </div>
@@ -161,14 +174,14 @@ interface StatusEffects {
     .status-panel {
       position: fixed;
       bottom: 120px;
-      right: -290px;
+      right: -305px;
       z-index: 1001;
       transition: transform 0.3s ease;
       cursor: pointer;
     }
 
     .status-panel.visible {
-      transform: translateX(-290px);
+      transform: translateX(-305px);
     }
 
     .status-panel.hover:not(.visible) {
@@ -176,11 +189,10 @@ interface StatusEffects {
     }
 
     .status-values {
-      width: 270px;
+      width: 290px;
       background: rgba(255, 246, 243, 0.7);
       border-radius: 12px 0 0 12px;
-      padding-block: 32px;
-      padding-inline: 16px;
+      padding: 16px;
       backdrop-filter: blur(10px);
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       display: flex;
@@ -204,26 +216,21 @@ interface StatusEffects {
     }
 
     .status-title {
-      font-size: 14px;
+      font-size: 18px;
       font-weight: bold;
       color: #847170;
       text-align: center;
-      margin-bottom: 16px;
+      margin-bottom: 8px;
       letter-spacing: 2px;
     }
 
     @media (max-width: 576px) {
-      .status-values {
-        padding-block: 16px;
-        padding-inline: 16px;
-      }
-
       .status-panel {
-        right: -290px !important;
+        right: -305px !important;
       }
 
       .status-panel.visible {
-        transform: translateX(-290px) !important;
+        transform: translateX(-305px) !important;
       }
 
       .status-panel.hover:not(.visible) {
@@ -233,16 +240,21 @@ interface StatusEffects {
 
     .status-row {
       display: flex;
-      align-items: center;
-      gap: 8px;
+      flex-direction: column;
+      gap: 0px;
     }
 
     .status-label {
-      min-width: 80px;
-      font-size: 12px;
+      font-size: 14px;
       color: #847170;
       font-weight: 500;
       letter-spacing: 1px;
+    }
+
+    .status-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .progress-bar {
@@ -277,7 +289,7 @@ interface StatusEffects {
 
     .status-value {
       min-width: 50px;
-      font-size: 11px;
+      font-size: 14px;
       text-align: right;
       font-weight: 600;
     }
@@ -302,8 +314,8 @@ interface StatusEffects {
 export class StatusBarComponent implements OnInit, OnDestroy {
   petInfo: PetInfo = {
     name: 'Achick',
-    birthday: '2025/09/15',
-    hoursAlive: 48
+    birthday: '未知',
+    hoursAlive: 0
   };
 
   statusEffects: StatusEffects = {
@@ -313,11 +325,14 @@ export class StatusBarComponent implements OnInit, OnDestroy {
 
   petStats: PetStats = PetStatsService.loadPetStats();
   stateData: StateData = StateDataService.loadStateData();
+  userData: UserData = UserDataService.loadUserData();
   isPanelVisible = false;
   isHovering = false;
 
   private stateUpdateInterval: any;
   private petStatsSubscription?: Subscription;
+
+  constructor(private customTimeService: CustomTimeService) {}
 
   ngOnInit() {
     // Initialize status monitoring
@@ -347,8 +362,30 @@ export class StatusBarComponent implements OnInit, OnDestroy {
 
   private loadPetData() {
     this.petStats = PetStatsService.loadPetStats();
+    this.userData = UserDataService.loadUserData();
+
     if (this.petStats.name) {
       this.petInfo.name = this.petStats.name;
+    }
+
+    // 獲取當前寵物記錄
+    const currentPetRecord = UserDataService.getCurrentPetRecord(this.userData);
+    if (currentPetRecord) {
+      // 設置生日
+      this.petInfo.birthday = currentPetRecord.birthTime ?
+        this.formatDisplayTime(currentPetRecord.birthTime) : '未知';
+
+      // 如果是進化狀態，顯示進化時間
+      if (this.petStats.lifeCycle === 'EVOLUTION' && currentPetRecord.evolutionTime) {
+        this.petInfo.evolutionTime = this.formatDisplayTime(currentPetRecord.evolutionTime);
+      } else {
+        this.petInfo.evolutionTime = undefined;
+      }
+
+      // 計算飼養小時數
+      if (currentPetRecord.birthTime) {
+        this.petInfo.hoursAlive = this.calculateHoursAlive(currentPetRecord.birthTime);
+      }
     }
   }
 
@@ -362,11 +399,6 @@ export class StatusBarComponent implements OnInit, OnDestroy {
     const activeStates = StateDataService.getActiveStates(this.stateData);
     this.statusEffects.activeStates = activeStates.map(state => state.stateText);
 
-    // 調試日誌
-    if (this.stateData.needLight?.isActive === 1) {
-      console.log('檢測到 needLight 狀態為激活，活躍狀態列表:', this.statusEffects.activeStates);
-    }
-
     // 檢查是否處於離家出走狀態
     if (this.petStats.isLeaving) {
       this.statusEffects.activeStates.push('離家出走中');
@@ -376,6 +408,9 @@ export class StatusBarComponent implements OnInit, OnDestroy {
     if (this.petStats.isFreezing) {
       this.statusEffects.activeStates.push('冷凍狀態');
     }
+
+    // 更新情緒
+    this.updateMood();
   }
 
   togglePanel() {
@@ -411,6 +446,90 @@ export class StatusBarComponent implements OnInit, OnDestroy {
   }
 
   getFriendshipDisplay(): string {
-    return this.petStats.currentFriendship.toFixed(2);
+    return this.petStats.currentFriendship.toFixed(1);
+  }
+
+  private updateMood() {
+    // 1. 當isDead、isCooked、isFreezing為true時，或是電子雞breed為null(未出生)時，情緒欄位隱藏
+    if (this.petStats.isDead || this.petStats.isCooked || this.petStats.isFreezing || this.petStats.breedName === null) {
+      // 情緒欄位應該隱藏，但為了保持一致性，我們暫時不顯示
+      this.statusEffects.mood = '';
+      return;
+    }
+
+    // 2. 當isLeaving時，情緒顯示為『心灰意冷』
+    if (this.petStats.isLeaving) {
+      this.statusEffects.mood = '心灰意冷';
+      return;
+    }
+
+    // 3. 當狀態包含『需要睡眠時』，情緒顯示為『煩躁』
+    if (this.stateData.needSleep?.isActive === 1) {
+      this.statusEffects.mood = '煩躁';
+      return;
+    }
+
+    // 4. 當狀態包含飢餓、虛弱、無依無靠，任一狀態時，情緒顯示為『難過』
+    if (this.stateData.hungry?.isActive === 1 ||
+        this.stateData.weak?.isActive === 1 ||
+        this.stateData.lowLikability?.isActive === 1) {
+      this.statusEffects.mood = '難過';
+      return;
+    }
+
+    // 5. 若屬於以上條件以外的情況，情緒顯示為『開心』
+    this.statusEffects.mood = '開心';
+  }
+
+  private formatDisplayTime(timeString: string): string {
+    // 格式：yyyy/mm/dd HH:mm:ss -> mm/dd HH:mm
+    const parts = timeString.split(' ');
+    if (parts.length === 2) {
+      const datePart = parts[0].split('/');
+      const timePart = parts[1].split(':');
+      if (datePart.length === 3 && timePart.length >= 2) {
+        return `${datePart[1]}/${datePart[2]} ${timePart[0]}:${timePart[1]}`;
+      }
+    }
+    return timeString;
+  }
+
+  private calculateHoursAlive(birthTimeString: string): number {
+    try {
+      // 解析生日時間 yyyy/mm/dd HH:mm:ss
+      const birthTime = this.parseTimeString(birthTimeString);
+      // 使用自訂時間服務獲取當前時間
+      const currentTime = this.customTimeService.getCurrentTime();
+
+      // 計算時間差（毫秒）
+      const timeDiff = currentTime.getTime() - birthTime.getTime();
+      // 轉換為小時，向下取整（未滿一小時不計算）
+      return Math.floor(timeDiff / (1000 * 60 * 60));
+    } catch (error) {
+      console.error('Error calculating hours alive:', error);
+      return 0;
+    }
+  }
+
+  private parseTimeString(timeString: string): Date {
+    // 解析 yyyy/mm/dd HH:mm:ss 格式
+    const parts = timeString.split(' ');
+    if (parts.length !== 2) throw new Error('Invalid time format');
+
+    const dateParts = parts[0].split('/');
+    const timeParts = parts[1].split(':');
+
+    if (dateParts.length !== 3 || timeParts.length !== 3) {
+      throw new Error('Invalid time format');
+    }
+
+    const year = parseInt(dateParts[0]);
+    const month = parseInt(dateParts[1]) - 1; // JavaScript月份從0開始
+    const day = parseInt(dateParts[2]);
+    const hour = parseInt(timeParts[0]);
+    const minute = parseInt(timeParts[1]);
+    const second = parseInt(timeParts[2]);
+
+    return new Date(year, month, day, hour, minute, second);
   }
 }

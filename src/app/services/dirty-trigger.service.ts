@@ -42,18 +42,10 @@ export class DirtyTriggerService {
    * 每30秒執行一次的私有函數：判斷是否要在 dirtyObjects 陣列新增髒污物件
    */
   private addDirtyObject(): void {
-    console.log('=== 開始髒污產生檢查 ===');
     const currentPetStats = PetStatsService.loadPetStats();
-    console.log('電子雞狀態:', {
-      rare: currentPetStats.rare,
-      timeStopping: currentPetStats.timeStopping,
-      currentDirtyCount: this.dirtyObjects.length,
-      maxDirtyCounts: this.maxDirtyCounts
-    });
 
     // 1. 當電子雞當前數值物件的 rare 為 null 時，將 lastAddDirtyTime 重置為 null，並且不往下執行邏輯
     if (currentPetStats.rare === null) {
-      console.log('髒污產生停止：電子雞稀有度為 null');
       this.lastAddDirtyTime = null;
       return;
     }
@@ -62,18 +54,14 @@ export class DirtyTriggerService {
     // 且只在 lifeCycle 為 CHILD 或 EVOLUTION 時執行
     if (currentPetStats.timeStopping === true || this.dirtyObjects.length >= this.maxDirtyCounts ||
         (currentPetStats.lifeCycle !== 'CHILD' && currentPetStats.lifeCycle !== 'EVOLUTION')) {
-      console.log('髒污產生停止：時間停止或已達最大髒污數量');
       return;
     }
 
     // 3. 取得實際當前時間
     const currentTime = this.getCurrentTimeString();
-    console.log('當前時間:', currentTime);
-    console.log('上次添加髒污時間:', this.lastAddDirtyTime);
 
     // 4. 若 lastAddDirtyTime 為 null，則將實際當前時間賦值給 lastAddDirtyTime，並且不往下執行邏輯
     if (this.lastAddDirtyTime === null) {
-      console.log('首次設定上次髒污時間為:', currentTime);
       this.lastAddDirtyTime = currentTime;
       return;
     }
@@ -91,8 +79,6 @@ export class DirtyTriggerService {
       // 計算實際可以產生的髒污數量（不超過最大限制）
       const availableSlots = this.maxDirtyCounts - this.dirtyObjects.length;
       const dirtyToCreate = Math.min(hoursElapsed, availableSlots);
-
-      console.log(`時間差: ${Math.floor(timeDiff / oneHourInMs)}小時, 可產生髒污: ${dirtyToCreate}個`);
 
       // 產生對應數量的髒污物件
       for (let i = 0; i < dirtyToCreate; i++) {
@@ -190,19 +176,12 @@ export class DirtyTriggerService {
           // 更新最後懲罰時間
           this.dirtyObjects[index].lastPunishTime = currentTime;
           dataChanged = true;
-
-          console.log(`髒污 ${dirtyObject.dirtyNo}: 存在 ${Math.floor(timeDiffFromCreation / (60 * 1000))} 分鐘, 新增懲罰 ${newPenalties} 次`);
         }
       }
     });
 
     // 如果有懲罰，扣除電子雞數值
     if (totalPenalties > 0) {
-      console.log('懲罰前數值:', {
-        currentWellness: currentPetStats.currentWellness,
-        currentFriendship: currentPetStats.currentFriendship,
-        totalPenalties: totalPenalties
-      });
 
       const updatedStats = {
         ...currentPetStats,
@@ -210,25 +189,14 @@ export class DirtyTriggerService {
         currentFriendship: Math.max(0, currentPetStats.currentFriendship - totalPenalties)
       };
 
-      console.log('懲罰後數值:', {
-        currentWellness: updatedStats.currentWellness,
-        currentFriendship: updatedStats.currentFriendship
-      });
-
       PetStatsService.savePetStats(updatedStats);
 
       // 驗證是否成功儲存
       const verifyStats = PetStatsService.loadPetStats();
-      console.log('儲存後驗證數值:', {
-        currentWellness: verifyStats.currentWellness,
-        currentFriendship: verifyStats.currentFriendship
-      });
 
       // 顯示 toastr 訊息
       const petName = currentPetStats.name || '電子雞';
       ToastrService.show(`${petName}因環境骯髒而身心靈受創，健康度-${totalPenalties}，好感度-${totalPenalties}`, 'warning');
-
-      console.log(`髒污懲罰執行: 總共扣除 ${totalPenalties} 點健康度和好感度`);
     }
 
     // 如果有更新髒污物件的懲罰時間，儲存資料

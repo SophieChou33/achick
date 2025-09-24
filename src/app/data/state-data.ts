@@ -75,14 +75,7 @@ export class StateDataService {
   }
 
   static saveStateData(data: StateData): void {
-    console.log('StateDataService.saveStateData() 開始執行');
-    console.log('要儲存的資料:', data.isSleeping, data.needSleep);
-    try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
-      console.log('✅ 狀態資料已成功儲存到 localStorage');
-    } catch (error) {
-      console.error('❌ 儲存狀態資料失敗:', error);
-    }
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
   }
 
   static updateStateData(updates: Partial<StateData>, currentData: StateData): StateData {
@@ -92,8 +85,6 @@ export class StateDataService {
   }
 
   static activateState(stateName: keyof StateData, stateData: StateData): StateData {
-    console.log(`StateDataService.activateState(${stateName}) 開始執行`);
-    console.log('原始狀態資料:', stateData[stateName]);
 
     const updatedData = {
       ...stateData,
@@ -103,17 +94,13 @@ export class StateDataService {
       }
     };
 
-    console.log('更新後狀態資料:', updatedData[stateName]);
 
     this.saveStateData(updatedData);
-    console.log(`StateDataService.activateState(${stateName}) 執行完成`);
 
     return updatedData;
   }
 
   static deactivateState(stateName: keyof StateData, stateData: StateData): StateData {
-    console.log(`StateDataService.deactivateState(${stateName}) 開始執行`);
-    console.log('原始狀態資料:', stateData[stateName]);
 
     const updatedData = {
       ...stateData,
@@ -123,10 +110,7 @@ export class StateDataService {
       }
     };
 
-    console.log('更新後狀態資料:', updatedData[stateName]);
-
     this.saveStateData(updatedData);
-    console.log(`StateDataService.deactivateState(${stateName}) 執行完成`);
 
     return updatedData;
   }

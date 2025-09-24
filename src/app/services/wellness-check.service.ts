@@ -149,7 +149,6 @@ export class WellnessCheckService {
         this.lastLifeDamageTime = this.formatTimeFromDate(newLastDamageTime);
         this.saveWellnessTimes();
 
-        console.log(`低健康度累積傷害：健康度範圍 ${currentWellness}，執行 ${damageCount} 次傷害，生命值-${totalHealthDamage}，最大生命值-${totalMaxHealthDamage}`);
 
         // 顯示低健康度扣值通知
         if (totalHealthDamage > 0 || totalMaxHealthDamage > 0) {
@@ -375,7 +374,6 @@ export class WellnessCheckService {
       WellnessCheckService.lastDiseaseEffectTime1hour = this.formatTimeFromDate(newLastEffectTime);
       this.saveWellnessTimes();
 
-      console.log(`疾病累積效果：${activeDiseaseCount} 個疾病，執行 ${effectCount} 次效果，生命值-${totalHealthReduction}，最大生命值-${totalMaxHealthReduction}`);
 
       // 顯示疾病效果通知
       if (totalHealthReduction > 0 || totalMaxHealthReduction > 0) {

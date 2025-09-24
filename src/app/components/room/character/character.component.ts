@@ -322,7 +322,6 @@ export class CharacterComponent implements OnInit, OnDestroy {
     const { lifeCycle, rare, breedName } = this.petStats;
 
     // 調試信息：檢查稀有度和生命週期
-    console.log('setCharacterImage - rare:', rare, 'lifeCycle:', lifeCycle);
 
     // 任務需求：當 rare 為 null 時，顯示出生按鈕
     if (rare === null) {
@@ -370,10 +369,8 @@ export class CharacterComponent implements OnInit, OnDestroy {
     // 根據任務四的邏輯：
     // 若rare有值且lifecycle為EGG，角色圖片顯示sources.character.egg.{{rare}}
     if (rare && lifeCycle === 'EGG') {
-      console.log('Setting egg image for rare:', rare);
       this.characterImage = this.getEggImage(rare);
       this.characterName = 'Egg';
-      console.log('Egg image set to:', this.characterImage);
       return;
     }
 
@@ -401,20 +398,15 @@ export class CharacterComponent implements OnInit, OnDestroy {
   }
 
   private getEggImage(rare: PetStats['rare']): string {
-    console.log('getEggImage called with rare:', rare);
     switch (rare) {
       case 'BAD':
-        console.log('Returning bad egg image');
         return sources.character.egg.bad;
       case 'SPECIAL':
-        console.log('Returning special egg image');
         return sources.character.egg.special;
       case 'SUPER_SPECIAL':
-        console.log('Returning super special egg image');
         return sources.character.egg.superSpecial;
       case 'NORMAL':
       default:
-        console.log('Returning normal egg image (default)');
         return sources.character.egg.normal;
     }
   }

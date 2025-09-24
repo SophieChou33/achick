@@ -270,57 +270,51 @@ export class LeavingService {
   private resetAllTimersOnReturn(): void {
     const currentTime = this.customTimeService.formatTime();
 
-    try {
-      // 使用 Injector 延遲獲取服務，避免循環依賴
-      const dirtyTriggerService = this.injector.get(DirtyTriggerService, null);
-      const lightService = this.injector.get(LightService, null);
-      const touchEventService = this.injector.get(TouchEventService, null);
-      const wellnessCheckService = this.injector.get(WellnessCheckService, null);
-      const lowLikabilityEventService = this.injector.get(LowLikabilityEventService, null);
-      const hungerManagerService = this.injector.get(HungerManagerService, null);
+    // 使用 Injector 延遲獲取服務，避免循環依賴
+    const dirtyTriggerService = this.injector.get(DirtyTriggerService, null);
+    const lightService = this.injector.get(LightService, null);
+    const touchEventService = this.injector.get(TouchEventService, null);
+    const wellnessCheckService = this.injector.get(WellnessCheckService, null);
+    const lowLikabilityEventService = this.injector.get(LowLikabilityEventService, null);
+    const hungerManagerService = this.injector.get(HungerManagerService, null);
 
-      // 重置各服務的時間
-      if (dirtyTriggerService) {
-        (dirtyTriggerService as any).lastAddDirtyTime = currentTime;
-        (dirtyTriggerService as any).saveDirtyData?.();
-      }
-
-      if (lightService) {
-        (lightService as any).lastLightCheckTime = currentTime;
-        (lightService as any).saveLightTimes?.();
-      }
-
-      if (touchEventService) {
-        (touchEventService as any).lastTimeReset = currentTime;
-        (touchEventService as any).saveTouchData?.();
-      }
-
-      if (wellnessCheckService) {
-        (wellnessCheckService as any).lastSickCheckTime = currentTime;
-        (wellnessCheckService as any).lastLifeDamageTime = currentTime;
-        (wellnessCheckService as any).lastDiseaseCheckTime = currentTime;
-        (wellnessCheckService as any).saveWellnessTimes?.();
-      }
-
-      if (lowLikabilityEventService) {
-        (lowLikabilityEventService as any).lastPunishTime = currentTime;
-        (lowLikabilityEventService as any).saveLowLikabilityTimes?.();
-      }
-
-      if (hungerManagerService) {
-        (hungerManagerService as any).lastHungerTime = currentTime;
-        (hungerManagerService as any).hungerStateStartTime = currentTime;
-        (hungerManagerService as any).lastHungerPenaltyTime = currentTime;
-        (hungerManagerService as any).saveHungerTimes?.();
-      }
-
-      // 重置自己的時間
-      this.lastTimeReset = currentTime;
-      this.saveLeavingTimes();
-
-      console.log('已重置所有定時檢查器時間為:', currentTime);
-    } catch (error) {
-      console.error('重置定時檢查器時間時發生錯誤:', error);
+    // 重置各服務的時間
+    if (dirtyTriggerService) {
+      (dirtyTriggerService as any).lastAddDirtyTime = currentTime;
+      (dirtyTriggerService as any).saveDirtyData?.();
     }
+
+    if (lightService) {
+      (lightService as any).lastLightCheckTime = currentTime;
+      (lightService as any).saveLightTimes?.();
+    }
+
+    if (touchEventService) {
+      (touchEventService as any).lastTimeReset = currentTime;
+      (touchEventService as any).saveTouchData?.();
+    }
+
+    if (wellnessCheckService) {
+      (wellnessCheckService as any).lastSickCheckTime = currentTime;
+      (wellnessCheckService as any).lastLifeDamageTime = currentTime;
+      (wellnessCheckService as any).lastDiseaseCheckTime = currentTime;
+      (wellnessCheckService as any).saveWellnessTimes?.();
+    }
+
+    if (lowLikabilityEventService) {
+      (lowLikabilityEventService as any).lastPunishTime = currentTime;
+      (lowLikabilityEventService as any).saveLowLikabilityTimes?.();
+    }
+
+    if (hungerManagerService) {
+      (hungerManagerService as any).lastHungerTime = currentTime;
+      (hungerManagerService as any).hungerStateStartTime = currentTime;
+      (hungerManagerService as any).lastHungerPenaltyTime = currentTime;
+      (hungerManagerService as any).saveHungerTimes?.();
+    }
+
+    // 重置自己的時間
+    this.lastTimeReset = currentTime;
+    this.saveLeavingTimes();
   }
 }

@@ -54,14 +54,14 @@ import { StateDataService } from '../../../data/state-data';
     .sleep-status-indicator {
       position: absolute;
       right: 30px;
-      top: 10px;
+      top: -30px;
       z-index: 650;
       animation: sleepFloat 2s ease-in-out infinite;
     }
 
     .sleep-icon {
-      width: 60px;
-      height: 60px;
+      width: auto;
+      height: 10dvh;
       object-fit: contain;
     }
 
@@ -270,7 +270,6 @@ export class BedComponent implements OnInit, OnDestroy {
 
       // 儲存新位置
       StateDataService.updateBedPosition(this.bedPosition);
-      console.log('Bed position saved after dragging');
     } else {
       // 這是點擊操作：觸發喚醒事件
       this.handleBedClick();
@@ -284,7 +283,6 @@ export class BedComponent implements OnInit, OnDestroy {
    * 處理床點擊事件（強制喚醒）
    */
   private async handleBedClick(): Promise<void> {
-    console.log('Bed clicked for wake up...');
 
     // 調用強制喚醒功能（含確認對話框）
     await this.sleepService.forceWakeUpWithConfirmation();

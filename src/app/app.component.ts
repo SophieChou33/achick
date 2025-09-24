@@ -50,7 +50,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // 注入離家出走相關服務以確保它們的定時器啟動
     // 這些服務在構造函數中會自動啟動定時器
-    console.log('離家出走服務已初始化');
   }
 
   ngOnInit() {

@@ -769,7 +769,6 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
   }
 
   async triggerTimer(type: string): Promise<void> {
-    console.log(`Triggering timer: ${type}`);
 
     switch (type) {
       case 'hungerDecrease':
@@ -872,7 +871,6 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
   addDirtyObject() {
     // 檢查是否已達到最大髒污數量限制
     if (this.dirtyTriggerService.dirtyObjects.length >= 3) {
-      console.log('已達到最大髒污數量限制(3個)');
       return;
     }
 
@@ -907,7 +905,6 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
 
     // 更新顯示
     this.updateDirtyDisplay();
-    console.log(`新增髒污 ${newDirty.dirtyNo}，目前總數: ${this.dirtyObjects.length}`);
   }
 
   clearAllDirty() {
@@ -930,7 +927,6 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
    */
   resetTouchLimit() {
     this.touchEventService.resetTouchLimit();
-    console.log('已重置撫摸次數限制');
   }
 
   /**
@@ -938,7 +934,6 @@ export class EngineerModeComponent implements OnInit, OnDestroy {
    */
   resetClickLimit() {
     this.leavingService.resetClickLimit();
-    console.log('已重置點擊次數限制');
   }
 
   /**

@@ -40,7 +40,6 @@ export class LifecycleService {
     const currentStateData = StateDataService.loadStateData();
     if (currentStateData.isSleeping.isActive === 1) {
       StateDataService.deactivateState('isSleeping', currentStateData);
-      console.log('電子雞死亡，已清除睡眠狀態');
     }
 
     // 4. 跳出確認彈窗 - 使用自定義死亡原因或預設原因

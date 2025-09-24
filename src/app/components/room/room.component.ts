@@ -37,7 +37,7 @@ import { LightService } from '../../services/light.service';
   template: `
     <div class="room-wrapper" #roomWrapper>
       <div class="room-container">
-        <img [src]="backgroundImageSrc" alt="Room Background" class="room-background" 
+        <img [src]="backgroundImageSrc" alt="Room Background" class="room-background"
              (mousedown)="onDragStart($event)"
              (touchstart)="onDragStart($event)" />
         <app-window></app-window>
@@ -329,7 +329,6 @@ export class RoomComponent implements OnInit, OnDestroy {
    * 購買成功事件
    */
   onPurchaseSuccess(event: { itemName: string; quantity: number; totalCost: number }) {
-    console.log(`Purchased: ${event.quantity}x ${event.itemName} for ${event.totalCost} coins`);
     // 購買成功後，可能需要更新金幣顯示等
   }
 
@@ -337,7 +336,6 @@ export class RoomComponent implements OnInit, OnDestroy {
    * 物品使用事件
    */
   onItemUsed(event: { itemName: string; effects: string[] }) {
-    console.log(`Used item: ${event.itemName}`, event.effects);
     // 物品使用後，可能需要更新角色顯示等
   }
 }

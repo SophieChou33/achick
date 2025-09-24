@@ -30,14 +30,14 @@ export interface ToastrMessage {
     .toastr-container {
       position: fixed;
       bottom: 120px;
-      right: 25px;
+      right: 35px;
       z-index: 2000;
       pointer-events: none;
       transition: bottom 0.3s ease, right 0.3s ease;
     }
 
     .toastr-container.status-expanded {
-      bottom: 350px;
+      bottom: 420px;
       right: 15px;
     }
 

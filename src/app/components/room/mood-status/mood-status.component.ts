@@ -110,9 +110,7 @@ export class MoodStatusComponent implements OnInit, OnDestroy {
   ngOnInit() {
     // 訂閱撫摸事件，當有增加好感度時顯示動畫
     this.touchEventSubscription = TouchEventService.getFriendshipIncrease$().subscribe((increase) => {
-      console.log('收到好感度增加事件:', increase); // Debug log
       if (increase > 0) {
-        console.log('觸發mood-status動畫'); // Debug log
         this.showMoodStatus();
       }
     });
@@ -133,7 +131,6 @@ export class MoodStatusComponent implements OnInit, OnDestroy {
   private animationTimeout?: number;
 
   private showMoodStatus(): void {
-    console.log('showMoodStatus 被調用'); // Debug log
 
     // 如果有正在進行的動畫，清除計時器
     if (this.animationTimeout) {
@@ -146,13 +143,11 @@ export class MoodStatusComponent implements OnInit, OnDestroy {
     // 強制重新觸發動畫
     setTimeout(() => {
       this.isVisible = true;
-      console.log('isVisible 設為 true'); // Debug log
     }, 10);
 
     // 1秒後重置狀態，準備下次動畫（與動畫時長一致）
     this.animationTimeout = window.setTimeout(() => {
       this.isVisible = false;
-      console.log('動畫結束，isVisible 設為 false'); // Debug log
     }, 1000);
   }
 }

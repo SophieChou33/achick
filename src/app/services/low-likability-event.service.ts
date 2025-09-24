@@ -196,7 +196,6 @@ export class LowLikabilityEventService {
    * 手動觸發低好感度檢查（工程師模式使用）
    */
   public manualTriggerLikabilityCheck(): void {
-    console.log('手動觸發低好感度檢查');
     this.likabilityPunishing();
   }
 
@@ -204,7 +203,6 @@ export class LowLikabilityEventService {
    * 手動觸發離家出走檢查（工程師模式使用）
    */
   public manualTriggerLeavingCheck(): void {
-    console.log('手動觸發離家出走檢查');
     this.shouldLeaveHouse();
   }
 

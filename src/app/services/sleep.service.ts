@@ -68,7 +68,6 @@ export class SleepService {
         // 若『狀態資料物件』的『isSleeping』的 isActive 為 0，則將『狀態資料物件』的『needSleep』的 isActive 賦值為 1
         if (currentStateData.needSleep?.isActive !== 1) {
           StateDataService.activateState('needSleep', currentStateData);
-          console.log('進入睡眠時間，已激活 needSleep 狀態');
         }
       }
     } else {
@@ -76,7 +75,6 @@ export class SleepService {
 
       // 如果電子雞還在睡眠中，強制喚醒（自己起床）
       if (currentStateData.isSleeping.isActive === 1) {
-        console.log('非睡眠時間，電子雞自己起床了');
 
         // 將『狀態資料物件』的『isSleeping』的 isActive 賦值為 0
         StateDataService.deactivateState('isSleeping', currentStateData);
@@ -89,7 +87,6 @@ export class SleepService {
       // 將『狀態資料物件』的『needSleep』的 isActive 賦值為 0
       if (currentStateData.needSleep?.isActive === 1) {
         StateDataService.deactivateState('needSleep', currentStateData);
-        console.log('離開睡眠時間，已關閉 needSleep 狀態');
       }
     }
   }
@@ -113,26 +110,16 @@ export class SleepService {
    * 公開函數：開始睡眠
    */
   public startSleep(): void {
-    console.log('=== SleepService.startSleep() 開始執行 ===');
-
     // 檢查寵物狀態
     const currentPetStats = PetStatsService.loadPetStats();
-    console.log('寵物狀態檢查:', {
-      rare: currentPetStats.rare,
-      timeStopping: currentPetStats.timeStopping,
-      isDead: currentPetStats.isDead,
-      isLeaving: currentPetStats.isLeaving
-    });
 
     // 當電子雞當前數值物件的 rare 為 null 時，不往下執行邏輯
     if (currentPetStats.rare === null) {
-      console.log('❌ 寵物 rare 為 null，無法睡眠');
       return;
     }
 
     // 當電子雞當前數值物件的 timeStopping 為 true 時，不往下執行邏輯
     if (currentPetStats.timeStopping === true) {
-      console.log('❌ 寵物時間已停止，無法睡眠');
       return;
     }
 
@@ -140,35 +127,24 @@ export class SleepService {
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
 
-    console.log(`當前時間: ${currentHour}:${String(currentMinute).padStart(2, '0')}`);
-    console.log(`isSleepTime 檢查結果:`, this.isSleepTime(currentHour, currentMinute));
 
     // 當當前時間處於 22:59~7:00 之間時，允許執行此函數，否則什麼也不執行
     if (!this.isSleepTime(currentHour, currentMinute)) {
-      console.log('❌ 不在睡眠時間內，退出 startSleep()');
       return;
     }
 
-    console.log('✅ 在睡眠時間內，繼續執行睡眠邏輯');
 
     // 檢查是否已經在睡眠中
     const currentStateData = StateDataService.loadStateData();
     if (currentStateData.isSleeping.isActive === 1) {
-      console.log('❌ 電子雞已經在睡眠中，無法重複睡眠');
       ToastrService.show('電子雞已經在睡眠中了。', 'info');
       return;
     }
 
     // 檢查光線條件 - 睡眠需要無光線環境（沒有日照且電燈關閉）
     const lightStatus = this.lightService.getLightStatus();
-    console.log('光線狀態檢查:', {
-      isDay: lightStatus.isDay,
-      isLightOn: lightStatus.isLightOn,
-      hasLight: lightStatus.hasLight
-    });
 
     if (lightStatus.hasLight) {
-      console.log('❌ 光線條件不符合睡眠要求');
 
       // 根據光線來源給出不同的提示
       if (lightStatus.isDay && lightStatus.isLightOn) {
@@ -181,29 +157,14 @@ export class SleepService {
       return;
     }
 
-    console.log('✅ 光線條件符合，環境適合睡眠');
-
-    console.log('當前狀態資料:', {
-      isSleeping: currentStateData.isSleeping.isActive,
-      needSleep: currentStateData.needSleep?.isActive
-    });
-
     // 執行時將『狀態資料物件』的『isSleeping』的 isActive 賦值為 1
     const updatedStateData1 = StateDataService.activateState('isSleeping', currentStateData);
-    console.log('✅ isSleeping 狀態已設為 1');
 
     // 執行時將『狀態資料物件』的『needSleep』的 isActive 賦值為 0
     StateDataService.deactivateState('needSleep', updatedStateData1);
-    console.log('✅ needSleep 狀態已設為 0');
 
     // 驗證狀態是否真的改變了
     const updatedStateData = StateDataService.loadStateData();
-    console.log('更新後狀態資料:', {
-      isSleeping: updatedStateData.isSleeping.isActive,
-      needSleep: updatedStateData.needSleep?.isActive
-    });
-
-    console.log('=== SleepService.startSleep() 執行完成 ===');
 
     // 床圖片會由 BedComponent 根據光線和睡眠狀態自動更新
   }
@@ -366,12 +327,8 @@ export class SleepService {
    * 手動觸發睡眠時間檢查（用於調試）
    */
   public manualSleepCheck(): void {
-    console.log('=== 手動觸發睡眠檢查 ===');
     const now = this.customTimeService.getCurrentTime();
-    console.log(`當前時間: ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`);
-    console.log(`睡眠時間判斷: ${this.isSleepTime(now.getHours(), now.getMinutes())}`);
     this.checkSleepTime();
-    console.log('=== 睡眠檢查完成 ===');
   }
 
   /**

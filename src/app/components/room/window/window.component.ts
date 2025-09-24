@@ -44,7 +44,6 @@ export class WindowComponent {
   constructor(private leavingService: LeavingService) {}
 
   async onWindowClick(): Promise<void> {
-    console.log('Window clicked...');
 
     const currentPetStats = PetStatsService.loadPetStats();
 

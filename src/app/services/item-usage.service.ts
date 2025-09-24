@@ -217,14 +217,9 @@ export class ItemUsageService {
 
     // 如果使用了復活物品，需要重置飽足感相關時間
     if (productItem.reborn === 1) {
-      try {
-        if (ItemUsageService.injector) {
-          const lastCheckTimeManager = ItemUsageService.injector.get(LastCheckTimeManagerService);
-          lastCheckTimeManager.initializeAllLastCheckTimes();
-          console.log('復活時已重置所有檢查時間');
-        }
-      } catch (error) {
-        console.error('復活時重置時間失敗:', error);
+      if (ItemUsageService.injector) {
+        const lastCheckTimeManager = ItemUsageService.injector.get(LastCheckTimeManagerService);
+        lastCheckTimeManager.initializeAllLastCheckTimes();
       }
     }
 
