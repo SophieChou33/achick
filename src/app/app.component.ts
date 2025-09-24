@@ -1,5 +1,4 @@
 import { Component, OnInit, OnDestroy, ViewChild, Injector } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { WelcomeComponent } from './components/welcome/welcome.component';
 import { RoomComponent } from './components/room/room.component';
@@ -8,13 +7,14 @@ import { WhiteTransitionService } from './services/white-transition.service';
 import { HungerManagerService } from './services/hunger-manager.service';
 import { AppStateService } from './services/app-state.service';
 import { ItemUsageService } from './services/item-usage.service';
-import { LeavingService } from './services/leaving.service';
-import { LowLikabilityEventService } from './services/low-likability-event.service';
+import { UnifiedStatsCheckerService } from './services/unified-stats-checker.service';
+import { PetStatsService } from './data/pet-stats-data';
+import { RealTimeStateMonitorService } from './services/real-time-state-monitor.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, WelcomeComponent, RoomComponent, WhiteTransitionComponent],
+  imports: [CommonModule, WelcomeComponent, RoomComponent, WhiteTransitionComponent],
   template: `
     <div class="app-container">
       <app-welcome *ngIf="showWelcome"></app-welcome>
@@ -42,14 +42,20 @@ export class AppComponent implements OnInit, OnDestroy {
     private hungerManagerService: HungerManagerService,
     private appStateService: AppStateService,
     private injector: Injector,
-    private leavingService: LeavingService,
-    private lowLikabilityEventService: LowLikabilityEventService
+    private unifiedStatsCheckerService: UnifiedStatsCheckerService,
+    private realTimeStateMonitorService: RealTimeStateMonitorService
   ) {
     // 設置 ItemUsageService 的依賴注入器
     ItemUsageService.setInjector(this.injector);
 
     // 注入離家出走相關服務以確保它們的定時器啟動
     // 這些服務在構造函數中會自動啟動定時器
+
+    // 啟動統一的數值檢查系統
+    this.unifiedStatsCheckerService.startUnifiedCheck();
+
+    // 即時狀態監控服務會自動在構造函數中啟動監控
+    // 無需手動啟動，但我們可以確保它已經初始化
   }
 
   ngOnInit() {
@@ -71,6 +77,12 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     // 停止飢餓系統
     this.hungerManagerService.stopHungerSystem();
+
+    // 停止統一檢查系統
+    this.unifiedStatsCheckerService.stopUnifiedCheck();
+
+    // 停止即時狀態監控
+    this.realTimeStateMonitorService.stopMonitoring();
   }
 
   private prepareScene() {
@@ -81,6 +93,12 @@ export class AppComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       if (this.roomComponent) {
         this.roomComponent.resetToCenter();
+
+        // 在場景載入時執行一次完整的數值檢查（如果 rare 有值）
+        const currentPetStats = PetStatsService.loadPetStats();
+        if (currentPetStats.rare !== null) {
+          this.unifiedStatsCheckerService.executeAllChecks();
+        }
 
         // 場景完全準備好後，通知Service可以fadeOut
         setTimeout(() => {

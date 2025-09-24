@@ -20,7 +20,8 @@ export class DirtyTriggerService {
 
   constructor(private customTimeService: CustomTimeService) {
     this.loadDirtyData();
-    this.startTimers();
+    // 不再自動啟動定時器，統一由 UnifiedStatsCheckerService 管理
+    // this.startTimers();
   }
 
   /**
@@ -41,7 +42,7 @@ export class DirtyTriggerService {
   /**
    * 每30秒執行一次的私有函數：判斷是否要在 dirtyObjects 陣列新增髒污物件
    */
-  private addDirtyObject(): void {
+  public addDirtyObject(): void {
     const currentPetStats = PetStatsService.loadPetStats();
 
     // 1. 當電子雞當前數值物件的 rare 為 null 時，將 lastAddDirtyTime 重置為 null，並且不往下執行邏輯
@@ -128,7 +129,7 @@ export class DirtyTriggerService {
   /**
    * 每30秒執行一次的私有函數：判斷是否要執行環境過髒懲罰
    */
-  private dirtyPunishing(): void {
+  public dirtyPunishing(): void {
     const currentPetStats = PetStatsService.loadPetStats();
     const currentTime = this.getCurrentTimeString();
 
@@ -183,16 +184,11 @@ export class DirtyTriggerService {
     // 如果有懲罰，扣除電子雞數值
     if (totalPenalties > 0) {
 
-      const updatedStats = {
-        ...currentPetStats,
+      // 使用 updatePetStats 確保響應式更新
+      PetStatsService.updatePetStats({
         currentWellness: Math.max(0, currentPetStats.currentWellness - totalPenalties),
         currentFriendship: Math.max(0, currentPetStats.currentFriendship - totalPenalties)
-      };
-
-      PetStatsService.savePetStats(updatedStats);
-
-      // 驗證是否成功儲存
-      const verifyStats = PetStatsService.loadPetStats();
+      });
 
       // 顯示 toastr 訊息
       const petName = currentPetStats.name || '電子雞';

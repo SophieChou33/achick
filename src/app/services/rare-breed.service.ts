@@ -5,6 +5,7 @@ import { PetStatsService } from '../data/pet-stats-data';
 import { UserDataService } from '../data/user-data';
 import { CustomTimeService } from './custom-time.service';
 import { LastCheckTimeManagerService } from './last-check-time-manager.service';
+import { UnifiedStatsCheckerService } from './unified-stats-checker.service';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +16,8 @@ export class RareBreedService {
 
   constructor(
     private customTimeService: CustomTimeService,
-    private lastCheckTimeManagerService: LastCheckTimeManagerService
+    private lastCheckTimeManagerService: LastCheckTimeManagerService,
+    private unifiedStatsCheckerService: UnifiedStatsCheckerService
   ) {}
 
   /**
@@ -164,6 +166,11 @@ export class RareBreedService {
 
     // 儲存到localStorage
     PetStatsService.savePetStats(newPetStats);
+
+    // 在電子雞孵化時執行一次完整的數值檢查
+    setTimeout(() => {
+      this.unifiedStatsCheckerService.executeAllChecks();
+    }, 100);
 
     return newPetStats;
   }

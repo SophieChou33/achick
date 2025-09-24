@@ -20,7 +20,8 @@ export class LowLikabilityEventService {
     private modalService: ModalService
   ) {
     this.loadLowLikabilityTimes();
-    this.startTimer();
+    // 不再自動啟動定時器，統一由 UnifiedStatsCheckerService 管理
+    // this.startTimer();
   }
 
   /**
@@ -35,7 +36,7 @@ export class LowLikabilityEventService {
   /**
    * 每30秒執行一次的私有函數：判斷是否要執行低好感度懲罰（健康度扣除）
    */
-  private likabilityPunishing(): void {
+  public likabilityPunishing(): void {
     const currentPetStats = PetStatsService.loadPetStats();
 
     // 1. 當電子雞當前數值物件的 rare 為 null 時，將 lastPunishTime 重置為 null，並且不往下執行邏輯
@@ -79,12 +80,9 @@ export class LowLikabilityEventService {
       const totalWellnessDecrease = punishmentCount * 2;
 
       // 6.2 執行累積懲罰
-      const updatedStats = {
-        ...currentPetStats,
+      PetStatsService.updatePetStats({
         currentWellness: Math.max(0, currentPetStats.currentWellness - totalWellnessDecrease)
-      };
-
-      PetStatsService.savePetStats(updatedStats);
+      });
 
       // 6.3 更新 lastPunishTime 為最後一次懲罰的時間點
       const lastPunishmentTime = new Date(lastTime.getTime() + (punishmentCount * twentyMinutesInMs));
@@ -102,7 +100,7 @@ export class LowLikabilityEventService {
   /**
    * 判斷是否觸發電子雞離家出走事件
    */
-  private async shouldLeaveHouse(): Promise<boolean> {
+  public async shouldLeaveHouse(): Promise<boolean> {
     const currentPetStats = PetStatsService.loadPetStats();
 
     // 當電子雞當前數值物件的 timeStopping 為 true 時，不往下執行邏輯
@@ -114,23 +112,19 @@ export class LowLikabilityEventService {
 
     if (currentPetStats.currentFriendship >= 10) {
       // 好感度 >= 10，設置 isLeaving 為 false
-      const updatedStats = {
-        ...currentPetStats,
+      PetStatsService.updatePetStats({
         isLeaving: false
-      };
-      PetStatsService.savePetStats(updatedStats);
+      });
       return false;
     } else {
       // 好感度 < 10，觸發離家出走
       const petName = currentPetStats.name || '電子雞';
 
       // 先設置離家出走狀態
-      const updatedStats = {
-        ...currentPetStats,
+      PetStatsService.updatePetStats({
         isLeaving: true,
         timeStopping: true
-      };
-      PetStatsService.savePetStats(updatedStats);
+      });
 
       // 顯示離家出走確認彈窗
       await this.modalService.info(

@@ -1,4 +1,5 @@
 import { StateData, StateDataType } from '../types/state-data.type';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 export const defaultStateData: StateData = {
   angry: {
@@ -61,8 +62,9 @@ export const defaultStateData: StateData = {
 
 export class StateDataService {
   private static readonly STORAGE_KEY = 'achick_state_data';
+  private static stateDataSubject = new BehaviorSubject<StateData>(StateDataService.loadStateDataFromStorage());
 
-  static loadStateData(): StateData {
+  private static loadStateDataFromStorage(): StateData {
     const saved = localStorage.getItem(this.STORAGE_KEY);
     if (saved) {
       try {
@@ -74,8 +76,21 @@ export class StateDataService {
     return { ...defaultStateData };
   }
 
+  static loadStateData(): StateData {
+    return this.stateDataSubject.value;
+  }
+
+  static getStateData$(): Observable<StateData> {
+    return this.stateDataSubject.asObservable();
+  }
+
   static saveStateData(data: StateData): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+      this.stateDataSubject.next(data); // 通知所有訂閱者
+    } catch (error) {
+      console.error('Failed to save state data:', error);
+    }
   }
 
   static updateStateData(updates: Partial<StateData>, currentData: StateData): StateData {

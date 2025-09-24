@@ -9,7 +9,8 @@ export class HealthCheckService {
   private checkInterval?: number;
 
   constructor(private lifecycleService: LifecycleService) {
-    this.startHealthCheck();
+    // 不再自動啟動定時器，統一由 UnifiedStatsCheckerService 管理
+    // this.startHealthCheck();
   }
 
   /**
@@ -25,7 +26,7 @@ export class HealthCheckService {
   /**
    * 每30秒執行一次的私有函數：檢查當前電子雞生命值狀態
    */
-  private async checkLifeValue(): Promise<void> {
+  public async checkLifeValue(): Promise<void> {
     const currentPetStats = PetStatsService.loadPetStats();
 
     // 當電子雞當前數值物件的 rare 為 null 時，或是當電子雞當前數值物件的 timeStopping 為 true 時，不往下執行邏輯

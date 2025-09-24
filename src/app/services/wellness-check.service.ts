@@ -26,7 +26,8 @@ export class WellnessCheckService {
     private modalService: ModalService
   ) {
     this.loadWellnessTimes();
-    this.startWellnessMonitoring();
+    // 不再自動啟動定時器，統一由 UnifiedStatsCheckerService 管理
+    // this.startWellnessMonitoring();
   }
 
   /**
@@ -47,7 +48,7 @@ export class WellnessCheckService {
   /**
    * 每30秒執行一次的私有函數：檢查健康度狀態
    */
-  private async healthCheck(): Promise<void> {
+  public async healthCheck(): Promise<void> {
     const currentPetStats = PetStatsService.loadPetStats();
 
     // 當電子雞當前數值物件的 rare 為 null 時，重置時間並不往下執行邏輯
@@ -95,7 +96,7 @@ export class WellnessCheckService {
   /**
    * 私有函數：判斷是否執行健康度回復（好感度>60且飽足感>60時每40分鐘+1）
    */
-  private checkWellnessBoost(): void {
+  public checkWellnessBoost(): void {
     const currentTime = this.customTimeService.formatTime();
     const currentPetStats = PetStatsService.loadPetStats();
 
@@ -145,7 +146,7 @@ export class WellnessCheckService {
   /**
    * 私有函數：判斷是否執行生命值回復（健康度>70時每1小時+1）
    */
-  private checkHealthBoost(): void {
+  public checkHealthBoost(): void {
     const currentTime = this.customTimeService.formatTime();
     const currentPetStats = PetStatsService.loadPetStats();
 
@@ -195,7 +196,7 @@ export class WellnessCheckService {
   /**
    * 私有函數：判斷是否執行健康度低導致的生命值扣除
    */
-  private checkLifeDamage(): void {
+  public checkLifeDamage(): void {
     const currentTime = this.customTimeService.formatTime();
     const currentPetStats = PetStatsService.loadPetStats();
 
@@ -249,7 +250,7 @@ export class WellnessCheckService {
         }
 
         // 扣除生命值
-        const updatedStats = PetStatsService.updatePetStats({
+        PetStatsService.updatePetStats({
           currentHealth: newCurrentHealth,
           maxHealth: newMaxHealth
         });
@@ -274,7 +275,7 @@ export class WellnessCheckService {
   /**
    * 私有函數：判斷是否觸發疾病抽籤事件
    */
-  private async checkDiseaseCheck(): Promise<void> {
+  public async checkDiseaseCheck(): Promise<void> {
     const currentTime = this.customTimeService.formatTime();
     const currentPetStats = PetStatsService.loadPetStats();
 
@@ -285,16 +286,24 @@ export class WellnessCheckService {
       return;
     }
 
-    // 若 lastDiseaseCheckTime 為 null，則將實際當前時間賦值給 lastDiseaseCheckTime，並且不往下執行邏輯
+    // 若 lastDiseaseCheckTime 為 null，則將實際當前時間賦值給 lastDiseaseCheckTime
+    // 但不立即返回，而是檢查是否應該執行疾病檢查（基於健康度）
     if (this.lastDiseaseCheckTime === null) {
       this.lastDiseaseCheckTime = currentTime;
       this.saveWellnessTimes();
+
+      // 如果健康度在疾病檢查範圍內，立即執行疾病檢查
+      if (currentPetStats.currentWellness >= 1 && currentPetStats.currentWellness <= 49) {
+        await this.randomGetSick();
+        this.lastDiseaseCheckTime = currentTime;
+        this.saveWellnessTimes();
+      }
       return;
     }
 
     const currentWellness = currentPetStats.currentWellness;
-    const lastCheckTime = new Date(this.lastDiseaseCheckTime);
-    const now = this.customTimeService.getCurrentTime();
+    const lastCheckTime = this.parseTimeString(this.lastDiseaseCheckTime);
+    const now = this.parseTimeString(currentTime);
     const timeDiffMinutes = Math.floor((now.getTime() - lastCheckTime.getTime()) / (1000 * 60));
 
     let shouldCheck = false;
@@ -411,7 +420,7 @@ export class WellnessCheckService {
   /**
    * 每30秒執行一次的私有函數：執行疾病狀態的持續效果
    */
-  private diseaseEffects(): void {
+  public diseaseEffects(): void {
     const currentPetStats = PetStatsService.loadPetStats();
 
     // 當電子雞當前數值物件的 rare 為 null 時，或是當電子雞當前數值物件的 timeStopping 為 true 時，不往下執行邏輯

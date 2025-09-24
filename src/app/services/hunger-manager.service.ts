@@ -20,7 +20,8 @@ export class HungerManagerService {
 
   constructor(private customTimeService: CustomTimeService) {
     this.loadHungerTimes();
-    this.startHungerSystem();
+    // 不再自動啟動定時器，統一由 UnifiedStatsCheckerService 管理
+    // this.startHungerSystem();
   }
 
   private startHungerSystem(): void {
@@ -53,7 +54,7 @@ export class HungerManagerService {
     return Math.abs(date2.getTime() - date1.getTime()) / (1000 * 60);
   }
 
-  private decreaseHunger(forceExecute: boolean = false): void {
+  public decreaseHunger(forceExecute: boolean = false): void {
     const petStats = PetStatsService.loadPetStats();
 
     // 當電子雞當前數值物件的 rare 為 null 時，重置上次飢餓時間並返回
@@ -128,7 +129,7 @@ export class HungerManagerService {
     }
   }
 
-  private checkHungerState(forceExecute: boolean = false): void {
+  public checkHungerState(forceExecute: boolean = false): void {
     const petStats = PetStatsService.loadPetStats();
 
     // 當電子雞當前數值物件的 rare 為 null 時，重置飢餓狀態時間並返回
@@ -170,7 +171,7 @@ export class HungerManagerService {
   /**
    * 檢查並執行飢餓懲罰的獨立邏輯
    */
-  private checkHungerPenalty(forceExecute: boolean, petStats: any, currentTime: string): void {
+  public checkHungerPenalty(forceExecute: boolean, petStats: any, currentTime: string): void {
     // 只有在飽足感 <= 35 時才執行懲罰
     if (petStats.currentHunger > 35) {
       return;

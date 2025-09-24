@@ -331,6 +331,7 @@ export class StatusBarComponent implements OnInit, OnDestroy {
 
   private stateUpdateInterval: any;
   private petStatsSubscription?: Subscription;
+  private stateDataSubscription?: Subscription;
 
   constructor(private customTimeService: CustomTimeService) {}
 
@@ -345,9 +346,15 @@ export class StatusBarComponent implements OnInit, OnDestroy {
       this.loadPetData();
     });
 
-    // 定期更新狀態資料
+    // 訂閱狀態資料變化（即時更新）
+    this.stateDataSubscription = StateDataService.getStateData$().subscribe(stateData => {
+      this.stateData = stateData;
+      this.updateActiveStates();
+    });
+
+    // 定期更新其他資料（減少頻率，因為狀態已經是即時更新）
     this.stateUpdateInterval = setInterval(() => {
-      this.updateStateData();
+      this.loadPetData(); // 更新時間相關資料
     }, 1000);
   }
 
@@ -357,6 +364,9 @@ export class StatusBarComponent implements OnInit, OnDestroy {
     }
     if (this.petStatsSubscription) {
       this.petStatsSubscription.unsubscribe();
+    }
+    if (this.stateDataSubscription) {
+      this.stateDataSubscription.unsubscribe();
     }
   }
 
@@ -390,6 +400,7 @@ export class StatusBarComponent implements OnInit, OnDestroy {
   }
 
   private updateStateData() {
+    // 狀態資料現在通過訂閱自動更新，這個方法保留給其他需要手動更新的場景
     this.stateData = StateDataService.loadStateData();
     this.updateActiveStates();
   }

@@ -88,16 +88,13 @@ export class LeavingService {
       // 22%機率：電子雞回家
       this.clickTimes = 0;
 
-      const updatedStats = {
-        ...currentPetStats,
+      PetStatsService.updatePetStats({
         isLeaving: false,
         timeStopping: false,
         isDead: false,
         currentFriendship: 50,
         currentHealth: Math.max(50, currentPetStats.currentHealth)
-      };
-
-      PetStatsService.savePetStats(updatedStats);
+      });
 
       // 重置所有定時檢查器的時間，避免累積扣除過多
       this.resetAllTimersOnReturn();
@@ -110,11 +107,9 @@ export class LeavingService {
       ToastrService.show(`${petName}在弱肉強食的世界中不幸被淘汰了，愛要及時啊！`, 'error');
 
       // 設定 isLeaving 為 false，因為電子雞已死亡
-      const updatedStats = {
-        ...currentPetStats,
+      PetStatsService.updatePetStats({
         isLeaving: false
-      };
-      PetStatsService.savePetStats(updatedStats);
+      });
 
       // 重置所有定時檢查器的時間，避免後續邏輯異常
       this.resetAllTimersOnReturn();
