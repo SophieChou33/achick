@@ -365,7 +365,6 @@ export class RoomComponent implements OnInit, OnDestroy {
   shouldHideUIComponents(): boolean {
     return this.petStats.isDead ||
            this.petStats.isFreezing ||
-           this.petStats.isLeaving ||
            this.petStats.isCooked;
   }
 }

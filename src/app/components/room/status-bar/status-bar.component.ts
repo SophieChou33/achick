@@ -50,7 +50,7 @@ interface StatusEffects {
     </div>
 
     <!-- 滑動狀態面板 -->
-    <div class="status-panel" *ngIf="petStats.rare !== null" [class.visible]="isPanelVisible" [class.hover]="isHovering"
+    <div class="status-panel" *ngIf="petStats.rare !== null && !petStats.isLeaving" [class.visible]="isPanelVisible" [class.hover]="isHovering"
          (click)="togglePanel()"
          (mouseenter)="onHover(true)"
          (mouseleave)="onHover(false)">
@@ -344,6 +344,8 @@ export class StatusBarComponent implements OnInit, OnDestroy {
     this.petStatsSubscription = PetStatsService.getPetStats$().subscribe(petStats => {
       this.petStats = petStats;
       this.loadPetData();
+      // 當 petStats 變化時，立即更新活動狀態（確保 isLeaving 變化時立即反映）
+      this.updateActiveStates();
     });
 
     // 訂閱狀態資料變化（即時更新）
@@ -406,18 +408,18 @@ export class StatusBarComponent implements OnInit, OnDestroy {
   }
 
   private updateActiveStates() {
-    // 獲取所有 isActive 為 1 的狀態的 stateText
-    const activeStates = StateDataService.getActiveStates(this.stateData);
-    this.statusEffects.activeStates = activeStates.map(state => state.stateText);
-
-    // 檢查是否處於離家出走狀態
+    // 如果處於離家出走狀態，只顯示「離家出走中」
     if (this.petStats.isLeaving) {
-      this.statusEffects.activeStates.push('離家出走中');
-    }
+      this.statusEffects.activeStates = ['離家出走中'];
+    } else {
+      // 原有邏輯：獲取所有活動狀態
+      const activeStates = StateDataService.getActiveStates(this.stateData);
+      this.statusEffects.activeStates = activeStates.map(state => state.stateText);
 
-    // 檢查是否處於冷凍狀態
-    if (this.petStats.isFreezing) {
-      this.statusEffects.activeStates.push('冷凍狀態');
+      // 檢查是否處於冷凍狀態
+      if (this.petStats.isFreezing) {
+        this.statusEffects.activeStates.push('冷凍狀態');
+      }
     }
 
     // 更新情緒
@@ -550,7 +552,6 @@ export class StatusBarComponent implements OnInit, OnDestroy {
   shouldHideActiveStates(): boolean {
     return this.petStats.isDead ||
            this.petStats.isFreezing ||
-           this.petStats.isLeaving ||
            this.petStats.isCooked;
   }
 }
